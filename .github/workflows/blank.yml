@@ -30,8 +30,7 @@ jobs:
           gradle-version: '8.9'
 
       - name: Enable AndroidX
-        run: |
-          echo "android.useAndroidX=true" > gradle.properties
+        run: echo "android.useAndroidX=true" > gradle.properties
 
       - name: Create Android Project
         run: |
@@ -79,8 +78,8 @@ jobs:
                   applicationId = "com.m.launchervoice"
                   minSdk = 23
                   targetSdk = 35
-                  versionCode = 1
-                  versionName = "1.0"
+                  versionCode = 2
+                  versionName = "2.0"
               }
 
               compileOptions {
@@ -110,6 +109,11 @@ jobs:
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
               <uses-permission android:name="android.permission.CAMERA"/>
+              <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+              <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
+              <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+              <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE"/>
+              <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
               <uses-feature
                   android:name="android.hardware.camera.flash"
@@ -141,8 +145,12 @@ jobs:
                           <category android:name="android.intent.category.HOME"/>
                           <category android:name="android.intent.category.DEFAULT"/>
                       </intent-filter>
-
                   </activity>
+
+                  <service
+                      android:name=".FloatingVoiceService"
+                      android:exported="false"
+                      android:foregroundServiceType="microphone"/>
               </application>
           </manifest>
           EOF
@@ -154,12 +162,10 @@ jobs:
           import android.app.Activity
           import android.content.Intent
           import android.content.pm.PackageManager
-          import android.hardware.camera2.CameraCharacteristics
-          import android.hardware.camera2.CameraManager
-          import android.media.AudioManager
+          import android.net.Uri
+          import android.os.Build
           import android.os.Bundle
           import android.provider.Settings
-          import android.speech.RecognizerIntent
           import androidx.activity.ComponentActivity
           import androidx.activity.compose.setContent
           import androidx.activity.result.contract.ActivityResultContracts
@@ -176,45 +182,23 @@ jobs:
 
           class MainActivity : ComponentActivity() {
 
-              private val statusText = mutableStateOf(
-                  "Tekan mikrofon untuk memberi perintah"
-              )
+              private var message by mutableStateOf("Aktifkan widget mikrofon untuk memulai")
 
-              private var pendingTorchAction: Boolean? = null
-
-              private val cameraPermissionLauncher =
+              private val permissionLauncher =
                   registerForActivityResult(
-                      ActivityResultContracts.RequestPermission()
-                  ) { granted ->
-                      val action = pendingTorchAction
-                      pendingTorchAction = null
-
-                      if (granted && action != null) {
-                          controlTorch(action)
-                      } else {
-                          statusText.value =
-                              "Izin kamera diperlukan untuk menggunakan senter"
-                      }
+                      ActivityResultContracts.RequestMultiplePermissions()
+                  ) {
+                      continueSetup()
                   }
 
-              private val speechLauncher =
+              private val overlayLauncher =
                   registerForActivityResult(
                       ActivityResultContracts.StartActivityForResult()
-                  ) { result ->
-                      if (result.resultCode == Activity.RESULT_OK) {
-                          val spoken = result.data
-                              ?.getStringArrayListExtra(
-                                  RecognizerIntent.EXTRA_RESULTS
-                              )?.firstOrNull()
-
-                          if (!spoken.isNullOrBlank()) {
-                              statusText.value = "Perintah: $spoken"
-                              executeCommand(spoken)
-                          } else {
-                              statusText.value = "Suara tidak dikenali"
-                          }
+                  ) {
+                      if (Settings.canDrawOverlays(this)) {
+                          startFloatingService()
                       } else {
-                          statusText.value = "Tidak ada perintah"
+                          message = "Izin tampil di atas aplikasi belum diberikan"
                       }
                   }
 
@@ -223,52 +207,426 @@ jobs:
 
                   setContent {
                       MaterialTheme {
-                          VoiceLauncherScreen(
-                              status = statusText.value,
-                              onSpeak = { startListening() }
-                          )
+                          Column(
+                              modifier = Modifier
+                                  .fillMaxSize()
+                                  .background(Color(0xFF101827))
+                                  .padding(24.dp),
+                              horizontalAlignment = Alignment.CenterHorizontally,
+                              verticalArrangement = Arrangement.Center
+                          ) {
+                              Text(
+                                  "M LAUNCHER VOICE",
+                                  color = Color.White,
+                                  fontSize = 26.sp
+                              )
+
+                              Spacer(Modifier.height(20.dp))
+
+                              Text(
+                                  "Widget mikrofon mengambang",
+                                  color = Color(0xFF61C5FF)
+                              )
+
+                              Spacer(Modifier.height(24.dp))
+
+                              Button(
+                                  onClick = { beginSetup() },
+                                  shape = CircleShape
+                              ) {
+                                  Text("AKTIFKAN WIDGET")
+                              }
+
+                              Spacer(Modifier.height(20.dp))
+
+                              Text(
+                                  message,
+                                  color = Color.White,
+                                  fontSize = 14.sp
+                              )
+                          }
                       }
                   }
               }
 
-              private fun startListening() {
-                  try {
+              private fun beginSetup() {
+                  val permissions = mutableListOf(
+                      Manifest.permission.RECORD_AUDIO,
+                      Manifest.permission.CAMERA
+                  )
+
+                  if (Build.VERSION.SDK_INT >= 33) {
+                      permissions.add(Manifest.permission.POST_NOTIFICATIONS)
+                  }
+
+                  val missing = permissions.filter {
+                      checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED
+                  }
+
+                  if (missing.isNotEmpty()) {
+                      permissionLauncher.launch(missing.toTypedArray())
+                  } else {
+                      continueSetup()
+                  }
+              }
+
+              private fun continueSetup() {
+                  if (checkSelfPermission(Manifest.permission.RECORD_AUDIO)
+                      != PackageManager.PERMISSION_GRANTED
+                  ) {
+                      message = "Izin mikrofon diperlukan"
+                      return
+                  }
+
+                  if (!Settings.canDrawOverlays(this)) {
+                      message = "Izinkan M Launcher Voice tampil di atas aplikasi lain"
+
                       val intent = Intent(
-                          RecognizerIntent.ACTION_RECOGNIZE_SPEECH
-                      ).apply {
+                          Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                          Uri.parse("package:$packageName")
+                      )
+                      overlayLauncher.launch(intent)
+                  } else {
+                      startFloatingService()
+                  }
+              }
+
+              private fun startFloatingService() {
+                  try {
+                      val intent = Intent(this, FloatingVoiceService::class.java)
+                      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                          startForegroundService(intent)
+                      } else {
+                          startService(intent)
+                      }
+                      message = "Widget mikrofon sudah diaktifkan"
+                  } catch (e: Exception) {
+                      message = "Tidak dapat mengaktifkan widget: ${e.message}"
+                  }
+              }
+          }
+          EOF
+
+          cat > app/src/main/java/com/m/launchervoice/FloatingVoiceService.kt <<'EOF'
+          package com.m.launchervoice
+
+          import android.app.*
+          import android.content.Context
+          import android.content.Intent
+          import android.content.pm.PackageManager
+          import android.graphics.Color
+          import android.graphics.PixelFormat
+          import android.graphics.Typeface
+          import android.hardware.camera2.CameraCharacteristics
+          import android.hardware.camera2.CameraManager
+          import android.media.AudioManager
+          import android.os.Build
+          import android.os.Handler
+          import android.os.IBinder
+          import android.os.Looper
+          import android.provider.Settings
+          import android.speech.RecognitionListener
+          import android.speech.RecognizerIntent
+          import android.speech.SpeechRecognizer
+          import android.view.Gravity
+          import android.view.MotionEvent
+          import android.view.View
+          import android.view.WindowManager
+          import android.widget.LinearLayout
+          import android.widget.TextView
+          import android.graphics.drawable.GradientDrawable
+
+          class FloatingVoiceService : Service() {
+
+              private lateinit var windowManager: WindowManager
+              private lateinit var container: LinearLayout
+              private lateinit var micButton: TextView
+              private lateinit var prompt: TextView
+              private var speechRecognizer: SpeechRecognizer? = null
+              private val handler = Handler(Looper.getMainLooper())
+              private var listening = false
+
+              private lateinit var layoutParams: WindowManager.LayoutParams
+
+              override fun onBind(intent: Intent?): IBinder? = null
+
+              override fun onCreate() {
+                  super.onCreate()
+                  createNotification()
+                  createOverlay()
+              }
+
+              override fun onStartCommand(
+                  intent: Intent?,
+                  flags: Int,
+                  startId: Int
+              ): Int {
+                  return START_STICKY
+              }
+
+              private fun createNotification() {
+                  val channelId = "m_launcher_voice_channel"
+
+                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                      val channel = NotificationChannel(
+                          channelId,
+                          "M Launcher Voice",
+                          NotificationManager.IMPORTANCE_LOW
+                      )
+                      val manager =
+                          getSystemService(NotificationManager::class.java)
+                      manager.createNotificationChannel(channel)
+                  }
+
+                  val notification = Notification.Builder(this, channelId)
+                      .setContentTitle("M Launcher Voice aktif")
+                      .setContentText("Widget mikrofon sedang berjalan")
+                      .setSmallIcon(android.R.drawable.ic_btn_speak_now)
+                      .setOngoing(true)
+                      .build()
+
+                  if (Build.VERSION.SDK_INT >= 29) {
+                      startForeground(
+                          10,
+                          notification,
+                          android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
+                      )
+                  } else {
+                      startForeground(10, notification)
+                  }
+              }
+
+              private fun createOverlay() {
+                  if (!Settings.canDrawOverlays(this)) {
+                      stopSelf()
+                      return
+                  }
+
+                  windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+
+                  container = LinearLayout(this).apply {
+                      orientation = LinearLayout.VERTICAL
+                      gravity = Gravity.CENTER
+                      setPadding(12, 8, 12, 8)
+                      background = roundedBackground(0xEE102B50.toInt(), 24)
+                  }
+
+                  prompt = TextView(this).apply {
+                      text = "Silakan ucapkan perintah"
+                      setTextColor(Color.WHITE)
+                      textSize = 13f
+                      typeface = Typeface.DEFAULT_BOLD
+                      gravity = Gravity.CENTER
+                      visibility = View.GONE
+                      setPadding(8, 4, 8, 10)
+                  }
+
+                  micButton = TextView(this).apply {
+                      text = "🎙️"
+                      textSize = 27f
+                      gravity = Gravity.CENTER
+                      setTextColor(Color.WHITE)
+                      background = roundedBackground(0xFF1769D2.toInt(), 100)
+                      setPadding(15, 10, 15, 10)
+                      setOnClickListener {
+                          startVoiceRecognition()
+                      }
+                  }
+
+                  container.addView(prompt)
+                  container.addView(
+                      micButton,
+                      LinearLayout.LayoutParams(62, 62)
+                  )
+
+                  layoutParams = WindowManager.LayoutParams(
+                      WindowManager.LayoutParams.WRAP_CONTENT,
+                      WindowManager.LayoutParams.WRAP_CONTENT,
+                      if (Build.VERSION.SDK_INT >= 26)
+                          WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+                      else
+                          WindowManager.LayoutParams.TYPE_PHONE,
+                      WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                      PixelFormat.TRANSLUCENT
+                  ).apply {
+                      gravity = Gravity.TOP or Gravity.START
+                      x = 20
+                      y = 250
+                  }
+
+                  try {
+                      windowManager.addView(container, layoutParams)
+                      enableDragging()
+                  } catch (e: Exception) {
+                      stopSelf()
+                  }
+              }
+
+              private fun roundedBackground(color: Int, radius: Int): GradientDrawable {
+                  return GradientDrawable().apply {
+                      setColor(color)
+                      cornerRadius = radius.toFloat()
+                  }
+              }
+
+              private fun enableDragging() {
+                  var startX = 0
+                  var startY = 0
+                  var touchX = 0f
+                  var touchY = 0f
+                  var moved = false
+
+                  container.setOnTouchListener { _, event ->
+                      when (event.action) {
+                          MotionEvent.ACTION_DOWN -> {
+                              startX = layoutParams.x
+                              startY = layoutParams.y
+                              touchX = event.rawX
+                              touchY = event.rawY
+                              moved = false
+                              true
+                          }
+
+                          MotionEvent.ACTION_MOVE -> {
+                              val dx = (event.rawX - touchX).toInt()
+                              val dy = (event.rawY - touchY).toInt()
+
+                              if (kotlin.math.abs(dx) > 8 ||
+                                  kotlin.math.abs(dy) > 8
+                              ) {
+                                  moved = true
+                              }
+
+                              if (moved) {
+                                  layoutParams.x = startX + dx
+                                  layoutParams.y = startY + dy
+                                  try {
+                                      windowManager.updateViewLayout(
+                                          container,
+                                          layoutParams
+                                      )
+                                  } catch (_: Exception) {}
+                              }
+                              true
+                          }
+
+                          MotionEvent.ACTION_UP -> moved
+                          else -> false
+                      }
+                  }
+              }
+
+              private fun startVoiceRecognition() {
+                  if (listening) return
+
+                  if (!SpeechRecognizer.isRecognitionAvailable(this)) {
+                      showMessage("Pengenalan suara tidak tersedia")
+                      return
+                  }
+
+                  try {
+                      speechRecognizer?.destroy()
+                      speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
+
+                      speechRecognizer?.setRecognitionListener(
+                          object : RecognitionListener {
+                              override fun onReadyForSpeech(params: android.os.Bundle?) {
+                                  showMessage("Silakan ucapkan perintah")
+                              }
+
+                              override fun onBeginningOfSpeech() {
+                                  showMessage("Mendengarkan...")
+                              }
+
+                              override fun onRmsChanged(rmsdB: Float) {}
+                              override fun onBufferReceived(buffer: ByteArray?) {}
+                              override fun onEndOfSpeech() {
+                                  showMessage("Memproses perintah...")
+                              }
+
+                              override fun onError(error: Int) {
+                                  listening = false
+                                  showMessage("Tidak terdengar, tekan mic lagi")
+                                  resetAfterDelay()
+                              }
+
+                              override fun onResults(results: android.os.Bundle?) {
+                                  listening = false
+                                  val words = results?.getStringArrayList(
+                                      SpeechRecognizer.RESULTS_RECOGNITION
+                                  )?.firstOrNull()
+
+                                  if (!words.isNullOrBlank()) {
+                                      showMessage("Perintah: $words")
+                                      executeCommand(words)
+                                  } else {
+                                      showMessage("Perintah tidak dikenali")
+                                  }
+                                  resetAfterDelay()
+                              }
+
+                              override fun onPartialResults(
+                                  partialResults: android.os.Bundle?
+                              ) {
+                                  val words = partialResults?.getStringArrayList(
+                                      SpeechRecognizer.RESULTS_RECOGNITION
+                                  )?.firstOrNull()
+                                  if (!words.isNullOrBlank()) {
+                                      showMessage(words)
+                                  }
+                              }
+
+                              override fun onEvent(
+                                  eventType: Int,
+                                  params: android.os.Bundle?
+                              ) {}
+                          }
+                      )
+
+                      val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
                           putExtra(
                               RecognizerIntent.EXTRA_LANGUAGE_MODEL,
                               RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
                           )
-                          putExtra(
-                              RecognizerIntent.EXTRA_LANGUAGE,
-                              "id-ID"
-                          )
-                          putExtra(
-                              RecognizerIntent.EXTRA_MAX_RESULTS,
-                              1
-                          )
-                          putExtra(
-                              RecognizerIntent.EXTRA_PROMPT,
-                              "Ucapkan satu perintah"
-                          )
+                          putExtra(RecognizerIntent.EXTRA_LANGUAGE, "id-ID")
+                          putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+                          putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
                       }
 
-                      speechLauncher.launch(intent)
+                      listening = true
+                      showMessage("Silakan ucapkan perintah")
+                      speechRecognizer?.startListening(intent)
+
                   } catch (e: Exception) {
-                      statusText.value =
-                          "Layanan pengenalan suara tidak tersedia"
+                      listening = false
+                      showMessage("Mikrofon tidak dapat diaktifkan")
                   }
+              }
+
+              private fun showMessage(message: String) {
+                  handler.post {
+                      if (::prompt.isInitialized) {
+                          prompt.text = message
+                          prompt.visibility = View.VISIBLE
+                      }
+                  }
+              }
+
+              private fun resetAfterDelay() {
+                  handler.postDelayed({
+                      if (!listening && ::prompt.isInitialized) {
+                          prompt.visibility = View.GONE
+                      }
+                  }, 3500)
               }
 
               private fun executeCommand(command: String) {
                   val text = command.lowercase()
-                      .replace("buka", "")
                       .replace("tolong", "")
                       .replace("silakan", "")
+                      .replace("buka", "")
                       .trim()
 
-                  // SENTER
                   if (text.contains("senter") ||
                       text.contains("flashlight") ||
                       text.contains("flash")
@@ -276,222 +634,139 @@ jobs:
                       when {
                           text.contains("matikan") ||
                           text.contains("nonaktifkan") ||
-                          text.contains("padamkan") -> requestTorch(false)
+                          text.contains("padamkan") -> controlTorch(false)
 
                           text.contains("nyalakan") ||
                           text.contains("hidupkan") ||
-                          text.contains("aktifkan") -> requestTorch(true)
+                          text.contains("aktifkan") -> controlTorch(true)
 
-                          else -> statusText.value =
-                              "Ucapkan nyalakan senter atau matikan senter"
+                          else -> showMessage("Ucapkan nyalakan senter atau matikan senter")
                       }
                       return
                   }
 
-                  // WI-FI
-                  if (text.contains("wifi") ||
-                      text.contains("wi-fi")
-                  ) {
-                      openSettingsPage(
-                          Settings.ACTION_WIFI_SETTINGS,
-                          "Membuka pengaturan Wi-Fi"
-                      )
+                  if (text.contains("wifi") || text.contains("wi-fi")) {
+                      openSettings(Settings.ACTION_WIFI_SETTINGS)
                       return
                   }
 
-                  // BLUETOOTH
                   if (text.contains("bluetooth")) {
-                      openSettingsPage(
-                          Settings.ACTION_BLUETOOTH_SETTINGS,
-                          "Membuka pengaturan Bluetooth"
-                      )
+                      openSettings(Settings.ACTION_BLUETOOTH_SETTINGS)
                       return
                   }
 
-                  // HOTSPOT
                   if (text.contains("hotspot") ||
                       text.contains("hot spot") ||
                       text.contains("tethering")
                   ) {
-                      openSettingsPage(
-                          Settings.ACTION_WIRELESS_SETTINGS,
-                          "Membuka pengaturan jaringan untuk hotspot"
-                      )
+                      openSettings(Settings.ACTION_WIRELESS_SETTINGS)
                       return
                   }
 
-                  // VOLUME
-                  if (text.contains("volume") ||
-                      text.contains("suara")
-                  ) {
-                      val audioManager =
-                          getSystemService(AUDIO_SERVICE) as AudioManager
+                  if (text.contains("volume") || text.contains("suara")) {
+                      val audio = getSystemService(AUDIO_SERVICE) as AudioManager
 
                       when {
-                          text.contains("naik") ||
-                          text.contains("besar") ||
-                          text.contains("keras") ||
-                          text.contains("tambah") -> {
-                              audioManager.adjustStreamVolume(
+                          text.contains("naik") || text.contains("besar") ||
+                          text.contains("keras") || text.contains("tambah") ->
+                              audio.adjustStreamVolume(
                                   AudioManager.STREAM_MUSIC,
                                   AudioManager.ADJUST_RAISE,
                                   AudioManager.FLAG_SHOW_UI
                               )
-                              statusText.value = "Volume dinaikkan"
-                          }
 
-                          text.contains("turun") ||
-                          text.contains("kecil") ||
-                          text.contains("rendah") ||
-                          text.contains("kurangi") -> {
-                              audioManager.adjustStreamVolume(
+                          text.contains("turun") || text.contains("kecil") ||
+                          text.contains("kurangi") ->
+                              audio.adjustStreamVolume(
                                   AudioManager.STREAM_MUSIC,
                                   AudioManager.ADJUST_LOWER,
                                   AudioManager.FLAG_SHOW_UI
                               )
-                              statusText.value = "Volume diturunkan"
-                          }
 
-                          text.contains("diam") ||
-                          text.contains("mute") -> {
-                              audioManager.adjustStreamVolume(
+                          text.contains("diam") || text.contains("mute") ->
+                              audio.adjustStreamVolume(
                                   AudioManager.STREAM_MUSIC,
                                   AudioManager.ADJUST_MUTE,
                                   AudioManager.FLAG_SHOW_UI
                               )
-                              statusText.value = "Suara dimatikan"
-                          }
-
-                          else -> statusText.value =
-                              "Ucapkan volume naik, volume turun, atau volume diam"
                       }
                       return
                   }
 
-                  // KECERAHAN
                   if (text.contains("kecerahan") ||
                       text.contains("brightness")
                   ) {
-                      openSettingsPage(
-                          Settings.ACTION_DISPLAY_SETTINGS,
-                          "Membuka pengaturan layar untuk kecerahan"
-                      )
+                      openSettings(Settings.ACTION_DISPLAY_SETTINGS)
                       return
                   }
 
-                  // KEMBALI KE MENU UTAMA
                   if (text.contains("menu utama") ||
                       text.contains("layar utama") ||
                       text.contains("halaman utama") ||
-                      text.contains("home")
+                      text == "home"
                   ) {
-                      val homeIntent = Intent(Intent.ACTION_MAIN).apply {
+                      val intent = Intent(Intent.ACTION_MAIN).apply {
                           addCategory(Intent.CATEGORY_HOME)
                           flags = Intent.FLAG_ACTIVITY_NEW_TASK
                       }
-                      startActivity(homeIntent)
+                      startActivity(intent)
                       return
                   }
 
-                  // KAMERA
-                  if (text.contains("kamera") ||
-                      text.contains("foto")
-                  ) {
+                  if (text.contains("kamera") || text == "foto") {
                       if (!openAppByName("kamera", "camera")) {
-                          try {
-                              startActivity(
-                                  Intent("android.media.action.IMAGE_CAPTURE")
-                              )
-                          } catch (e: Exception) {
-                              statusText.value = "Kamera tidak ditemukan"
-                          }
+                          launchIntent(Intent("android.media.action.IMAGE_CAPTURE"))
                       }
                       return
                   }
 
-                  // GALERI
-                  if (text.contains("galeri") ||
-                      text.contains("foto foto") ||
-                      text.contains("album")
-                  ) {
+                  if (text.contains("galeri") || text.contains("album")) {
                       if (!openAppByName("galeri", "gallery", "photos", "foto")) {
-                          try {
-                              val intent = Intent(Intent.ACTION_VIEW).apply {
-                                  setType("image/*")
+                          launchIntent(
+                              Intent(Intent.ACTION_VIEW).apply {
+                                  type = "image/*"
                               }
-                              startActivity(
-                                  Intent.createChooser(intent, "Buka galeri")
-                              )
-                          } catch (e: Exception) {
-                              statusText.value = "Galeri tidak ditemukan"
-                          }
+                          )
                       }
                       return
                   }
 
-                  // TELEPON
                   if (text.contains("telepon") ||
                       text.contains("panggilan") ||
                       text.contains("dialer")
                   ) {
-                      try {
-                          startActivity(Intent(Intent.ACTION_DIAL))
-                      } catch (e: Exception) {
-                          statusText.value = "Aplikasi telepon tidak ditemukan"
-                      }
+                      launchIntent(Intent(Intent.ACTION_DIAL))
                       return
                   }
 
-                  // SMS / PESAN
                   if (text == "pesan" ||
                       text.contains("sms") ||
                       text.contains("pesan")
                   ) {
-                      try {
-                          startActivity(
-                              Intent(Intent.ACTION_MAIN).apply {
-                                  addCategory(Intent.CATEGORY_DEFAULT)
-                                  type = "vnd.android-dir/mms-sms"
-                              }
-                          )
-                      } catch (e: Exception) {
-                          statusText.value = "Aplikasi pesan tidak ditemukan"
-                      }
-                      return
-                  }
-
-                  // PENGATURAN UMUM
-                  if (text.contains("pengaturan") ||
-                      text.contains("setelan")
-                  ) {
-                      openSettingsPage(
-                          Settings.ACTION_SETTINGS,
-                          "Membuka pengaturan"
+                      launchIntent(
+                          Intent(Intent.ACTION_MAIN).apply {
+                              addCategory(Intent.CATEGORY_DEFAULT)
+                              type = "vnd.android-dir/mms-sms"
+                          }
                       )
                       return
                   }
 
-                  // LOKASI
+                  if (text.contains("pengaturan") || text.contains("setelan")) {
+                      openSettings(Settings.ACTION_SETTINGS)
+                      return
+                  }
+
                   if (text.contains("lokasi")) {
-                      openSettingsPage(
-                          Settings.ACTION_LOCATION_SOURCE_SETTINGS,
-                          "Membuka pengaturan lokasi"
-                      )
+                      openSettings(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
                       return
                   }
 
-                  // MODE PESAWAT
-                  if (text.contains("pesawat") ||
-                      text.contains("airplane")
-                  ) {
-                      openSettingsPage(
-                          Settings.ACTION_AIRPLANE_MODE_SETTINGS,
-                          "Membuka pengaturan mode pesawat"
-                      )
+                  if (text.contains("pesawat") || text.contains("airplane")) {
+                      openSettings(Settings.ACTION_AIRPLANE_MODE_SETTINGS)
                       return
                   }
 
-                  // APLIKASI LAIN
                   val target = text
                       .replace("jalankan", "")
                       .replace("mulai", "")
@@ -499,32 +774,29 @@ jobs:
 
                   if (target.isNotBlank()) {
                       if (!openAppByName(target)) {
-                          statusText.value =
-                              "Aplikasi $target tidak ditemukan"
+                          showMessage("Aplikasi $target tidak ditemukan")
                       }
                   } else {
-                      statusText.value = "Perintah tidak dikenali"
+                      showMessage("Perintah tidak dikenali")
                   }
               }
 
-              private fun openSettingsPage(
-                  action: String,
-                  message: String
-              ) {
+              private fun openSettings(action: String) {
                   try {
-                      startActivity(Intent(action))
-                      statusText.value = message
+                      startActivity(
+                          Intent(action).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                      )
                   } catch (e: Exception) {
-                      try {
-                          startActivity(
-                              Intent(Settings.ACTION_SETTINGS)
-                          )
-                          statusText.value =
-                              "Halaman khusus tidak tersedia. Membuka pengaturan umum."
-                      } catch (error: Exception) {
-                          statusText.value =
-                              "Pengaturan tidak dapat dibuka"
-                      }
+                      showMessage("Pengaturan tidak dapat dibuka")
+                  }
+              }
+
+              private fun launchIntent(intent: Intent) {
+                  try {
+                      intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                      startActivity(intent)
+                  } catch (e: Exception) {
+                      showMessage("Aplikasi tidak ditemukan")
                   }
               }
 
@@ -534,146 +806,76 @@ jobs:
                           addCategory(Intent.CATEGORY_LAUNCHER)
                       }
 
-                      val apps = packageManager.queryIntentActivities(
-                          intent,
-                          0
-                      )
+                      val apps = packageManager.queryIntentActivities(intent, 0)
 
                       val matched = apps.firstOrNull { app ->
                           val label = app.loadLabel(packageManager)
                               .toString().lowercase()
 
                           app.activityInfo.packageName != packageName &&
-                              names.any { name ->
-                                  label.contains(name.lowercase())
-                              }
+                              names.any { label.contains(it.lowercase()) }
                       }
 
                       if (matched != null) {
-                          val launchIntent =
-                              packageManager.getLaunchIntentForPackage(
-                                  matched.activityInfo.packageName
-                              )
+                          val launch = packageManager.getLaunchIntentForPackage(
+                              matched.activityInfo.packageName
+                          )
 
-                          if (launchIntent != null) {
-                              startActivity(launchIntent)
+                          if (launch != null) {
+                              launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                              startActivity(launch)
                               true
-                          } else {
-                              false
-                          }
-                      } else {
-                          false
-                      }
+                          } else false
+                      } else false
                   } catch (e: Exception) {
                       false
                   }
               }
 
-              private fun requestTorch(turnOn: Boolean) {
+              private fun controlTorch(turnOn: Boolean) {
                   if (checkSelfPermission(Manifest.permission.CAMERA)
                       != PackageManager.PERMISSION_GRANTED
                   ) {
-                      pendingTorchAction = turnOn
-                      cameraPermissionLauncher.launch(
-                          Manifest.permission.CAMERA
-                      )
+                      showMessage("Izin kamera belum diberikan")
                       return
                   }
 
-                  controlTorch(turnOn)
-              }
-
-              private fun controlTorch(turnOn: Boolean) {
                   try {
                       val cameraManager =
                           getSystemService(CAMERA_SERVICE) as CameraManager
 
                       val cameraId = cameraManager.cameraIdList.firstOrNull {
-                          val characteristics =
-                              cameraManager.getCameraCharacteristics(it)
-
-                          characteristics.get(
+                          cameraManager.getCameraCharacteristics(it).get(
                               CameraCharacteristics.FLASH_INFO_AVAILABLE
                           ) == true
                       }
 
                       if (cameraId == null) {
-                          statusText.value =
-                              "Perangkat ini tidak memiliki lampu senter"
+                          showMessage("Senter tidak tersedia")
                           return
                       }
 
                       cameraManager.setTorchMode(cameraId, turnOn)
-
-                      statusText.value = if (turnOn) {
-                          "Senter berhasil dinyalakan"
-                      } else {
-                          "Senter berhasil dimatikan"
-                      }
-
+                      showMessage(
+                          if (turnOn) "Senter dinyalakan" else "Senter dimatikan"
+                      )
                   } catch (e: Exception) {
-                      statusText.value =
-                          "Senter tidak dapat digunakan"
+                      showMessage("Senter tidak dapat digunakan")
                   }
               }
-          }
 
-          @Composable
-          fun VoiceLauncherScreen(
-              status: String,
-              onSpeak: () -> Unit
-          ) {
-              Box(
-                  modifier = Modifier
-                      .fillMaxSize()
-                      .background(Color(0xFF101827)),
-                  contentAlignment = Alignment.Center
-              ) {
-                  Column(
-                      horizontalAlignment = Alignment.CenterHorizontally,
-                      verticalArrangement = Arrangement.spacedBy(28.dp)
-                  ) {
-                      Text(
-                          "M LAUNCHER",
-                          color = Color.White,
-                          fontSize = 30.sp
-                      )
+              override fun onDestroy() {
+                  try {
+                      speechRecognizer?.destroy()
+                      speechRecognizer = null
 
-                      Text(
-                          "VOICE ASSISTANT",
-                          color = Color(0xFF61C5FF),
-                          fontSize = 15.sp
-                      )
-
-                      Button(
-                          onClick = onSpeak,
-                          modifier = Modifier.size(155.dp),
-                          shape = CircleShape,
-                          colors = ButtonDefaults.buttonColors(
-                              containerColor = Color(0xFF1769D2)
-                          )
-                      ) {
-                          Text("🎙️", fontSize = 58.sp)
+                      if (::container.isInitialized) {
+                          windowManager.removeView(container)
                       }
+                  } catch (_: Exception) {}
 
-                      Text(
-                          "TEKAN UNTUK BICARA",
-                          color = Color.White,
-                          fontSize = 14.sp
-                      )
-
-                      Text(
-                          status,
-                          color = Color(0xFFB9D7F5),
-                          fontSize = 14.sp
-                      )
-
-                      Text(
-                          "Satu tekanan = satu perintah",
-                          color = Color.Gray,
-                          fontSize = 12.sp
-                      )
-                  }
+                  handler.removeCallbacksAndMessages(null)
+                  super.onDestroy()
               }
           }
           EOF
