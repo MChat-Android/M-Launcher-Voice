@@ -314,8 +314,8 @@ jobs:
                       text.contains("tethering")
                   ) {
                       openSettingsPage(
-                          Settings.ACTION_TETHER_SETTINGS,
-                          "Membuka pengaturan hotspot"
+                          Settings.ACTION_WIRELESS_SETTINGS,
+                          "Membuka pengaturan jaringan untuk hotspot"
                       )
                       return
                   }
@@ -491,7 +491,7 @@ jobs:
                       return
                   }
 
-                  // BUKA APLIKASI LAIN BERDASARKAN NAMA
+                  // APLIKASI LAIN
                   val target = text
                       .replace("jalankan", "")
                       .replace("mulai", "")
