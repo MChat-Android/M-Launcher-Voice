@@ -1,36 +1,317 @@
-# This is a basic workflow to help you get started with Actions
 
-name: CI
+name: Build M Launcher Voice
 
-# Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the "main" branch
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+  push:
+    branches:
+      - main
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+permissions:
+  contents: read
+
 jobs:
-  # This workflow contains a single job called "build"
   build:
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Hello, world!
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
 
-      # Runs a set of commands using the runners shell
-      - name: Run a multi-line script
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Create Android Project
         run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
+          mkdir -p app/src/main/java/com/m/launchervoice
+
+          cat > settings.gradle.kts <<'EOF'
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          rootProject.name = "M-Launcher-Voice"
+          include(":app")
+          EOF
+
+          cat > build.gradle.kts <<'EOF'
+          plugins {
+              id("com.android.application") version "8.7.3" apply false
+              id("org.jetbrains.kotlin.android") version "2.0.21" apply false
+              id("org.jetbrains.kotlin.plugin.compose") version "2.0.21" apply false
+          }
+          EOF
+
+          cat > app/build.gradle.kts <<'EOF'
+          plugins {
+              id("com.android.application")
+              id("org.jetbrains.kotlin.android")
+              id("org.jetbrains.kotlin.plugin.compose")
+          }
+
+          android {
+              namespace = "com.m.launchervoice"
+              compileSdk = 35
+
+              defaultConfig {
+                  applicationId = "com.m.launchervoice"
+                  minSdk = 23
+                  targetSdk = 35
+                  versionCode = 1
+                  versionName = "1.0"
+              }
+
+              buildFeatures {
+                  compose = true
+              }
+          }
+
+          dependencies {
+              implementation(platform("androidx.compose:compose-bom:2024.12.01"))
+              implementation("androidx.activity:activity-compose:1.10.0")
+              implementation("androidx.compose.ui:ui")
+              implementation("androidx.compose.ui:ui-tooling-preview")
+              implementation("androidx.compose.material3:material3")
+          }
+          EOF
+
+          cat > app/src/main/AndroidManifest.xml <<'EOF'
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+              <queries>
+                  <intent>
+                      <action android:name="android.intent.action.MAIN"/>
+                      <category android:name="android.intent.category.LAUNCHER"/>
+                  </intent>
+              </queries>
+
+              <application
+                  android:theme="@android:style/Theme.Material.Light.NoActionBar"
+                  android:label="M Launcher Voice"
+                  android:allowBackup="false">
+
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true">
+
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN"/>
+                          <category android:name="android.intent.category.LAUNCHER"/>
+                      </intent-filter>
+
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN"/>
+                          <category android:name="android.intent.category.HOME"/>
+                          <category android:name="android.intent.category.DEFAULT"/>
+                      </intent-filter>
+
+                  </activity>
+              </application>
+          </manifest>
+          EOF
+
+          cat > app/src/main/java/com/m/launchervoice/MainActivity.kt <<'EOF'
+          package com.m.launchervoice
+
+          import android.app.Activity
+          import android.content.Intent
+          import android.os.Bundle
+          import android.speech.RecognizerIntent
+          import androidx.activity.ComponentActivity
+          import androidx.activity.compose.setContent
+          import androidx.activity.result.contract.ActivityResultContracts
+          import androidx.compose.foundation.background
+          import androidx.compose.foundation.layout.*
+          import androidx.compose.foundation.shape.CircleShape
+          import androidx.compose.foundation.shape.RoundedCornerShape
+          import androidx.compose.material3.*
+          import androidx.compose.runtime.*
+          import androidx.compose.ui.Alignment
+          import androidx.compose.ui.Modifier
+          import androidx.compose.ui.graphics.Color
+          import androidx.compose.ui.unit.dp
+          import androidx.compose.ui.unit.sp
+
+          class MainActivity : ComponentActivity() {
+
+              private val statusText = mutableStateOf("Tekan mikrofon untuk memberi perintah")
+
+              private val speechLauncher =
+                  registerForActivityResult(
+                      ActivityResultContracts.StartActivityForResult()
+                  ) { result ->
+
+                      if (result.resultCode == Activity.RESULT_OK) {
+                          val spoken = result.data
+                              ?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+                              ?.firstOrNull()
+
+                          if (!spoken.isNullOrBlank()) {
+                              statusText.value = "Perintah: $spoken"
+                              executeCommand(spoken)
+                          } else {
+                              statusText.value = "Suara tidak dikenali"
+                          }
+                      } else {
+                          statusText.value = "Tidak ada perintah"
+                      }
+                  }
+
+              override fun onCreate(savedInstanceState: Bundle?) {
+                  super.onCreate(savedInstanceState)
+
+                  setContent {
+                      MaterialTheme {
+                          VoiceLauncherScreen(
+                              status = statusText.value,
+                              onSpeak = { startListening() }
+                          )
+                      }
+                  }
+              }
+
+              private fun startListening() {
+                  try {
+                      val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                          putExtra(
+                              RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                              RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+                          )
+                          putExtra(RecognizerIntent.EXTRA_LANGUAGE, "id-ID")
+                          putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+                          putExtra(RecognizerIntent.EXTRA_PROMPT, "Ucapkan satu perintah")
+                      }
+
+                      speechLauncher.launch(intent)
+                  } catch (e: Exception) {
+                      statusText.value = "Layanan pengenalan suara tidak tersedia"
+                  }
+              }
+
+              private fun executeCommand(command: String) {
+                  val target = command.lowercase()
+                      .replace("buka", "")
+                      .replace("jalankan", "")
+                      .replace("tolong", "")
+                      .trim()
+
+                  if (target.contains("pengaturan")) {
+                      startActivity(Intent(android.provider.Settings.ACTION_SETTINGS))
+                      return
+                  }
+
+                  val apps = packageManager.queryIntentActivities(
+                      Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER),
+                      0
+                  )
+
+                  val matched = apps.firstOrNull { app ->
+                      val label = app.loadLabel(packageManager)
+                          .toString().lowercase()
+
+                      app.activityInfo.packageName != packageName &&
+                          (label == target || label.contains(target))
+                  }
+
+                  if (matched != null) {
+                      val launchIntent = packageManager.getLaunchIntentForPackage(
+                          matched.activityInfo.packageName
+                      )
+
+                      if (launchIntent != null) {
+                          startActivity(launchIntent)
+                      } else {
+                          statusText.value = "Aplikasi tidak dapat dibuka"
+                      }
+                  } else {
+                      statusText.value = "Aplikasi $target tidak ditemukan"
+                  }
+              }
+          }
+
+          @Composable
+          fun VoiceLauncherScreen(
+              status: String,
+              onSpeak: () -> Unit
+          ) {
+              Box(
+                  modifier = Modifier
+                      .fillMaxSize()
+                      .background(Color(0xFF101827)),
+                  contentAlignment = Alignment.Center
+              ) {
+                  Column(
+                      horizontalAlignment = Alignment.CenterHorizontally,
+                      verticalArrangement = Arrangement.spacedBy(28.dp)
+                  ) {
+                      Text(
+                          "M LAUNCHER",
+                          color = Color.White,
+                          fontSize = 30.sp
+                      )
+
+                      Text(
+                          "VOICE ASSISTANT",
+                          color = Color(0xFF61C5FF),
+                          fontSize = 15.sp
+                      )
+
+                      Button(
+                          onClick = onSpeak,
+                          modifier = Modifier.size(155.dp),
+                          shape = CircleShape,
+                          colors = ButtonDefaults.buttonColors(
+                              containerColor = Color(0xFF1769D2)
+                          )
+                      ) {
+                          Text("🎙️", fontSize = 58.sp)
+                      }
+
+                      Text(
+                          "TEKAN UNTUK BICARA",
+                          color = Color.White,
+                          fontSize = 14.sp
+                      )
+
+                      Text(
+                          status,
+                          color = Color(0xFFB9D7F5),
+                          fontSize = 14.sp
+                      )
+
+                      Text(
+                          "Satu tekanan = satu perintah",
+                          color = Color.Gray,
+                          fontSize = 12.sp
+                      )
+                  }
+              }
+          }
+          EOF
+
+      - name: Build APK
+        run: gradle assembleDebug --no-daemon
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: M-Launcher-Voice-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
