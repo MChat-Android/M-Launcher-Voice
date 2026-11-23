@@ -29,6 +29,10 @@ jobs:
         with:
           gradle-version: '8.9'
 
+      - name: Enable AndroidX
+        run: |
+          echo "android.useAndroidX=true" > gradle.properties
+
       - name: Create Android Project
         run: |
           mkdir -p app/src/main/java/com/m/launchervoice
@@ -41,6 +45,7 @@ jobs:
                   gradlePluginPortal()
               }
           }
+
           dependencyResolutionManagement {
               repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
               repositories {
@@ -48,6 +53,7 @@ jobs:
                   mavenCentral()
               }
           }
+
           rootProject.name = "M-Launcher-Voice"
           include(":app")
           EOF
@@ -141,7 +147,6 @@ jobs:
           import androidx.compose.foundation.background
           import androidx.compose.foundation.layout.*
           import androidx.compose.foundation.shape.CircleShape
-          import androidx.compose.foundation.shape.RoundedCornerShape
           import androidx.compose.material3.*
           import androidx.compose.runtime.*
           import androidx.compose.ui.Alignment
@@ -152,7 +157,9 @@ jobs:
 
           class MainActivity : ComponentActivity() {
 
-              private val statusText = mutableStateOf("Tekan mikrofon untuk memberi perintah")
+              private val statusText = mutableStateOf(
+                  "Tekan mikrofon untuk memberi perintah"
+              )
 
               private val speechLauncher =
                   registerForActivityResult(
@@ -161,8 +168,9 @@ jobs:
 
                       if (result.resultCode == Activity.RESULT_OK) {
                           val spoken = result.data
-                              ?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
-                              ?.firstOrNull()
+                              ?.getStringArrayListExtra(
+                                  RecognizerIntent.EXTRA_RESULTS
+                              )?.firstOrNull()
 
                           if (!spoken.isNullOrBlank()) {
                               statusText.value = "Perintah: $spoken"
@@ -190,19 +198,32 @@ jobs:
 
               private fun startListening() {
                   try {
-                      val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                      val intent = Intent(
+                          RecognizerIntent.ACTION_RECOGNIZE_SPEECH
+                      ).apply {
                           putExtra(
                               RecognizerIntent.EXTRA_LANGUAGE_MODEL,
                               RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
                           )
-                          putExtra(RecognizerIntent.EXTRA_LANGUAGE, "id-ID")
-                          putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
-                          putExtra(RecognizerIntent.EXTRA_PROMPT, "Ucapkan satu perintah")
+                          putExtra(
+                              RecognizerIntent.EXTRA_LANGUAGE,
+                              "id-ID"
+                          )
+                          putExtra(
+                              RecognizerIntent.EXTRA_MAX_RESULTS,
+                              1
+                          )
+                          putExtra(
+                              RecognizerIntent.EXTRA_PROMPT,
+                              "Ucapkan satu perintah"
+                          )
                       }
 
                       speechLauncher.launch(intent)
+
                   } catch (e: Exception) {
-                      statusText.value = "Layanan pengenalan suara tidak tersedia"
+                      statusText.value =
+                          "Layanan pengenalan suara tidak tersedia"
                   }
               }
 
@@ -214,12 +235,16 @@ jobs:
                       .trim()
 
                   if (target.contains("pengaturan")) {
-                      startActivity(Intent(android.provider.Settings.ACTION_SETTINGS))
+                      startActivity(
+                          Intent(android.provider.Settings.ACTION_SETTINGS)
+                      )
                       return
                   }
 
                   val apps = packageManager.queryIntentActivities(
-                      Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER),
+                      Intent(Intent.ACTION_MAIN).addCategory(
+                          Intent.CATEGORY_LAUNCHER
+                      ),
                       0
                   )
 
@@ -232,17 +257,20 @@ jobs:
                   }
 
                   if (matched != null) {
-                      val launchIntent = packageManager.getLaunchIntentForPackage(
-                          matched.activityInfo.packageName
-                      )
+                      val launchIntent =
+                          packageManager.getLaunchIntentForPackage(
+                              matched.activityInfo.packageName
+                          )
 
                       if (launchIntent != null) {
                           startActivity(launchIntent)
                       } else {
-                          statusText.value = "Aplikasi tidak dapat dibuka"
+                          statusText.value =
+                              "Aplikasi tidak dapat dibuka"
                       }
                   } else {
-                      statusText.value = "Aplikasi $target tidak ditemukan"
+                      statusText.value =
+                          "Aplikasi $target tidak ditemukan"
                   }
               }
           }
