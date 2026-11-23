@@ -156,7 +156,9 @@ jobs:
           import android.content.pm.PackageManager
           import android.hardware.camera2.CameraCharacteristics
           import android.hardware.camera2.CameraManager
+          import android.media.AudioManager
           import android.os.Bundle
+          import android.provider.Settings
           import android.speech.RecognizerIntent
           import androidx.activity.ComponentActivity
           import androidx.activity.compose.setContent
@@ -260,78 +262,310 @@ jobs:
               }
 
               private fun executeCommand(command: String) {
-                  val text = command.lowercase().trim()
+                  val text = command.lowercase()
+                      .replace("buka", "")
+                      .replace("tolong", "")
+                      .replace("silakan", "")
+                      .trim()
 
-                  val isTorchCommand =
-                      text.contains("senter") ||
-                      text.contains("flash") ||
-                      text.contains("flashlight")
-
-                  if (isTorchCommand) {
-                      val turnOff =
+                  // SENTER
+                  if (text.contains("senter") ||
+                      text.contains("flashlight") ||
+                      text.contains("flash")
+                  ) {
+                      when {
                           text.contains("matikan") ||
                           text.contains("nonaktifkan") ||
-                          text.contains("tutup") ||
-                          text.contains("padamkan")
+                          text.contains("padamkan") -> requestTorch(false)
 
-                      val turnOn =
-                          text.contains("buka") ||
                           text.contains("nyalakan") ||
                           text.contains("hidupkan") ||
-                          text.contains("aktifkan")
+                          text.contains("aktifkan") -> requestTorch(true)
 
-                      when {
-                          turnOff -> requestTorch(false)
-                          turnOn -> requestTorch(true)
                           else -> statusText.value =
-                              "Ucapkan buka senter atau matikan senter"
+                              "Ucapkan nyalakan senter atau matikan senter"
                       }
                       return
                   }
 
-                  val target = text
-                      .replace("buka", "")
-                      .replace("jalankan", "")
-                      .replace("tolong", "")
-                      .trim()
-
-                  if (target.contains("pengaturan")) {
-                      startActivity(
-                          Intent(android.provider.Settings.ACTION_SETTINGS)
+                  // WI-FI
+                  if (text.contains("wifi") ||
+                      text.contains("wi-fi")
+                  ) {
+                      openSettingsPage(
+                          Settings.ACTION_WIFI_SETTINGS,
+                          "Membuka pengaturan Wi-Fi"
                       )
                       return
                   }
 
-                  val apps = packageManager.queryIntentActivities(
-                      Intent(Intent.ACTION_MAIN).addCategory(
-                          Intent.CATEGORY_LAUNCHER
-                      ),
-                      0
-                  )
-
-                  val matched = apps.firstOrNull { app ->
-                      val label = app.loadLabel(packageManager)
-                          .toString().lowercase()
-
-                      app.activityInfo.packageName != packageName &&
-                          (label == target || label.contains(target))
+                  // BLUETOOTH
+                  if (text.contains("bluetooth")) {
+                      openSettingsPage(
+                          Settings.ACTION_BLUETOOTH_SETTINGS,
+                          "Membuka pengaturan Bluetooth"
+                      )
+                      return
                   }
 
-                  if (matched != null) {
-                      val launchIntent =
-                          packageManager.getLaunchIntentForPackage(
-                              matched.activityInfo.packageName
-                          )
+                  // HOTSPOT
+                  if (text.contains("hotspot") ||
+                      text.contains("hot spot") ||
+                      text.contains("tethering")
+                  ) {
+                      openSettingsPage(
+                          Settings.ACTION_TETHER_SETTINGS,
+                          "Membuka pengaturan hotspot"
+                      )
+                      return
+                  }
 
-                      if (launchIntent != null) {
-                          startActivity(launchIntent)
-                      } else {
+                  // VOLUME
+                  if (text.contains("volume") ||
+                      text.contains("suara")
+                  ) {
+                      val audioManager =
+                          getSystemService(AUDIO_SERVICE) as AudioManager
+
+                      when {
+                          text.contains("naik") ||
+                          text.contains("besar") ||
+                          text.contains("keras") ||
+                          text.contains("tambah") -> {
+                              audioManager.adjustStreamVolume(
+                                  AudioManager.STREAM_MUSIC,
+                                  AudioManager.ADJUST_RAISE,
+                                  AudioManager.FLAG_SHOW_UI
+                              )
+                              statusText.value = "Volume dinaikkan"
+                          }
+
+                          text.contains("turun") ||
+                          text.contains("kecil") ||
+                          text.contains("rendah") ||
+                          text.contains("kurangi") -> {
+                              audioManager.adjustStreamVolume(
+                                  AudioManager.STREAM_MUSIC,
+                                  AudioManager.ADJUST_LOWER,
+                                  AudioManager.FLAG_SHOW_UI
+                              )
+                              statusText.value = "Volume diturunkan"
+                          }
+
+                          text.contains("diam") ||
+                          text.contains("mute") -> {
+                              audioManager.adjustStreamVolume(
+                                  AudioManager.STREAM_MUSIC,
+                                  AudioManager.ADJUST_MUTE,
+                                  AudioManager.FLAG_SHOW_UI
+                              )
+                              statusText.value = "Suara dimatikan"
+                          }
+
+                          else -> statusText.value =
+                              "Ucapkan volume naik, volume turun, atau volume diam"
+                      }
+                      return
+                  }
+
+                  // KECERAHAN
+                  if (text.contains("kecerahan") ||
+                      text.contains("brightness")
+                  ) {
+                      openSettingsPage(
+                          Settings.ACTION_DISPLAY_SETTINGS,
+                          "Membuka pengaturan layar untuk kecerahan"
+                      )
+                      return
+                  }
+
+                  // KEMBALI KE MENU UTAMA
+                  if (text.contains("menu utama") ||
+                      text.contains("layar utama") ||
+                      text.contains("halaman utama") ||
+                      text.contains("home")
+                  ) {
+                      val homeIntent = Intent(Intent.ACTION_MAIN).apply {
+                          addCategory(Intent.CATEGORY_HOME)
+                          flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                      }
+                      startActivity(homeIntent)
+                      return
+                  }
+
+                  // KAMERA
+                  if (text.contains("kamera") ||
+                      text.contains("foto")
+                  ) {
+                      if (!openAppByName("kamera", "camera")) {
+                          try {
+                              startActivity(
+                                  Intent("android.media.action.IMAGE_CAPTURE")
+                              )
+                          } catch (e: Exception) {
+                              statusText.value = "Kamera tidak ditemukan"
+                          }
+                      }
+                      return
+                  }
+
+                  // GALERI
+                  if (text.contains("galeri") ||
+                      text.contains("foto foto") ||
+                      text.contains("album")
+                  ) {
+                      if (!openAppByName("galeri", "gallery", "photos", "foto")) {
+                          try {
+                              val intent = Intent(Intent.ACTION_VIEW).apply {
+                                  setType("image/*")
+                              }
+                              startActivity(
+                                  Intent.createChooser(intent, "Buka galeri")
+                              )
+                          } catch (e: Exception) {
+                              statusText.value = "Galeri tidak ditemukan"
+                          }
+                      }
+                      return
+                  }
+
+                  // TELEPON
+                  if (text.contains("telepon") ||
+                      text.contains("panggilan") ||
+                      text.contains("dialer")
+                  ) {
+                      try {
+                          startActivity(Intent(Intent.ACTION_DIAL))
+                      } catch (e: Exception) {
+                          statusText.value = "Aplikasi telepon tidak ditemukan"
+                      }
+                      return
+                  }
+
+                  // SMS / PESAN
+                  if (text == "pesan" ||
+                      text.contains("sms") ||
+                      text.contains("pesan")
+                  ) {
+                      try {
+                          startActivity(
+                              Intent(Intent.ACTION_MAIN).apply {
+                                  addCategory(Intent.CATEGORY_DEFAULT)
+                                  type = "vnd.android-dir/mms-sms"
+                              }
+                          )
+                      } catch (e: Exception) {
+                          statusText.value = "Aplikasi pesan tidak ditemukan"
+                      }
+                      return
+                  }
+
+                  // PENGATURAN UMUM
+                  if (text.contains("pengaturan") ||
+                      text.contains("setelan")
+                  ) {
+                      openSettingsPage(
+                          Settings.ACTION_SETTINGS,
+                          "Membuka pengaturan"
+                      )
+                      return
+                  }
+
+                  // LOKASI
+                  if (text.contains("lokasi")) {
+                      openSettingsPage(
+                          Settings.ACTION_LOCATION_SOURCE_SETTINGS,
+                          "Membuka pengaturan lokasi"
+                      )
+                      return
+                  }
+
+                  // MODE PESAWAT
+                  if (text.contains("pesawat") ||
+                      text.contains("airplane")
+                  ) {
+                      openSettingsPage(
+                          Settings.ACTION_AIRPLANE_MODE_SETTINGS,
+                          "Membuka pengaturan mode pesawat"
+                      )
+                      return
+                  }
+
+                  // BUKA APLIKASI LAIN BERDASARKAN NAMA
+                  val target = text
+                      .replace("jalankan", "")
+                      .replace("mulai", "")
+                      .trim()
+
+                  if (target.isNotBlank()) {
+                      if (!openAppByName(target)) {
                           statusText.value =
-                              "Aplikasi tidak dapat dibuka"
+                              "Aplikasi $target tidak ditemukan"
                       }
                   } else {
-                      statusText.value =
-                          "Aplikasi $target tidak ditemukan"
+                      statusText.value = "Perintah tidak dikenali"
+                  }
+              }
+
+              private fun openSettingsPage(
+                  action: String,
+                  message: String
+              ) {
+                  try {
+                      startActivity(Intent(action))
+                      statusText.value = message
+                  } catch (e: Exception) {
+                      try {
+                          startActivity(
+                              Intent(Settings.ACTION_SETTINGS)
+                          )
+                          statusText.value =
+                              "Halaman khusus tidak tersedia. Membuka pengaturan umum."
+                      } catch (error: Exception) {
+                          statusText.value =
+                              "Pengaturan tidak dapat dibuka"
+                      }
+                  }
+              }
+
+              private fun openAppByName(vararg names: String): Boolean {
+                  return try {
+                      val intent = Intent(Intent.ACTION_MAIN).apply {
+                          addCategory(Intent.CATEGORY_LAUNCHER)
+                      }
+
+                      val apps = packageManager.queryIntentActivities(
+                          intent,
+                          0
+                      )
+
+                      val matched = apps.firstOrNull { app ->
+                          val label = app.loadLabel(packageManager)
+                              .toString().lowercase()
+
+                          app.activityInfo.packageName != packageName &&
+                              names.any { name ->
+                                  label.contains(name.lowercase())
+                              }
+                      }
+
+                      if (matched != null) {
+                          val launchIntent =
+                              packageManager.getLaunchIntentForPackage(
+                                  matched.activityInfo.packageName
+                              )
+
+                          if (launchIntent != null) {
+                              startActivity(launchIntent)
+                              true
+                          } else {
+                              false
+                          }
+                      } else {
+                          false
+                      }
+                  } catch (e: Exception) {
+                      false
                   }
               }
 
@@ -379,7 +613,7 @@ jobs:
 
                   } catch (e: Exception) {
                       statusText.value =
-                          "Senter tidak dapat digunakan: ${e.message ?: "terjadi kesalahan"}"
+                          "Senter tidak dapat digunakan"
                   }
               }
           }
