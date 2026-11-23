@@ -471,50 +471,126 @@ jobs:
               }
 
               private fun enableDragging() {
-                  var startX = 0
-                  var startY = 0
-                  var touchX = 0f
-                  var touchY = 0f
-                  var moved = false
+              val closeTarget = TextView(this).apply {
+              text = "✕"
+              textSize = 28f
+              gravity = Gravity.CENTER
+              setTextColor(Color.WHITE)
+              background = roundedBackground(0xFFE53935.toInt(), 100)
+              elevation = 20f
+              }
 
-                  container.setOnTouchListener { _, event ->
-                      when (event.action) {
-                          MotionEvent.ACTION_DOWN -> {
-                              startX = layoutParams.x
-                              startY = layoutParams.y
-                              touchX = event.rawX
-                              touchY = event.rawY
-                              moved = false
-                              true
-                          }
+              val closeParams = WindowManager.LayoutParams(
+              68,
+              68,
+              if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+              WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+              else
+              WindowManager.LayoutParams.TYPE_PHONE,
+              WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+              WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+              PixelFormat.TRANSLUCENT
+              ).apply {
+              gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+              y = 36
+              }
 
-                          MotionEvent.ACTION_MOVE -> {
-                              val dx = (event.rawX - touchX).toInt()
-                              val dy = (event.rawY - touchY).toInt()
+              var startX = 0
+              var startY = 0
+              var touchX = 0f
+              var touchY = 0f
+              var moved = false
+              var targetVisible = false
 
-                              if (kotlin.math.abs(dx) > 8 ||
-                                  kotlin.math.abs(dy) > 8
-                              ) {
-                                  moved = true
-                              }
+              fun showTarget() {
+              if (targetVisible) return
+              try {
+              windowManager.addView(closeTarget, closeParams)
+              targetVisible = true
+              } catch (_: Exception) {}
+              }
 
-                              if (moved) {
-                                  layoutParams.x = startX + dx
-                                  layoutParams.y = startY + dy
-                                  try {
-                                      windowManager.updateViewLayout(
-                                          container,
-                                          layoutParams
-                                      )
-                                  } catch (_: Exception) {}
-                              }
-                              true
-                          }
+              fun hideTarget() {
+              if (!targetVisible) return
+              try {
+              windowManager.removeView(closeTarget)
+              } catch (_: Exception) {}
+              targetVisible = false
+              }
 
-                          MotionEvent.ACTION_UP -> moved
-                          else -> false
-                      }
-                  }
+              fun handleDrag(event: MotionEvent): Boolean {
+              when (event.action) {
+            MotionEvent.ACTION_DOWN -> {
+                startX = layoutParams.x
+                startY = layoutParams.y
+                touchX = event.rawX
+                touchY = event.rawY
+                moved = false
+                showTarget()
+                return true
+            }
+
+            MotionEvent.ACTION_MOVE -> {
+                val dx = (event.rawX - touchX).toInt()
+                val dy = (event.rawY - touchY).toInt()
+
+                if (kotlin.math.abs(dx) > 8 ||
+                    kotlin.math.abs(dy) > 8
+                ) {
+                    moved = true
+                }
+
+                if (moved) {
+                    layoutParams.x = (startX + dx).coerceAtLeast(0)
+                    layoutParams.y = (startY + dy).coerceAtLeast(0)
+
+                    try {
+                        windowManager.updateViewLayout(
+                            container,
+                            layoutParams
+                        )
+                    } catch (_: Exception) {}
+                }
+                return true
+            }
+
+            MotionEvent.ACTION_UP -> {
+                val metrics = resources.displayMetrics
+                val widgetX = layoutParams.x + container.width / 2
+                val widgetY = layoutParams.y + container.height / 2
+                val targetX = metrics.widthPixels / 2
+                val targetY = metrics.heightPixels - closeParams.y - 34
+
+                val dismiss = moved &&
+                    kotlin.math.abs(widgetX - targetX) < 90 &&
+                    kotlin.math.abs(widgetY - targetY) < 90
+
+                hideTarget()
+
+                if (dismiss) {
+                    stopSelf()
+                } else if (!moved) {
+                    startVoiceRecognition()
+                }
+                return true
+            }
+
+            MotionEvent.ACTION_CANCEL -> {
+                hideTarget()
+                return true
+            }
+            }
+            return true
+            }
+
+            container.setOnTouchListener { _, event ->
+            handleDrag(event)
+            }
+
+            micButton.setOnTouchListener { _, event ->
+            handleDrag(event)
+            }
+            }
               }
 
               private fun startVoiceRecognition() {
