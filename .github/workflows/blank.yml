@@ -480,7 +480,7 @@ jobs:
           }
           EOF
 
-          cat > app/src/main/java/com/m/launchervoice/FloatingVoiceService.kt <<'EOF'          cat > app/src/main/java/com/m/launchervoice/FloatingVoiceService.kt <<'EOF'
+          cat > app/src/main/java/com/m/launchervoice/FloatingVoiceService.kt <<'EOF'
           package com.m.launchervoice
 
           import android.app.*
