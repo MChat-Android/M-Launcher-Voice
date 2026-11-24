@@ -47,7 +47,7 @@ node vip-admin.js remove-admin UID_FIREBASE
 3. Ambil ID dokumen permintaan pembayaran (bukan UID pengguna), lalu jalankan:
 
 ```bash
-node vip-admin.js verify ID_DOKUMEN_PERMINTAAN "Transfer cocok dengan mutasi SeaBank"
+export M_ASISTEN_ADMIN_UID="UID_ADMIN_FIREBASE"\nnode vip-admin.js verify ID_DOKUMEN_PERMINTAAN "Transfer cocok dengan mutasi SeaBank"
 ```
 
 Skrip memeriksa status harus `PENDING_REVIEW`, memvalidasi pasangan paket/nominal, lalu dalam satu transaksi mengubah permintaan menjadi `VERIFIED` dan mengaktifkan membership. Masa aktif dihitung sejak verifikasi: 7, 30, atau 365 hari; Lifetime tidak memiliki tanggal kedaluwarsa.
