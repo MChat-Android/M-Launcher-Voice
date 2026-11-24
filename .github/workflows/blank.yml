@@ -84,8 +84,8 @@ jobs:
                   applicationId = "com.m.launchervoice"
                   minSdk = 23
                   targetSdk = 35
-                  versionCode = 31
-                  versionName = "2.38"
+                  versionCode = 33
+                  versionName = "2.40"
               }
 
               signingConfigs {
@@ -1882,7 +1882,7 @@ jobs:
                           }
                       }.sortedBy { it.second }.firstOrNull()?.first
 
-if (matched != null) {
+                       if (matched != null) {
                           val launch = packageManager.getLaunchIntentForPackage(
                               matched.activityInfo.packageName
                           )
