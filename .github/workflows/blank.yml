@@ -973,6 +973,7 @@ jobs:
 
               private var vipMode = false
               private var serviceInitialized = false
+              private var membershipListener: com.google.firebase.firestore.ListenerRegistration? = null
               private lateinit var windowManager: WindowManager
               private lateinit var container: LinearLayout
               private lateinit var micButton: TextView
@@ -997,19 +998,91 @@ jobs:
                   flags: Int,
                   startId: Int
               ): Int {
-                  if (!serviceInitialized) {
-                      serviceInitialized = true
-                      vipMode = intent?.getStringExtra(EXTRA_MODE) == MODE_VIP
-
-                      if (vipMode) {
-                          // Hanya anggota VIP yang menjalankan layanan mikrofon.
-                          createNotification()
-                          initializeVoiceAssistant()
-                      }
-
-                      createOverlay()
-                  }
+                  val preferences = getSharedPreferences("m_widget_mode", MODE_PRIVATE)
+                  val requestedMode = intent?.getStringExtra(EXTRA_MODE)
+                      ?: preferences.getString("active_mode", MODE_STANDARD)
+                      ?: MODE_STANDARD
+                  configureMode(requestedMode == MODE_VIP)
                   return START_STICKY
+              }
+
+              // Mode Standar dan VIP+ memakai siklus hidup terpisah.
+              // Saat paket berubah, seluruh komponen mode lama dihentikan dahulu.
+              private fun configureMode(enableVip: Boolean) {
+                  if (serviceInitialized && vipMode == enableVip) return
+
+                  if (serviceInitialized) {
+                      stopCurrentMode()
+                  }
+
+                  vipMode = enableVip
+                  serviceInitialized = true
+                  getSharedPreferences("m_widget_mode", MODE_PRIVATE)
+                      .edit().putString("active_mode", if (vipMode) MODE_VIP else MODE_STANDARD).apply()
+
+                  if (vipMode) {
+                      createNotification()
+                      initializeVoiceAssistant()
+                      watchVipMembership()
+                  } else {
+                      membershipListener?.remove()
+                      membershipListener = null
+                  }
+
+                  createOverlay()
+              }
+
+              private fun stopCurrentMode() {
+                  membershipListener?.remove()
+                  membershipListener = null
+                  try { speechRecognizer?.cancel() } catch (_: Exception) {}
+                  try { speechRecognizer?.destroy() } catch (_: Exception) {}
+                  speechRecognizer = null
+                  listening = false
+                  awaitingWakeWord = true
+                  try { textToSpeech?.stop() } catch (_: Exception) {}
+                  try { textToSpeech?.shutdown() } catch (_: Exception) {}
+                  textToSpeech = null
+                  textToSpeechReady = false
+                  handler.removeCallbacksAndMessages(null)
+
+                  try {
+                      if (::container.isInitialized && container.isAttachedToWindow) {
+                          windowManager.removeView(container)
+                      }
+                  } catch (_: Exception) {}
+
+                  if (Build.VERSION.SDK_INT >= 24) {
+                      stopForeground(STOP_FOREGROUND_REMOVE)
+                  } else {
+                      @Suppress("DEPRECATION")
+                      stopForeground(true)
+                  }
+              }
+
+              private fun watchVipMembership() {
+                  val user = FirebaseAuth.getInstance().currentUser
+                  if (user == null) {
+                      handler.post { configureMode(false) }
+                      return
+                  }
+
+                  membershipListener?.remove()
+                  membershipListener = FirebaseFirestore.getInstance()
+                      .collection("vip_members")
+                      .document(user.uid)
+                      .addSnapshotListener { snapshot, error ->
+                          if (error == null && snapshot != null &&
+                              snapshot.getString("membershipStatus") != "ACTIVE"
+                          ) {
+                              handler.post {
+                                  if (vipMode) {
+                                      showMessage("VIP+ berakhir. Kembali ke sistem Standar.")
+                                      configureMode(false)
+                                  }
+                              }
+                          }
+                      }
               }
 
               private fun createNotification() {
@@ -1996,20 +2069,8 @@ jobs:
               }
 
               override fun onDestroy() {
-                  try {
-                      speechRecognizer?.destroy()
-                      speechRecognizer = null
-                      textToSpeech?.stop()
-                      textToSpeech?.shutdown()
-                      textToSpeech = null
-
-
-                      if (::container.isInitialized) {
-                          windowManager.removeView(container)
-                      }
-                  } catch (_: Exception) {}
-
-                  handler.removeCallbacksAndMessages(null)
+                  stopCurrentMode()
+                  serviceInitialized = false
                   super.onDestroy()
               }
           }
