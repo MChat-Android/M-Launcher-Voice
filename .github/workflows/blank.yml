@@ -84,8 +84,8 @@ jobs:
                   applicationId = "com.m.launchervoice"
                   minSdk = 23
                   targetSdk = 35
-                  versionCode = 26
-                  versionName = "2.33"
+                  versionCode = 27
+                  versionName = "2.34"
               }
 
               signingConfigs {
@@ -880,6 +880,8 @@ jobs:
           import android.widget.TextView
           import android.graphics.drawable.GradientDrawable
           import java.util.Locale
+          import com.google.firebase.auth.FirebaseAuth
+          import com.google.firebase.firestore.FirebaseFirestore
 
           class FloatingVoiceService : Service() {
 
@@ -1546,15 +1548,7 @@ jobs:
                       addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                   }
 
-                  try {
-                      startActivity(videoIntent)
-                  } catch (_: Exception) {
-                      if (!openAppByName("kamera", "camera")) {
-                          showMessage("Aplikasi kamera/video tidak ditemukan")
-                      } else {
-                          showMessage("Kamera dibuka. Pilih mode Video jika belum aktif.")
-                      }
-                  }
+                  launchIntent(videoIntent)
               }
 
               private fun openMessagingApp() {
@@ -1564,17 +1558,13 @@ jobs:
                   }
 
                   try {
-                      startActivity(mainIntent)
+                      launchIntent(mainIntent)
                   } catch (_: Exception) {
-                      try {
-                          val fallbackIntent = Intent(
-                              Intent.ACTION_SENDTO,
-                              Uri.parse("smsto:")
-                          ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                          startActivity(fallbackIntent)
-                      } catch (_: Exception) {
-                          showMessage("Aplikasi Pesan/SMS tidak ditemukan")
-                      }
+                      val fallbackIntent = Intent(
+                          Intent.ACTION_SENDTO,
+                          Uri.parse("smsto:")
+                      ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                      launchIntent(fallbackIntent)
                   }
               }
 
@@ -1654,11 +1644,73 @@ jobs:
                   }
               }
 
+              private fun isBuiltInSystemApp(packageNameToCheck: String): Boolean {
+                  return try {
+                      val info = if (Build.VERSION.SDK_INT >= 33) {
+                          packageManager.getApplicationInfo(
+                              packageNameToCheck,
+                              PackageManager.ApplicationInfoFlags.of(0)
+                          )
+                      } else {
+                          @Suppress("DEPRECATION")
+                          packageManager.getApplicationInfo(packageNameToCheck, 0)
+                      }
+                      val systemFlags = android.content.pm.ApplicationInfo.FLAG_SYSTEM or
+                          android.content.pm.ApplicationInfo.FLAG_UPDATED_SYSTEM_APP
+                      (info.flags and systemFlags) != 0
+                  } catch (_: Exception) {
+                      false
+                  }
+              }
+
+              private fun launchVipApp(intent: Intent) {
+                  val user = FirebaseAuth.getInstance().currentUser
+                  if (user == null) {
+                      showMessage("Aplikasi ini khusus VIP+. Hubungkan akun Google dan aktifkan VIP+.")
+                      return
+                  }
+
+                  showMessage("Memeriksa akses VIP+...")
+                  FirebaseFirestore.getInstance()
+                      .collection("vip_members")
+                      .document(user.uid)
+                      .get()
+                      .addOnSuccessListener { member ->
+                          if (member.getString("membershipStatus") == "ACTIVE") {
+                              try {
+                                  intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                  startActivity(intent)
+                              } catch (_: Exception) {
+                                  showMessage("Aplikasi tidak dapat dibuka")
+                              }
+                          } else {
+                              showMessage("Aplikasi ini khusus VIP+. Aktifkan VIP+ untuk membukanya.")
+                          }
+                      }
+                      .addOnFailureListener {
+                          showMessage("Akses VIP+ belum dapat diverifikasi. Periksa koneksi internet.")
+                      }
+              }
+
               private fun launchIntent(intent: Intent) {
                   try {
                       intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                      startActivity(intent)
-                  } catch (e: Exception) {
+                      val resolved = packageManager.resolveActivity(
+                          intent,
+                          PackageManager.MATCH_DEFAULT_ONLY
+                      )
+                      val targetPackage = resolved?.activityInfo?.packageName
+                      if (targetPackage.isNullOrBlank()) {
+                          showMessage("Aplikasi tidak ditemukan")
+                          return
+                      }
+
+                      if (targetPackage == packageName || isBuiltInSystemApp(targetPackage)) {
+                          startActivity(intent)
+                      } else {
+                          launchVipApp(intent)
+                      }
+                  } catch (_: Exception) {
                       showMessage("Aplikasi tidak ditemukan")
                   }
               }
@@ -1670,11 +1722,9 @@ jobs:
                       }
 
                       val apps = packageManager.queryIntentActivities(intent, 0)
-
                       val matched = apps.firstOrNull { app ->
                           val label = app.loadLabel(packageManager)
                               .toString().lowercase()
-
                           app.activityInfo.packageName != packageName &&
                               names.any { label.contains(it.lowercase()) }
                       }
@@ -1683,14 +1733,12 @@ jobs:
                           val launch = packageManager.getLaunchIntentForPackage(
                               matched.activityInfo.packageName
                           )
-
                           if (launch != null) {
-                              launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                              startActivity(launch)
+                              launchIntent(launch)
                               true
                           } else false
                       } else false
-                  } catch (e: Exception) {
+                  } catch (_: Exception) {
                       false
                   }
               }
