@@ -84,8 +84,8 @@ jobs:
                   applicationId = "com.m.launchervoice"
                   minSdk = 23
                   targetSdk = 35
-                  versionCode = 20
-                  versionName = "2.18"
+                  versionCode = 21
+                  versionName = "2.19"
               }
 
               signingConfigs {
@@ -191,6 +191,7 @@ jobs:
           import android.graphics.Bitmap
           import android.graphics.Canvas
           import android.content.Intent
+          import android.net.Uri
           import android.content.pm.PackageManager
           import android.net.Uri
           import android.os.Build
@@ -729,6 +730,7 @@ jobs:
           import android.app.*
           import android.Manifest
           import android.content.Context
+          import android.net.Uri
           import android.content.Intent
           import android.content.pm.PackageManager
           import android.graphics.Color
@@ -1224,7 +1226,7 @@ jobs:
                   }
 
                   if (text.contains("video") || text.contains("rekam") || text.contains("record")) {
-                      launchIntent(Intent("android.media.action.VIDEO_CAPTURE"))
+                      openVideoRecorder()
                       return
                   }
 
@@ -1292,6 +1294,22 @@ jobs:
                       }
                   } else {
                       showMessage("Perintah tidak dikenali")
+                  }
+              }
+
+              private fun openVideoRecorder() {
+                  val videoIntent = Intent("android.media.action.VIDEO_CAPTURE").apply {
+                      addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                  }
+
+                  try {
+                      startActivity(videoIntent)
+                  } catch (_: Exception) {
+                      if (!openAppByName("kamera", "camera")) {
+                          showMessage("Aplikasi kamera/video tidak ditemukan")
+                      } else {
+                          showMessage("Kamera dibuka. Pilih mode Video jika belum aktif.")
+                      }
                   }
               }
 
