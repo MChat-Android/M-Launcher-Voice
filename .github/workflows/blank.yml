@@ -84,8 +84,8 @@ jobs:
                   applicationId = "com.m.launchervoice"
                   minSdk = 23
                   targetSdk = 35
-                  versionCode = 30
-                  versionName = "2.37"
+                  versionCode = 31
+                  versionName = "2.38"
               }
 
               signingConfigs {
@@ -903,6 +903,7 @@ jobs:
               private var textToSpeechReady = false
               private val handler = Handler(Looper.getMainLooper())
               private var listening = false
+              private var awaitingWakeWord = true
 
               private lateinit var layoutParams: WindowManager.LayoutParams
 
@@ -913,6 +914,10 @@ jobs:
                   createNotification()
                   initializeVoiceAssistant()
                   createOverlay()
+                  // Mulai menunggu kata pemicu setelah layanan mikrofon aktif.
+                  handler.postDelayed({
+                      if (!listening) startVoiceRecognition()
+                  }, 1200)
               }
 
               override fun onStartCommand(
@@ -988,6 +993,12 @@ jobs:
                       background = roundedBackground(0xFF1769D2.toInt(), 100)
                       setPadding(15, 10, 15, 10)
                       setOnClickListener {
+                          // Tombol tetap menyediakan cara manual tanpa menunggu kata pemicu.
+                          if (awaitingWakeWord && listening) {
+                              speechRecognizer?.cancel()
+                              listening = false
+                          }
+                          awaitingWakeWord = false
                           speakAndListen()
                       }
                   }
@@ -1176,11 +1187,16 @@ jobs:
 
               private fun speakAndListen() {
                   if (listening) return
+                  awaitingWakeWord = false
+                  speakTextThenListen("Silahkan ucapkan perintah.")
+              }
+
+              private fun speakTextThenListen(message: String) {
                   val engine = textToSpeech
                   if (textToSpeechReady && engine != null) {
                       try {
-                          showMessage("Silahkan ucapkan perintah.")
-                          val utteranceId = "m_voice_ready_" + System.currentTimeMillis()
+                          showMessage(message)
+                          val utteranceId = "m_voice_prompt_" + System.currentTimeMillis()
                           engine.setOnUtteranceProgressListener(
                               object : android.speech.tts.UtteranceProgressListener() {
                                   override fun onStart(id: String?) {}
@@ -1194,7 +1210,7 @@ jobs:
                               }
                           )
                           val result = engine.speak(
-                              "Silahkan ucapkan perintah.",
+                              message,
                               TextToSpeech.QUEUE_FLUSH,
                               null,
                               utteranceId
@@ -1204,15 +1220,43 @@ jobs:
                           startVoiceRecognition()
                       }
                   } else {
+                      showMessage(message)
                       startVoiceRecognition()
                   }
+              }
+
+              private fun speakWakeWordResponse() {
+                  awaitingWakeWord = false
+                  speakTextThenListen("Hallo, silahkan ucapkan perintah.")
+              }
+
+              private fun isWakeWord(text: String): Boolean {
+                  val normalized = text.lowercase(Locale("id", "ID"))
+                      .replace(Regex("[^a-z0-9 ]"), " ")
+                      .replace(Regex("\\s+"), " ")
+                      .trim()
+                  return normalized == "hallo m" ||
+                      normalized == "halo m" ||
+                      normalized == "hello m" ||
+                      normalized == "hallo em" ||
+                      normalized == "halo em" ||
+                      normalized == "hello em"
+              }
+
+              private fun scheduleWakeWordListening(delayMs: Long = 800L) {
+                  handler.postDelayed({
+                      if (!listening) {
+                          awaitingWakeWord = true
+                          startVoiceRecognition()
+                      }
+                  }, delayMs)
               }
 
               private fun startVoiceRecognition() {
                   if (listening) return
 
                   if (!SpeechRecognizer.isRecognitionAvailable(this)) {
-                      showMessage("Pengenalan suara tidak tersedia")
+                      showMessage("Layanan pengenalan suara Android tidak tersedia")
                       return
                   }
 
@@ -1223,7 +1267,10 @@ jobs:
                       speechRecognizer?.setRecognitionListener(
                           object : RecognitionListener {
                               override fun onReadyForSpeech(params: android.os.Bundle?) {
-                                  showMessage("Silakan ucapkan perintah")
+                                  showMessage(
+                                      if (awaitingWakeWord) "Menunggu panggilan Hallo M..."
+                                      else "Silahkan ucapkan perintah..."
+                                  )
                               }
 
                               override fun onBeginningOfSpeech() {
@@ -1233,13 +1280,19 @@ jobs:
                               override fun onRmsChanged(rmsdB: Float) {}
                               override fun onBufferReceived(buffer: ByteArray?) {}
                               override fun onEndOfSpeech() {
-                                  showMessage("Memproses perintah...")
+                                  showMessage("Memproses suara...")
                               }
 
                               override fun onError(error: Int) {
                                   listening = false
-                                  showMessage("Tidak terdengar, tekan mic lagi")
-                                  resetAfterDelay()
+                                  if (awaitingWakeWord) {
+                                      showMessage("M Asisten siap dipanggil dengan Hallo M")
+                                      scheduleWakeWordListening(1200L)
+                                  } else {
+                                      showMessage("Tidak terdengar. Silahkan coba lagi.")
+                                      awaitingWakeWord = true
+                                      scheduleWakeWordListening(1600L)
+                                  }
                               }
 
                               override fun onResults(results: android.os.Bundle?) {
@@ -1248,30 +1301,36 @@ jobs:
                                       SpeechRecognizer.RESULTS_RECOGNITION
                                   )?.firstOrNull()
 
-                                  if (!words.isNullOrBlank()) {
-                                      showMessage("Perintah: $words")
-                                      executeCommand(words)
+                                  if (awaitingWakeWord) {
+                                      if (!words.isNullOrBlank() && isWakeWord(words)) {
+                                          showMessage("Panggilan diterima")
+                                          speakWakeWordResponse()
+                                      } else {
+                                          // Abaikan ucapan lain saat menunggu kata pemicu.
+                                          scheduleWakeWordListening(500L)
+                                      }
                                   } else {
-                                      showMessage("Perintah tidak dikenali")
+                                      if (!words.isNullOrBlank()) {
+                                          showMessage("Perintah: $words")
+                                          executeCommand(words)
+                                      } else {
+                                          showMessage("Perintah tidak dikenali")
+                                      }
+                                      awaitingWakeWord = true
+                                      scheduleWakeWordListening(1800L)
                                   }
-                                  resetAfterDelay()
                               }
 
-                              override fun onPartialResults(
-                                  partialResults: android.os.Bundle?
-                              ) {
+                              override fun onPartialResults(partialResults: android.os.Bundle?) {
                                   val words = partialResults?.getStringArrayList(
                                       SpeechRecognizer.RESULTS_RECOGNITION
                                   )?.firstOrNull()
-                                  if (!words.isNullOrBlank()) {
+                                  if (!words.isNullOrBlank() && !awaitingWakeWord) {
                                       showMessage(words)
                                   }
                               }
 
-                              override fun onEvent(
-                                  eventType: Int,
-                                  params: android.os.Bundle?
-                              ) {}
+                              override fun onEvent(eventType: Int, params: android.os.Bundle?) {}
                           }
                       )
 
@@ -1280,19 +1339,18 @@ jobs:
                               RecognizerIntent.EXTRA_LANGUAGE_MODEL,
                               RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
                           )
-                          putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault().toLanguageTag())
-                          putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, Locale.getDefault().toLanguageTag())
+                          putExtra(RecognizerIntent.EXTRA_LANGUAGE, "id-ID")
+                          putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "id-ID")
                           putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
                           putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
                       }
 
                       listening = true
-                      showMessage("Silakan ucapkan perintah")
                       speechRecognizer?.startListening(intent)
-
-                  } catch (e: Exception) {
+                  } catch (_: Exception) {
                       listening = false
                       showMessage("Mikrofon tidak dapat diaktifkan")
+                      if (awaitingWakeWord) scheduleWakeWordListening(1800L)
                   }
               }
 
