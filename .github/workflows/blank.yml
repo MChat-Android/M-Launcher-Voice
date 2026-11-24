@@ -79,8 +79,8 @@ jobs:
                   applicationId = "com.m.launchervoice"
                   minSdk = 23
                   targetSdk = 35
-                  versionCode = 7
-                  versionName = "2.5"
+                  versionCode = 8
+                  versionName = "2.6"
               }
 
               signingConfigs {
@@ -206,6 +206,7 @@ jobs:
           import androidx.compose.ui.graphics.Color
           import androidx.compose.ui.text.font.FontWeight
           import androidx.compose.ui.text.style.TextAlign
+          import androidx.compose.ui.platform.LocalContext
           import androidx.compose.ui.unit.dp
           import androidx.compose.ui.unit.sp
 
@@ -321,8 +322,19 @@ jobs:
               onActivate: () -> Unit
           ) {
               var showVipPlus by remember { mutableStateOf(false) }
+              var showAppDrawer by remember { mutableStateOf(false) }
               var selectedVipPayment by remember { mutableStateOf("QRIS") }
               var selectedVipPlan by remember { mutableStateOf("VIP+ Bulanan") }
+              val context = LocalContext.current
+              val launchableApps = remember(context) {
+                  val launcherIntent = android.content.Intent(android.content.Intent.ACTION_MAIN).apply {
+                      addCategory(android.content.Intent.CATEGORY_LAUNCHER)
+                  }
+                  context.packageManager.queryIntentActivities(launcherIntent, 0)
+                      .filter { it.activityInfo.packageName != context.packageName }
+                      .distinctBy { it.activityInfo.packageName }
+                      .sortedBy { it.loadLabel(context.packageManager).toString().lowercase() }
+              }
               Box(
                   modifier = Modifier
                       .fillMaxSize()
@@ -417,6 +429,35 @@ jobs:
                       }
 
                       Spacer(Modifier.height(25.dp))
+                      Card(
+                          modifier = Modifier.fillMaxWidth(),
+                          shape = RoundedCornerShape(20.dp),
+                          colors = CardDefaults.cardColors(containerColor = Panel)
+                      ) {
+                          Column(modifier = Modifier.padding(18.dp)) {
+                              Text("APLIKASI DI PONSEL", color = Cyan, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold)
+                              Spacer(Modifier.height(6.dp))
+                              Text(
+                                  "Buka aplikasi yang sudah terpasang langsung dari M Launcher Voice.",
+                                  color = Muted,
+                                  fontSize = 11.sp,
+                                  lineHeight = 17.sp
+                              )
+                              Spacer(Modifier.height(12.dp))
+                              Button(
+                                  onClick = { showAppDrawer = true },
+                                  modifier = Modifier.fillMaxWidth().height(48.dp),
+                                  shape = RoundedCornerShape(14.dp),
+                                  colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1B3652), contentColor = Color.White)
+                              ) {
+                                  Text("☷   BUKA DAFTAR APLIKASI", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                              }
+                              Spacer(Modifier.height(7.dp))
+                              Text("${launchableApps.size} aplikasi terdeteksi", color = Muted, fontSize = 10.sp)
+                          }
+                      }
+
+                      Spacer(Modifier.height(25.dp))
                       Row(
                           modifier = Modifier.fillMaxWidth(),
                           verticalAlignment = Alignment.CenterVertically
@@ -485,6 +526,61 @@ jobs:
                           fontSize = 10.sp
                       )
                       Spacer(Modifier.height(12.dp))
+                  }
+                  if (showAppDrawer) {
+                      AlertDialog(
+                          onDismissRequest = { showAppDrawer = false },
+                          containerColor = Panel,
+                          title = {
+                              Text("DAFTAR APLIKASI", color = Cyan, fontWeight = FontWeight.ExtraBold)
+                          },
+                          text = {
+                              Column(
+                                  modifier = Modifier
+                                      .heightIn(max = 440.dp)
+                                      .verticalScroll(rememberScrollState())
+                              ) {
+                                  if (launchableApps.isEmpty()) {
+                                      Text("Belum ada aplikasi yang dapat ditampilkan.", color = Muted, fontSize = 12.sp)
+                                  } else {
+                                      launchableApps.forEach { app ->
+                                          val appName = app.loadLabel(context.packageManager).toString()
+                                          Row(
+                                              modifier = Modifier
+                                                  .fillMaxWidth()
+                                                  .clip(RoundedCornerShape(10.dp))
+                                                  .clickable {
+                                                      val launchIntent = context.packageManager.getLaunchIntentForPackage(app.activityInfo.packageName)
+                                                      if (launchIntent != null) {
+                                                          context.startActivity(launchIntent)
+                                                          showAppDrawer = false
+                                                      }
+                                                  }
+                                                  .padding(horizontal = 10.dp, vertical = 12.dp),
+                                              verticalAlignment = Alignment.CenterVertically
+                                          ) {
+                                              Box(
+                                                  modifier = Modifier
+                                                      .size(34.dp)
+                                                      .clip(RoundedCornerShape(10.dp))
+                                                      .background(Color(0xFF1B3652)),
+                                                  contentAlignment = Alignment.Center
+                                              ) {
+                                                  Text(appName.take(1).uppercase(), color = Cyan, fontWeight = FontWeight.Bold)
+                                              }
+                                              Spacer(Modifier.width(12.dp))
+                                              Text(appName, color = Color.White, fontSize = 13.sp)
+                                          }
+                                      }
+                                  }
+                              }
+                          },
+                          confirmButton = {
+                              TextButton(onClick = { showAppDrawer = false }) {
+                                  Text("TUTUP", color = Cyan, fontWeight = FontWeight.Bold)
+                              }
+                          }
+                      )
                   }
                   if (showVipPlus) {
                       AlertDialog(
