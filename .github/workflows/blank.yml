@@ -338,6 +338,7 @@ jobs:
           import android.widget.LinearLayout
           import android.widget.TextView
           import android.graphics.drawable.GradientDrawable
+          import java.util.Locale
 
           class FloatingVoiceService : Service() {
 
@@ -666,7 +667,8 @@ jobs:
                               RecognizerIntent.EXTRA_LANGUAGE_MODEL,
                               RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
                           )
-                          putExtra(RecognizerIntent.EXTRA_LANGUAGE, "id-ID")
+                          putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault().toLanguageTag())
+                          putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, Locale.getDefault().toLanguageTag())
                           putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
                           putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
                       }
@@ -702,7 +704,12 @@ jobs:
                   val text = command.lowercase()
                       .replace("tolong", "")
                       .replace("silakan", "")
+                      .replace("please", "")
                       .replace("buka", "")
+                      .replace("open", "")
+                      .replace("launch", "")
+                      .replace("jalankan", "")
+                      .replace("start", "")
                       .trim()
 
                   if (text.contains("senter") ||
@@ -712,11 +719,15 @@ jobs:
                       when {
                           text.contains("matikan") ||
                           text.contains("nonaktifkan") ||
-                          text.contains("padamkan") -> controlTorch(false)
+                          text.contains("padamkan") ||
+                          text.contains("turn off") ||
+                          text.contains("switch off") -> controlTorch(false)
 
                           text.contains("nyalakan") ||
                           text.contains("hidupkan") ||
-                          text.contains("aktifkan") -> controlTorch(true)
+                          text.contains("aktifkan") ||
+                          text.contains("turn on") ||
+                          text.contains("switch on") -> controlTorch(true)
 
                           else -> showMessage("Ucapkan nyalakan senter atau matikan senter")
                       }
@@ -746,7 +757,9 @@ jobs:
 
                       when {
                           text.contains("naik") || text.contains("besar") ||
-                          text.contains("keras") || text.contains("tambah") ->
+                          text.contains("keras") || text.contains("tambah") ||
+                          text.contains("up") || text.contains("increase") ||
+                          text.contains("louder") ->
                               audio.adjustStreamVolume(
                                   AudioManager.STREAM_MUSIC,
                                   AudioManager.ADJUST_RAISE,
@@ -754,14 +767,16 @@ jobs:
                               )
 
                           text.contains("turun") || text.contains("kecil") ||
-                          text.contains("kurangi") ->
+                          text.contains("kurangi") || text.contains("down") ||
+                          text.contains("decrease") || text.contains("lower") ->
                               audio.adjustStreamVolume(
                                   AudioManager.STREAM_MUSIC,
                                   AudioManager.ADJUST_LOWER,
                                   AudioManager.FLAG_SHOW_UI
                               )
 
-                          text.contains("diam") || text.contains("mute") ->
+                          text.contains("diam") || text.contains("mute") ||
+                          text.contains("silence") ->
                               audio.adjustStreamVolume(
                                   AudioManager.STREAM_MUSIC,
                                   AudioManager.ADJUST_MUTE,
@@ -779,6 +794,9 @@ jobs:
                   }
 
                   if (text.contains("menu utama") ||
+                      text.contains("main screen") ||
+                      text.contains("home screen") ||
+                      text == "home" ||
                       text.contains("layar utama") ||
                       text.contains("halaman utama") ||
                       text == "home"
@@ -791,19 +809,19 @@ jobs:
                       return
                   }
 
-                  if (text.contains("video") || text.contains("rekam")) {
+                  if (text.contains("video") || text.contains("rekam") || text.contains("record")) {
                       launchIntent(Intent("android.media.action.VIDEO_CAPTURE"))
                       return
                   }
 
-                  if (text.contains("kamera") || text == "foto") {
+                  if (text.contains("kamera") || text.contains("camera") || text == "foto" || text.contains("photo")) {
                       if (!openAppByName("kamera", "camera")) {
                           launchIntent(Intent("android.media.action.IMAGE_CAPTURE"))
                       }
                       return
                   }
 
-                  if (text.contains("galeri") || text.contains("album")) {
+                  if (text.contains("galeri") || text.contains("album") || text.contains("gallery")) {
                       if (!openAppByName("galeri", "gallery", "photos", "foto")) {
                           launchIntent(
                               Intent(Intent.ACTION_VIEW).apply {
@@ -816,13 +834,17 @@ jobs:
 
                   if (text.contains("telepon") ||
                       text.contains("panggilan") ||
-                      text.contains("dialer")
+                      text.contains("dialer") ||
+                      text.contains("phone") ||
+                      text.contains("call")
                   ) {
                       launchIntent(Intent(Intent.ACTION_DIAL))
                       return
                   }
 
                   if (text == "pesan" ||
+                      text.contains("messages") ||
+                      text.contains("message") ||
                       text.contains("sms") ||
                       text.contains("pesan")
                   ) {
@@ -835,17 +857,17 @@ jobs:
                       return
                   }
 
-                  if (text.contains("pengaturan") || text.contains("setelan")) {
+                  if (text.contains("pengaturan") || text.contains("setelan") || text.contains("settings")) {
                       openSettings(Settings.ACTION_SETTINGS)
                       return
                   }
 
-                  if (text.contains("lokasi")) {
+                  if (text.contains("lokasi") || text.contains("location")) {
                       openSettings(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
                       return
                   }
 
-                  if (text.contains("pesawat") || text.contains("airplane")) {
+                  if (text.contains("pesawat") || text.contains("airplane") || text.contains("flight mode")) {
                       openSettings(Settings.ACTION_AIRPLANE_MODE_SETTINGS)
                       return
                   }
