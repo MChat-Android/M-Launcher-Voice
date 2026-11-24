@@ -361,7 +361,9 @@ jobs:
                   FirebaseFirestore.getInstance().collection("vip_members").document(uid).get()
                       .addOnSuccessListener { snap ->
                           val status = snap.getString("membershipStatus") ?: "FREE"
-                          vipMembershipStatus = if (status == "ACTIVE") "VIP+ AKTIF" else "BELUM AKTIF"
+                          val expiresAt = snap.getTimestamp("expiresAt")?.toDate()?.time
+                          val active = status == "ACTIVE" && (expiresAt == null || expiresAt > System.currentTimeMillis())
+                          vipMembershipStatus = if (active) "VIP+ AKTIF" else "BELUM AKTIF"
                       }
                       .addOnFailureListener { vipMembershipStatus = "STATUS BELUM TERSINKRON" }
               }
@@ -490,7 +492,9 @@ jobs:
                       .document(user.uid)
                       .get()
                       .addOnSuccessListener { member ->
-                          val vipActive = member.getString("membershipStatus") == "ACTIVE"
+                          val expiresAt = member.getTimestamp("expiresAt")?.toDate()?.time
+                          val vipActive = member.getString("membershipStatus") == "ACTIVE" &&
+                              (expiresAt == null || expiresAt > System.currentTimeMillis())
                           if (vipActive &&
                               checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED
                           ) {
@@ -1264,9 +1268,10 @@ jobs:
                       .collection("vip_members")
                       .document(user.uid)
                       .addSnapshotListener { snapshot, error ->
-                          if (error == null && snapshot != null &&
-                              snapshot.getString("membershipStatus") != "ACTIVE"
-                          ) {
+                          val expiresAt = snapshot?.getTimestamp("expiresAt")?.toDate()?.time
+                          val vipStillActive = snapshot?.getString("membershipStatus") == "ACTIVE" &&
+                              (expiresAt == null || expiresAt > System.currentTimeMillis())
+                          if (error == null && snapshot != null && !vipStillActive) {
                               handler.post {
                                   if (vipMode) {
                                       showMessage("VIP+ berakhir. Kembali ke sistem Standar.")
@@ -2158,7 +2163,10 @@ jobs:
                       .document(user.uid)
                       .get()
                       .addOnSuccessListener { member ->
-                          if (member.getString("membershipStatus") == "ACTIVE") {
+                          val expiresAt = member.getTimestamp("expiresAt")?.toDate()?.time
+                          val vipActive = member.getString("membershipStatus") == "ACTIVE" &&
+                              (expiresAt == null || expiresAt > System.currentTimeMillis())
+                          if (vipActive) {
                               try {
                                   intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                   startActivity(intent)
