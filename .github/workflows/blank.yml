@@ -79,8 +79,8 @@ jobs:
                   applicationId = "com.m.launchervoice"
                   minSdk = 23
                   targetSdk = 35
-                  versionCode = 8
-                  versionName = "2.6"
+                  versionCode = 9
+                  versionName = "2.7"
               }
 
               signingConfigs {
@@ -323,6 +323,7 @@ jobs:
           ) {
               var showVipPlus by remember { mutableStateOf(false) }
               var showAppDrawer by remember { mutableStateOf(false) }
+              var appSearchQuery by remember { mutableStateOf("") }
               var selectedVipPayment by remember { mutableStateOf("QRIS") }
               var selectedVipPlan by remember { mutableStateOf("VIP+ Bulanan") }
               val context = LocalContext.current
@@ -540,10 +541,35 @@ jobs:
                                       .heightIn(max = 440.dp)
                                       .verticalScroll(rememberScrollState())
                               ) {
-                                  if (launchableApps.isEmpty()) {
-                                      Text("Belum ada aplikasi yang dapat ditampilkan.", color = Muted, fontSize = 12.sp)
+                                  OutlinedTextField(
+                                      value = appSearchQuery,
+                                      onValueChange = { appSearchQuery = it },
+                                      modifier = Modifier.fillMaxWidth(),
+                                      singleLine = true,
+                                      label = { Text("Cari aplikasi", color = Muted) },
+                                      placeholder = { Text("Contoh: Kamera, WhatsApp...", color = Muted) },
+                                      colors = OutlinedTextFieldDefaults.colors(
+                                          focusedTextColor = Color.White,
+                                          unfocusedTextColor = Color.White,
+                                          focusedBorderColor = Cyan,
+                                          unfocusedBorderColor = Muted,
+                                          focusedLabelColor = Cyan,
+                                          cursorColor = Cyan
+                                      )
+                                  )
+                                  Spacer(Modifier.height(10.dp))
+                                  val filteredApps = launchableApps.filter {
+                                      it.loadLabel(context.packageManager).toString()
+                                          .contains(appSearchQuery.trim(), ignoreCase = true)
+                                  }
+                                  if (filteredApps.isEmpty()) {
+                                      Text(
+                                          if (launchableApps.isEmpty()) "Belum ada aplikasi yang dapat ditampilkan." else "Aplikasi tidak ditemukan.",
+                                          color = Muted,
+                                          fontSize = 12.sp
+                                      )
                                   } else {
-                                      launchableApps.forEach { app ->
+                                      filteredApps.forEach { app ->
                                           val appName = app.loadLabel(context.packageManager).toString()
                                           Row(
                                               modifier = Modifier
