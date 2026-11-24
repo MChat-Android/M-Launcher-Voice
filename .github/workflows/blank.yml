@@ -79,8 +79,24 @@ jobs:
                   applicationId = "com.m.launchervoice"
                   minSdk = 23
                   targetSdk = 35
-                  versionCode = 2
-                  versionName = "2.0"
+                  versionCode = 3
+                  versionName = "2.1"
+              }
+
+              signingConfigs {
+                  create("release") {
+                      storeFile = file(System.getenv("SIGNING_STORE_FILE"))
+                      storePassword = System.getenv("SIGNING_STORE_PASSWORD")
+                      keyAlias = System.getenv("SIGNING_KEY_ALIAS")
+                      keyPassword = System.getenv("SIGNING_KEY_PASSWORD")
+                  }
+              }
+
+              buildTypes {
+                  getByName("release") {
+                      signingConfig = signingConfigs.getByName("release")
+                      isMinifyEnabled = false
+                  }
               }
 
               compileOptions {
@@ -1186,11 +1202,37 @@ jobs:
               resized.save(folder / "ic_launcher.png", optimize=True)
           PY
 
-      - name: Build APK
-        run: gradle assembleDebug --no-daemon
+      - name: Decode Release Keystore
+        env:
+          SIGNING_KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          test -n "$SIGNING_KEYSTORE_BASE64"
+          test -n "$SIGNING_STORE_PASSWORD"
+          test -n "$SIGNING_KEY_ALIAS"
+          printf '%s' "$SIGNING_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/mlauncher-release.jks"
+          test -s "$RUNNER_TEMP/mlauncher-release.jks"
+          keytool -list -keystore "$RUNNER_TEMP/mlauncher-release.jks" -storepass "$SIGNING_STORE_PASSWORD" -alias "$SIGNING_KEY_ALIAS"
 
-      - name: Upload APK
+      - name: Build Signed Release APK
+        env:
+          SIGNING_STORE_FILE: ${{ runner.temp }}/mlauncher-release.jks
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: gradle assembleRelease --no-daemon
+
+      - name: Verify APK Signature
+        run: |
+          APK="app/build/outputs/apk/release/app-release.apk"
+          test -s "$APK"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$APK"
+
+      - name: Upload Signed APK
         uses: actions/upload-artifact@v4
         with:
-          name: M-Launcher-Voice-APK
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: M-Launcher-Voice-Release
+          path: app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
