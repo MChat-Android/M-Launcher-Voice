@@ -79,8 +79,8 @@ jobs:
                   applicationId = "com.m.launchervoice"
                   minSdk = 23
                   targetSdk = 35
-                  versionCode = 6
-                  versionName = "2.4"
+                  versionCode = 7
+                  versionName = "2.5"
               }
 
               signingConfigs {
@@ -322,6 +322,7 @@ jobs:
           ) {
               var showVipPlus by remember { mutableStateOf(false) }
               var selectedVipPayment by remember { mutableStateOf("QRIS") }
+              var selectedVipPlan by remember { mutableStateOf("VIP+ Bulanan") }
               Box(
                   modifier = Modifier
                       .fillMaxSize()
@@ -503,11 +504,26 @@ jobs:
                                       .verticalScroll(rememberScrollState())
                               ) {
                                   Text(
-                                      "Buka pengalaman khusus M Launcher Voice.",
+                                      "Fitur standar M Launcher Voice tetap gratis. VIP+ adalah keanggotaan opsional untuk membuka fitur khusus.",
                                       color = Color.White,
                                       fontSize = 14.sp,
                                       fontWeight = FontWeight.SemiBold
                                   )
+                                  Spacer(Modifier.height(12.dp))
+                                  Card(
+                                      modifier = Modifier.fillMaxWidth(),
+                                      colors = CardDefaults.cardColors(containerColor = Color(0xFF0D2932)),
+                                      shape = RoundedCornerShape(12.dp)
+                                  ) {
+                                      Row(
+                                          modifier = Modifier.fillMaxWidth().padding(11.dp),
+                                          verticalAlignment = Alignment.CenterVertically
+                                      ) {
+                                          Text("STATUS KEANGGOTAAN", color = Muted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                          Spacer(Modifier.weight(1f))
+                                          Text("BELUM AKTIF", color = Cyan, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
+                                      }
+                                  }
                                   Spacer(Modifier.height(12.dp))
                                   Text("FITUR KHUSUS VIP+", color = Cyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                   Spacer(Modifier.height(7.dp))
@@ -522,8 +538,14 @@ jobs:
                                   Spacer(Modifier.height(7.dp))
                                   listOf("VIP+ Bulanan", "VIP+ Tahunan", "VIP+ Lifetime").forEach { plan ->
                                       Card(
-                                          modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                                          colors = CardDefaults.cardColors(containerColor = Color(0xFF172B42)),
+                                          modifier = Modifier
+                                              .fillMaxWidth()
+                                              .padding(vertical = 4.dp)
+                                              .clickable { selectedVipPlan = plan },
+                                          colors = CardDefaults.cardColors(
+                                              containerColor = if (selectedVipPlan == plan) Color(0xFF164354) else Color(0xFF172B42)
+                                          ),
+                                          border = if (selectedVipPlan == plan) androidx.compose.foundation.BorderStroke(1.dp, Cyan) else null,
                                           shape = RoundedCornerShape(12.dp)
                                       ) {
                                           Row(
@@ -532,10 +554,12 @@ jobs:
                                           ) {
                                               Text(plan, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                               Spacer(Modifier.weight(1f))
-                                              Text("Harga menyusul", color = Muted, fontSize = 10.sp)
+                                              Text(if (selectedVipPlan == plan) "DIPILIH" else "Harga menyusul", color = if (selectedVipPlan == plan) Cyan else Muted, fontSize = 10.sp)
                                           }
                                       }
                                   }
+                                  Spacer(Modifier.height(8.dp))
+                                  Text("Paket dipilih: $selectedVipPlan", color = Color.White, fontSize = 11.sp)
                                   Spacer(Modifier.height(12.dp))
                                   Text("METODE PEMBAYARAN", color = Cyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                   Spacer(Modifier.height(7.dp))
@@ -561,13 +585,22 @@ jobs:
                                   }
                                   Spacer(Modifier.height(10.dp))
                                   Text(
-                                      "Pilihan saat ini: $selectedVipPayment",
+                                      "Paket: $selectedVipPlan  •  Pembayaran: $selectedVipPayment",
                                       color = Color.White,
                                       fontSize = 11.sp
                                   )
                                   Spacer(Modifier.height(8.dp))
+                                  Button(
+                                      onClick = {},
+                                      enabled = false,
+                                      modifier = Modifier.fillMaxWidth(),
+                                      colors = ButtonDefaults.buttonColors(disabledContainerColor = Color(0xFF26384A), disabledContentColor = Muted)
+                                  ) {
+                                      Text("LANJUTKAN PEMBAYARAN — SEGERA HADIR", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                  }
+                                  Spacer(Modifier.height(8.dp))
                                   Text(
-                                      "Pembayaran belum diaktifkan. Sistem akan dihubungkan ke server dan penyedia pembayaran setelah konfigurasi akun founder selesai. Belum ada transaksi atau pemotongan saldo.",
+                                      "Pembayaran belum diaktifkan. Tombol akan dibuka setelah akun pembayaran dan server verifikasi siap. Belum ada transaksi atau pemotongan saldo.",
                                       color = Muted,
                                       fontSize = 10.sp,
                                       lineHeight = 16.sp
