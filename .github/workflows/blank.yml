@@ -1637,8 +1637,10 @@ jobs:
                   }
 
                   val target = text
+                      .replace(Regex("\\b(aplikasi|app)\\b"), " ")
                       .replace("jalankan", "")
                       .replace("mulai", "")
+                      .replace(Regex("\\s+"), " ")
                       .trim()
 
                   if (target.isNotBlank()) {
@@ -1854,27 +1856,33 @@ jobs:
                       }
 
                       val apps = packageManager.queryIntentActivities(intent, 0)
-                      val aliases = names.map { it.lowercase(Locale("id", "ID")).trim() }
-                      val matched = apps
-                          .filter { app ->
-                              app.activityInfo.packageName != packageName &&
-                                  aliases.any { alias ->
-                                      app.loadLabel(packageManager).toString()
-                                          .lowercase(Locale("id", "ID")).contains(alias)
-                                  }
-                          }
-                          .sortedBy { app ->
+                      val aliases = names.map {
+                          it.lowercase(Locale("id", "ID"))
+                              .replace(Regex("[^a-z0-9 ]"), " ")
+                              .replace(Regex("\\s+"), " ")
+                              .trim()
+                      }.filter { it.length >= 3 }
+                      val matched = apps.mapNotNull { app ->
+                          if (app.activityInfo.packageName == packageName) {
+                              null
+                          } else {
                               val label = app.loadLabel(packageManager).toString()
-                                  .lowercase(Locale("id", "ID")).trim()
-                              when {
+                                  .lowercase(Locale("id", "ID"))
+                                  .replace(Regex("[^a-z0-9 ]"), " ")
+                                  .replace(Regex("\\s+"), " ")
+                                  .trim()
+                              val score = when {
                                   aliases.any { label == it } -> 0
                                   aliases.any { label.startsWith(it) } -> 1
-                                  else -> 2
+                                  aliases.any { label.contains(it) } -> 2
+                                  aliases.any { it.contains(label) && label.length >= 3 } -> 3
+                                  else -> null
                               }
+                              if (score == null) null else app to score
                           }
-                          .firstOrNull()
+                      }.sortedBy { it.second }.firstOrNull()?.first
 
-                      if (matched != null) {
+if (matched != null) {
                           val launch = packageManager.getLaunchIntentForPackage(
                               matched.activityInfo.packageName
                           )
