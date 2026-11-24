@@ -642,7 +642,38 @@ jobs:
                           }
                       }
 
-                      Spacer(Modifier.height(22.dp))
+                      Spacer(Modifier.height(18.dp))
+                      Card(
+                          modifier = Modifier
+                              .fillMaxWidth()
+                              .clickable { showVipPlus = true },
+                          shape = RoundedCornerShape(20.dp),
+                          colors = CardDefaults.cardColors(containerColor = Color(0xFF123344)),
+                          border = androidx.compose.foundation.BorderStroke(1.dp, Cyan)
+                      ) {
+                          Column(modifier = Modifier.padding(18.dp)) {
+                              Row(verticalAlignment = Alignment.CenterVertically) {
+                                  Column(modifier = Modifier.weight(1f)) {
+                                      Text("TINGKATKAN KE VIP+", color = Cyan, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp)
+                                      Spacer(Modifier.height(5.dp))
+                                      Text("Buka semua aplikasi dengan perintah suara", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                                      Text("Mulai Rp15.000 / 7 hari", color = Muted, fontSize = 11.sp)
+                                  }
+                                  Text("VIP+", color = Cyan, fontSize = 25.sp, fontWeight = FontWeight.ExtraBold)
+                              }
+                              Spacer(Modifier.height(12.dp))
+                              Button(
+                                  onClick = { showVipPlus = true },
+                                  modifier = Modifier.fillMaxWidth(),
+                                  colors = ButtonDefaults.buttonColors(containerColor = Cyan, contentColor = Navy),
+                                  shape = RoundedCornerShape(13.dp)
+                              ) {
+                                  Text("LIHAT PAKET VIP+", fontWeight = FontWeight.ExtraBold)
+                              }
+                          }
+                      }
+
+                      Spacer(Modifier.height(18.dp))
                       Card(
                           modifier = Modifier.fillMaxWidth(),
                           shape = RoundedCornerShape(20.dp),
@@ -877,7 +908,7 @@ jobs:
                                   listOf(
                                       "VIP+ Mingguan (7 hari)" to "Rp15.000",
                                       "VIP+ Bulanan (30 hari)" to "Rp50.000",
-                                      "VIP+ Tahunan (365 hari)" to "Rp250.000",
+                                      "VIP+ Tahunan (365 hari)" to "Rp200.000",
                                       "VIP+ Lifetime" to "Rp500.000"
                                   ).forEach { (plan, price) ->
                                       Card(
@@ -917,7 +948,7 @@ jobs:
                                   }
                                   Spacer(Modifier.height(8.dp))
                                   Text(
-                                      "Daftar di atas adalah rancangan manfaat VIP+ yang akan dirilis bertahap. Paket Mingguan berlaku 7 hari, Bulanan 30 hari, Tahunan 365 hari, dan Lifetime berlaku selamanya. VIP+ belum dapat dibeli atau diaktifkan. Harga paket yang ditampilkan adalah harga rencana: Mingguan Rp15.000, Bulanan Rp50.000, Tahunan Rp250.000, dan Lifetime Rp500.000. Pembelian dan aktivasi tetap menunggu sistem pembayaran serta verifikasi server siap. Belum ada transaksi atau pemotongan saldo.",
+                                      "Daftar di atas adalah rancangan manfaat VIP+ yang akan dirilis bertahap. Paket Mingguan berlaku 7 hari, Bulanan 30 hari, Tahunan 365 hari, dan Lifetime berlaku selamanya. VIP+ belum dapat dibeli atau diaktifkan. Harga paket yang ditampilkan adalah harga rencana: Mingguan Rp15.000, Bulanan Rp50.000, Tahunan Rp200.000, dan Lifetime Rp500.000. Pembelian dan aktivasi tetap menunggu sistem pembayaran serta verifikasi server siap. Belum ada transaksi atau pemotongan saldo.",
                                       color = Muted,
                                       fontSize = 10.sp,
                                       lineHeight = 16.sp
