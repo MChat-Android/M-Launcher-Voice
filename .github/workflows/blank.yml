@@ -61,6 +61,7 @@ jobs:
               id("com.android.application") version "8.7.3" apply false
               id("org.jetbrains.kotlin.android") version "2.0.21" apply false
               id("org.jetbrains.kotlin.plugin.compose") version "2.0.21" apply false
+              id("com.google.gms.google-services") version "4.4.2" apply false
           }
           EOF
 
@@ -69,6 +70,10 @@ jobs:
               id("com.android.application")
               id("org.jetbrains.kotlin.android")
               id("org.jetbrains.kotlin.plugin.compose")
+          }
+
+          if (file("google-services.json").exists()) {
+              apply(plugin = "com.google.gms.google-services")
           }
 
           android {
@@ -119,6 +124,10 @@ jobs:
               implementation("androidx.compose.ui:ui")
               implementation("androidx.compose.ui:ui-tooling-preview")
               implementation("androidx.compose.material3:material3")
+
+              implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
+              implementation("com.google.firebase:firebase-auth")
+              implementation("com.google.firebase:firebase-firestore")
           }
           EOF
 
@@ -1389,6 +1398,26 @@ jobs:
           }
           EOF
           
+      - name: Configure Firebase Android
+        env:
+          GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
+        run: |
+          set -euo pipefail
+          if [ -n "${GOOGLE_SERVICES_JSON_BASE64:-}" ]; then
+            printf '%s' "$GOOGLE_SERVICES_JSON_BASE64" | base64 --decode > app/google-services.json
+            python3 - <<'PY'
+          import json
+          from pathlib import Path
+          config = json.loads(Path("app/google-services.json").read_text())
+          packages = [c.get("client_info", {}).get("android_client_info", {}).get("package_name") for c in config.get("client", [])]
+          if "com.m.launchervoice" not in packages:
+              raise SystemExit("Firebase config tidak memiliki package com.m.launchervoice")
+          print("Firebase config valid untuk M Asisten.")
+          PY
+          else
+            echo "Secret Firebase belum dipasang; build tetap berjalan tanpa konfigurasi Firebase."
+          fi
+
       - name: Generate Launcher Icons
         run: |
           python3 -m pip install --quiet Pillow
