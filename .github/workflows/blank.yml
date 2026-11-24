@@ -262,18 +262,32 @@ jobs:
                                       } else {
                                           googleAccountName = user.displayName ?: account.displayName ?: "Pengguna M Asisten"
                                           googleAccountEmail = user.email ?: account.email.orEmpty()
-                                          val data = hashMapOf<String, Any>(
-                                              "uid" to user.uid, "email" to googleAccountEmail,
-                                              "displayName" to googleAccountName, "provider" to "google",
-                                              "membershipStatus" to "FREE",
-                                              "lastLoginAt" to FieldValue.serverTimestamp(),
-                                              "updatedAt" to FieldValue.serverTimestamp()
-                                          )
-                                          FirebaseFirestore.getInstance().collection("vip_members").document(user.uid)
-                                              .set(data, com.google.firebase.firestore.SetOptions.merge())
-                                              .addOnSuccessListener {
-                                                  message = "Akun Google berhasil terhubung."
-                                                  loadVipMembership(user.uid)
+                                          val memberRef = FirebaseFirestore.getInstance().collection("vip_members").document(user.uid)
+                                          memberRef.get()
+                                              .addOnSuccessListener { existing ->
+                                                  val profileData = hashMapOf<String, Any>(
+                                                      "uid" to user.uid, "email" to googleAccountEmail,
+                                                      "displayName" to googleAccountName, "provider" to "google",
+                                                      "lastLoginAt" to FieldValue.serverTimestamp(),
+                                                      "updatedAt" to FieldValue.serverTimestamp()
+                                                  )
+                                                  if (existing.exists()) {
+                                                      memberRef.update(profileData as Map<String, Any>)
+                                                          .addOnSuccessListener {
+                                                              message = "Akun Google berhasil terhubung."
+                                                              loadVipMembership(user.uid)
+                                                          }
+                                                          .addOnFailureListener { err -> message = "Pembaruan akun gagal: " + err.localizedMessage }
+                                                  } else {
+                                                      profileData["membershipStatus"] = "FREE"
+                                                      profileData["createdAt"] = FieldValue.serverTimestamp()
+                                                      memberRef.set(profileData)
+                                                          .addOnSuccessListener {
+                                                              message = "Akun Google berhasil terhubung."
+                                                              loadVipMembership(user.uid)
+                                                          }
+                                                          .addOnFailureListener { err -> message = "Pembuatan profil VIP gagal: " + err.localizedMessage }
+                                                  }
                                               }
                                               .addOnFailureListener { err -> message = "Sinkronisasi VIP gagal: " + err.localizedMessage }
                                       }
