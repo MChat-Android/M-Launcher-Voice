@@ -30,7 +30,8 @@ jobs:
           gradle-version: '8.9'
 
       - name: Enable AndroidX
-        run: echo "android.useAndroidX=true" > gradle.properties
+        run: |
+          printf "android.useAndroidX=true\\norg.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8\\norg.gradle.workers.max=2\\n" > gradle.properties
 
       - name: Create Android Project
         run: |
