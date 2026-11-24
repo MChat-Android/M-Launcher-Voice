@@ -84,8 +84,8 @@ jobs:
                   applicationId = "com.m.launchervoice"
                   minSdk = 23
                   targetSdk = 35
-                  versionCode = 24
-                  versionName = "2.31"
+                  versionCode = 25
+                  versionName = "2.32"
               }
 
               signingConfigs {
@@ -871,6 +871,7 @@ jobs:
           import android.speech.RecognitionListener
           import android.speech.RecognizerIntent
           import android.speech.SpeechRecognizer
+          import android.speech.tts.TextToSpeech
           import android.view.Gravity
           import android.view.MotionEvent
           import android.view.View
@@ -887,6 +888,8 @@ jobs:
               private lateinit var micButton: TextView
               private lateinit var prompt: TextView
               private var speechRecognizer: SpeechRecognizer? = null
+              private var textToSpeech: TextToSpeech? = null
+              private var textToSpeechReady = false
               private val handler = Handler(Looper.getMainLooper())
               private var listening = false
 
@@ -897,6 +900,7 @@ jobs:
               override fun onCreate() {
                   super.onCreate()
                   createNotification()
+                  initializeVoiceAssistant()
                   createOverlay()
               }
 
@@ -973,7 +977,7 @@ jobs:
                       background = roundedBackground(0xFF1769D2.toInt(), 100)
                       setPadding(15, 10, 15, 10)
                       setOnClickListener {
-                          startVoiceRecognition()
+                          speakAndListen()
                       }
                   }
 
@@ -1113,7 +1117,7 @@ jobs:
                 if (dismiss) {
                     stopSelf()
                 } else if (!moved) {
-                    startVoiceRecognition()
+                    speakAndListen()
                 }
                 return true
             }
@@ -1134,6 +1138,54 @@ jobs:
             handleDrag(event)
             }
             }
+
+              private fun initializeVoiceAssistant() {
+                  textToSpeech = TextToSpeech(this) { status ->
+                      if (status == TextToSpeech.SUCCESS) {
+                          textToSpeech?.let { engine ->
+                              val languageResult = engine.setLanguage(Locale("id", "ID"))
+                              textToSpeechReady =
+                                  languageResult != TextToSpeech.LANG_MISSING_DATA &&
+                                  languageResult != TextToSpeech.LANG_NOT_SUPPORTED
+                              engine.setSpeechRate(0.95f)
+                          }
+                      }
+                  }
+              }
+
+              private fun speakAndListen() {
+                  if (listening) return
+                  val engine = textToSpeech
+                  if (textToSpeechReady && engine != null) {
+                      try {
+                          showMessage("Ya, saya mendengarkan...")
+                          val utteranceId = "m_voice_ready_" + System.currentTimeMillis()
+                          engine.setOnUtteranceProgressListener(
+                              object : android.speech.tts.UtteranceProgressListener() {
+                                  override fun onStart(id: String?) {}
+                                  override fun onDone(id: String?) {
+                                      if (id == utteranceId) handler.post { startVoiceRecognition() }
+                                  }
+                                  @Deprecated("Deprecated in Java")
+                                  override fun onError(id: String?) {
+                                      if (id == utteranceId) handler.post { startVoiceRecognition() }
+                                  }
+                              }
+                          )
+                          val result = engine.speak(
+                              "Ya, saya mendengarkan. Silakan ucapkan perintah.",
+                              TextToSpeech.QUEUE_FLUSH,
+                              null,
+                              utteranceId
+                          )
+                          if (result == TextToSpeech.ERROR) startVoiceRecognition()
+                      } catch (_: Exception) {
+                          startVoiceRecognition()
+                      }
+                  } else {
+                      startVoiceRecognition()
+                  }
+              }
 
               private fun startVoiceRecognition() {
                   if (listening) return
@@ -1669,6 +1721,10 @@ jobs:
                   try {
                       speechRecognizer?.destroy()
                       speechRecognizer = null
+                      textToSpeech?.stop()
+                      textToSpeech?.shutdown()
+                      textToSpeech = null
+
 
                       if (::container.isInitialized) {
                           windowManager.removeView(container)
