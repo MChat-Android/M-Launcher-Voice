@@ -79,8 +79,8 @@ jobs:
                   applicationId = "com.m.launchervoice"
                   minSdk = 23
                   targetSdk = 35
-                  versionCode = 10
-                  versionName = "2.8"
+                  versionCode = 11
+                  versionName = "2.9"
               }
 
               signingConfigs {
@@ -323,10 +323,27 @@ jobs:
           ) {
               var showVipPlus by remember { mutableStateOf(false) }
               var showAppDrawer by remember { mutableStateOf(false) }
+              var showThemePicker by remember { mutableStateOf(false) }
+              var selectedTheme by remember { mutableStateOf("Midnight Cyan") }
               var appSearchQuery by remember { mutableStateOf("") }
               var selectedVipPayment by remember { mutableStateOf("QRIS") }
               var selectedVipPlan by remember { mutableStateOf("VIP+ Bulanan") }
               val context = LocalContext.current
+              LaunchedEffect(context) {
+                  selectedTheme = context.getSharedPreferences("m_launcher_preferences", android.content.Context.MODE_PRIVATE).getString("selected_theme", "Midnight Cyan") ?: "Midnight Cyan"
+              }
+              val themePalette = when (selectedTheme) {
+                  "Royal Gold" -> listOf(Color(0xFF100D0A), Color(0xFF2A1E12), Color(0xFFD6A84F), Color.White, Color(0xFFB99A6B))
+                  "Galaxy Nebula" -> listOf(Color(0xFF100B20), Color(0xFF24133F), Color(0xFFB58CFF), Color.White, Color(0xFFB6A5D6))
+                  "Cyber Neon" -> listOf(Color(0xFF050F20), Color(0xFF102B4A), Color(0xFF27D9FF), Color.White, Color(0xFF8BAFC8))
+                  "Aurora Luxe" -> listOf(Color(0xFF071A1B), Color(0xFF103A38), Color(0xFF57E0B0), Color.White, Color(0xFF9BC9BE))
+                  "Diamond Black" -> listOf(Color(0xFF080A0E), Color(0xFF1B2029), Color(0xFFC7D0DC), Color.White, Color(0xFFAAB4C2))
+                  else -> listOf(Color(0xFF07111F), Color(0xFF111F32), Color(0xFF35D6E8), Color.White, Color(0xFF9DB2C9))
+              }
+              val Navy = themePalette[0]
+              val Panel = themePalette[1]
+              val Cyan = themePalette[2]
+              val Muted = themePalette[4]
               val favoritePackages = remember { mutableStateListOf<String>() }
               LaunchedEffect(context) {
                   val saved = context.getSharedPreferences("m_launcher_preferences", android.content.Context.MODE_PRIVATE)
@@ -347,9 +364,7 @@ jobs:
                   modifier = Modifier
                       .fillMaxSize()
                       .background(
-                          Brush.verticalGradient(
-                              listOf(Color(0xFF07111F), Color(0xFF0B1D32), Color(0xFF07111F))
-                          )
+                          Brush.verticalGradient(listOf(Navy, Panel, Navy))
                       )
               ) {
                   Column(
@@ -465,6 +480,18 @@ jobs:
                           }
                       }
 
+                      Spacer(Modifier.height(16.dp))
+                      Card(modifier = Modifier.fillMaxWidth().clickable { showThemePicker = true }, shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = Panel)) {
+                          Row(modifier = Modifier.fillMaxWidth().padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
+                              Column(modifier = Modifier.weight(1f)) {
+                                  Text("PERSONALISASI TEMA", color = Cyan, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold)
+                                  Spacer(Modifier.height(5.dp))
+                                  Text("Tema aktif: $selectedTheme", color = Color.White, fontSize = 12.sp)
+                                  Text("1 tema Standar + 5 tema eksklusif VIP+", color = Muted, fontSize = 10.sp)
+                              }
+                              Text("🎨  ›", color = Cyan, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                          }
+                      }
                       Spacer(Modifier.height(25.dp))
                       Row(
                           modifier = Modifier.fillMaxWidth(),
@@ -647,6 +674,48 @@ jobs:
                                   Text("TUTUP", color = Cyan, fontWeight = FontWeight.Bold)
                               }
                           }
+                      )
+                  }
+                  if (showThemePicker) {
+                      AlertDialog(
+                          onDismissRequest = { showThemePicker = false },
+                          containerColor = Panel,
+                          title = { Text("PILIH TEMA TAMPILAN", color = Cyan, fontWeight = FontWeight.ExtraBold) },
+                          text = {
+                              Column(modifier = Modifier.heightIn(max = 440.dp).verticalScroll(rememberScrollState())) {
+                                  Text("Tema Standar gratis untuk semua pengguna. Lima tema VIP+ tampil sebagai pilihan eksklusif dan akan terbuka setelah keanggotaan aktif.", color = Color.White, fontSize = 12.sp, lineHeight = 18.sp)
+                                  Spacer(Modifier.height(12.dp))
+                                  val themeOptions = listOf(
+                                      Triple("Midnight Cyan", "STANDAR • GRATIS", listOf(Color(0xFF07111F), Color(0xFF35D6E8))),
+                                      Triple("Royal Gold", "VIP+ 1 • ROYAL GOLD", listOf(Color(0xFF100D0A), Color(0xFFD6A84F))),
+                                      Triple("Galaxy Nebula", "VIP+ 2 • GALAXY NEBULA", listOf(Color(0xFF100B20), Color(0xFFB58CFF))),
+                                      Triple("Cyber Neon", "VIP+ 3 • CYBER NEON", listOf(Color(0xFF050F20), Color(0xFF27D9FF))),
+                                      Triple("Aurora Luxe", "VIP+ 4 • AURORA LUXE", listOf(Color(0xFF071A1B), Color(0xFF57E0B0))),
+                                      Triple("Diamond Black", "VIP+ 5 • DIAMOND BLACK", listOf(Color(0xFF080A0E), Color(0xFFC7D0DC)))
+                                  )
+                                  themeOptions.forEach { option ->
+                                      val standard = option.first == "Midnight Cyan"
+                                      val chosen = selectedTheme == option.first
+                                      Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).then(if (standard) Modifier.clickable {
+                                          selectedTheme = option.first
+                                          context.getSharedPreferences("m_launcher_preferences", android.content.Context.MODE_PRIVATE).edit().putString("selected_theme", option.first).apply()
+                                      } else Modifier), colors = CardDefaults.cardColors(containerColor = if (chosen) Color(0xFF164354) else Color(0xFF172B42)), border = if (chosen) androidx.compose.foundation.BorderStroke(1.dp, Cyan) else null, shape = RoundedCornerShape(13.dp)) {
+                                          Row(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                              Box(modifier = Modifier.size(38.dp).clip(RoundedCornerShape(10.dp)).background(Brush.horizontalGradient(option.third)))
+                                              Spacer(Modifier.width(11.dp))
+                                              Column(modifier = Modifier.weight(1f)) {
+                                                  Text(option.first, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                                  Text(option.second, color = if (standard) Cyan else Color(0xFFFFD166), fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                              }
+                                              Text(if (standard) { if (chosen) "AKTIF" else "PILIH" } else "🔒 VIP+", color = if (standard) Cyan else Muted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                          }
+                                      }
+                                  }
+                                  Spacer(Modifier.height(8.dp))
+                                  Text("Tema VIP+ masih terkunci karena aktivasi keanggotaan dan pembayaran belum tersedia. Tema Standar tetap gratis.", color = Muted, fontSize = 10.sp, lineHeight = 16.sp)
+                              }
+                          },
+                          confirmButton = { TextButton(onClick = { showThemePicker = false }) { Text("SELESAI", color = Cyan, fontWeight = FontWeight.Bold) } }
                       )
                   }
                   if (showVipPlus) {
