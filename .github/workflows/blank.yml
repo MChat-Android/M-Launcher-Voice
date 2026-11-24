@@ -84,8 +84,8 @@ jobs:
                   applicationId = "com.m.launchervoice"
                   minSdk = 23
                   targetSdk = 35
-                  versionCode = 33
-                  versionName = "2.40"
+                  versionCode = 34
+                  versionName = "2.41"
               }
 
               signingConfigs {
@@ -1181,6 +1181,14 @@ jobs:
                 if (dismiss) {
                     stopSelf()
                 } else if (!moved) {
+                    // Ketukan manual harus mengambil alih sesi wake-word yang sedang aktif.
+                    if (awaitingWakeWord && listening) {
+                        try {
+                            speechRecognizer?.cancel()
+                        } catch (_: Exception) {}
+                        listening = false
+                    }
+                    awaitingWakeWord = false
                     speakAndListen()
                 }
                 return true
