@@ -79,8 +79,8 @@ jobs:
                   applicationId = "com.m.launchervoice"
                   minSdk = 23
                   targetSdk = 35
-                  versionCode = 9
-                  versionName = "2.7"
+                  versionCode = 10
+                  versionName = "2.8"
               }
 
               signingConfigs {
@@ -327,6 +327,13 @@ jobs:
               var selectedVipPayment by remember { mutableStateOf("QRIS") }
               var selectedVipPlan by remember { mutableStateOf("VIP+ Bulanan") }
               val context = LocalContext.current
+              val favoritePackages = remember { mutableStateListOf<String>() }
+              LaunchedEffect(context) {
+                  val saved = context.getSharedPreferences("m_launcher_preferences", android.content.Context.MODE_PRIVATE)
+                      .getStringSet("favorite_packages", emptySet()) ?: emptySet()
+                  favoritePackages.clear()
+                  favoritePackages.addAll(saved)
+              }
               val launchableApps = remember(context) {
                   val launcherIntent = android.content.Intent(android.content.Intent.ACTION_MAIN).apply {
                       addCategory(android.content.Intent.CATEGORY_LAUNCHER)
@@ -558,10 +565,18 @@ jobs:
                                       )
                                   )
                                   Spacer(Modifier.height(10.dp))
-                                  val filteredApps = launchableApps.filter {
-                                      it.loadLabel(context.packageManager).toString()
-                                          .contains(appSearchQuery.trim(), ignoreCase = true)
-                                  }
+                                  val filteredApps = launchableApps
+                                      .filter {
+                                          it.loadLabel(context.packageManager).toString()
+                                              .contains(appSearchQuery.trim(), ignoreCase = true)
+                                      }
+                                      .sortedWith(
+                                          compareByDescending<android.content.pm.ResolveInfo> {
+                                              favoritePackages.contains(it.activityInfo.packageName)
+                                          }.thenBy {
+                                              it.loadLabel(context.packageManager).toString().lowercase()
+                                          }
+                                      )
                                   if (filteredApps.isEmpty()) {
                                       Text(
                                           if (launchableApps.isEmpty()) "Belum ada aplikasi yang dapat ditampilkan." else "Aplikasi tidak ditemukan.",
@@ -595,7 +610,33 @@ jobs:
                                                   Text(appName.take(1).uppercase(), color = Cyan, fontWeight = FontWeight.Bold)
                                               }
                                               Spacer(Modifier.width(12.dp))
-                                              Text(appName, color = Color.White, fontSize = 13.sp)
+                                              Text(
+                                                  appName,
+                                                  color = Color.White,
+                                                  fontSize = 13.sp,
+                                                  modifier = Modifier.weight(1f)
+                                              )
+                                              Text(
+                                                  if (favoritePackages.contains(app.activityInfo.packageName)) "★" else "☆",
+                                                  color = if (favoritePackages.contains(app.activityInfo.packageName)) Color(0xFFFFD166) else Muted,
+                                                  fontSize = 24.sp,
+                                                  modifier = Modifier
+                                                      .clickable {
+                                                          val packageName = app.activityInfo.packageName
+                                                          if (favoritePackages.contains(packageName)) {
+                                                              favoritePackages.remove(packageName)
+                                                          } else {
+                                                              favoritePackages.add(packageName)
+                                                          }
+                                                          context.getSharedPreferences(
+                                                              "m_launcher_preferences",
+                                                              android.content.Context.MODE_PRIVATE
+                                                          ).edit()
+                                                              .putStringSet("favorite_packages", favoritePackages.toSet())
+                                                              .apply()
+                                                      }
+                                                      .padding(horizontal = 8.dp)
+                                              )
                                           }
                                       }
                                   }
