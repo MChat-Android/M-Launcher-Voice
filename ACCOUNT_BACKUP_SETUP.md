@@ -15,7 +15,7 @@
 ## Menyiapkan Firebase
 1. Buat project Firebase milik pengelola M Asisten di https://console.firebase.google.com/.
 2. Tambahkan aplikasi Android dengan package name persis `com.m.launchervoice`.
-3. Unduh `google-services.json` dan letakkan di `app/google-services.json` pada sumber project.
+3. Unduh `google-services.json` dan unggah ke direktori utama repository dengan nama persis `google-services.json`. Workflow CI perlu menyalinnya ke `app/google-services.json` sebelum build.
 4. Authentication → Sign-in method → aktifkan Email/Password.
 5. Authentication → Settings → pastikan verifikasi email diwajibkan oleh alur aplikasi.
 6. Buat Cloud Firestore dalam production mode.
