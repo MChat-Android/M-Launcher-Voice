@@ -79,8 +79,8 @@ jobs:
                   applicationId = "com.m.launchervoice"
                   minSdk = 23
                   targetSdk = 35
-                  versionCode = 18
-                  versionName = "2.16"
+                  versionCode = 19
+                  versionName = "2.17"
               }
 
               signingConfigs {
@@ -326,7 +326,6 @@ jobs:
               onActivate: () -> Unit
           ) {
               var showVipPlus by remember { mutableStateOf(false) }
-              var selectedVipPayment by remember { mutableStateOf("QRIS") }
               var selectedVipPlan by remember { mutableStateOf("VIP+ Bulanan") }
               val context = LocalContext.current
               val Navy = Color(0xFF07111F)
@@ -513,37 +512,50 @@ jobs:
                                       .verticalScroll(rememberScrollState())
                               ) {
                                   Text(
-                                      "Fitur standar M Asisten tetap gratis. VIP+ adalah keanggotaan opsional untuk membuka fitur khusus.",
+                                      "Pengalaman lebih nyaman, dengan dukungan untuk pengembangan M Asisten.",
                                       color = Color.White,
                                       fontSize = 14.sp,
-                                      fontWeight = FontWeight.SemiBold
+                                      fontWeight = FontWeight.SemiBold,
+                                      lineHeight = 20.sp
                                   )
-                                  Spacer(Modifier.height(12.dp))
+                                  Spacer(Modifier.height(14.dp))
                                   Card(
                                       modifier = Modifier.fillMaxWidth(),
                                       colors = CardDefaults.cardColors(containerColor = Color(0xFF0D2932)),
                                       shape = RoundedCornerShape(12.dp)
                                   ) {
                                       Row(
-                                          modifier = Modifier.fillMaxWidth().padding(11.dp),
+                                          modifier = Modifier.fillMaxWidth().padding(12.dp),
                                           verticalAlignment = Alignment.CenterVertically
                                       ) {
-                                          Text("STATUS KEANGGOTAAN", color = Muted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                          Column {
+                                              Text("STATUS KEANGGOTAAN", color = Muted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                              Spacer(Modifier.height(3.dp))
+                                              Text("Belum ada keanggotaan aktif", color = Color.White, fontSize = 11.sp)
+                                          }
                                           Spacer(Modifier.weight(1f))
                                           Text("BELUM AKTIF", color = Cyan, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
                                       }
                                   }
-                                  Spacer(Modifier.height(12.dp))
-                                  Text("FITUR KHUSUS VIP+", color = Cyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                                  Spacer(Modifier.height(7.dp))
-                                  Text(
-                                      "• Perintah suara dan kemampuan asisten eksklusif\n• Pilihan tampilan premium\n• Personalisasi pengalaman launcher\n• Fitur tambahan yang akan hadir bertahap",
-                                      color = Color.White,
-                                      fontSize = 12.sp,
-                                      lineHeight = 19.sp
-                                  )
-                                  Spacer(Modifier.height(16.dp))
-                                  Text("PILIHAN KEANGGOTAAN", color = Cyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                  Spacer(Modifier.height(15.dp))
+                                  Text("KEUNTUNGAN VIP+", color = Cyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                  Spacer(Modifier.height(8.dp))
+                                  listOf(
+                                      "Pengalaman bebas iklan saat sistem iklan resmi diluncurkan",
+                                      "Akses ke fitur eksklusif VIP+ yang dirilis bertahap",
+                                      "Dukungan untuk pengembangan M Asisten"
+                                  ).forEach { benefit ->
+                                      Row(
+                                          modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                          verticalAlignment = Alignment.Top
+                                      ) {
+                                          Text("✓", color = Cyan, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
+                                          Spacer(Modifier.width(8.dp))
+                                          Text(benefit, color = Color.White, fontSize = 12.sp, lineHeight = 18.sp)
+                                      }
+                                  }
+                                  Spacer(Modifier.height(14.dp))
+                                  Text("PILIHAN PAKET", color = Cyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                   Spacer(Modifier.height(7.dp))
                                   listOf("VIP+ Bulanan", "VIP+ Tahunan", "VIP+ Lifetime").forEach { plan ->
                                       Card(
@@ -568,48 +580,22 @@ jobs:
                                       }
                                   }
                                   Spacer(Modifier.height(8.dp))
-                                  Text("Paket dipilih: $selectedVipPlan", color = Color.White, fontSize = 11.sp)
-                                  Spacer(Modifier.height(12.dp))
-                                  Text("METODE PEMBAYARAN", color = Cyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                                  Spacer(Modifier.height(7.dp))
-                                  Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                      listOf("QRIS", "Transfer Bank").forEach { method ->
-                                          if (selectedVipPayment == method) {
-                                              Button(
-                                                  onClick = { selectedVipPayment = method },
-                                                  contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                                                  colors = ButtonDefaults.buttonColors(containerColor = Cyan, contentColor = Navy)
-                                              ) {
-                                                  Text(method, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                                              }
-                                          } else {
-                                              OutlinedButton(
-                                                  onClick = { selectedVipPayment = method },
-                                                  contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
-                                              ) {
-                                                  Text(method, fontSize = 11.sp, color = Color.White)
-                                              }
-                                          }
-                                      }
-                                  }
+                                  Text("Pilihan saat ini: $selectedVipPlan", color = Color.White, fontSize = 11.sp)
                                   Spacer(Modifier.height(10.dp))
-                                  Text(
-                                      "Paket: $selectedVipPlan  •  Pembayaran: $selectedVipPayment",
-                                      color = Color.White,
-                                      fontSize = 11.sp
-                                  )
-                                  Spacer(Modifier.height(8.dp))
                                   Button(
                                       onClick = {},
                                       enabled = false,
                                       modifier = Modifier.fillMaxWidth(),
-                                      colors = ButtonDefaults.buttonColors(disabledContainerColor = Color(0xFF26384A), disabledContentColor = Muted)
+                                      colors = ButtonDefaults.buttonColors(
+                                          disabledContainerColor = Color(0xFF26384A),
+                                          disabledContentColor = Muted
+                                      )
                                   ) {
-                                      Text("LANJUTKAN PEMBAYARAN — SEGERA HADIR", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                      Text("PEMBAYARAN SEGERA HADIR", fontSize = 10.sp, fontWeight = FontWeight.Bold)
                                   }
                                   Spacer(Modifier.height(8.dp))
                                   Text(
-                                      "Pembayaran belum diaktifkan. Tombol akan dibuka setelah akun pembayaran dan server verifikasi siap. Belum ada transaksi atau pemotongan saldo.",
+                                      "VIP+ belum dapat dibeli atau diaktifkan. Harga dan pembayaran akan diumumkan setelah sistem pembayaran serta verifikasi server siap. Belum ada transaksi atau pemotongan saldo.",
                                       color = Muted,
                                       fontSize = 10.sp,
                                       lineHeight = 16.sp
