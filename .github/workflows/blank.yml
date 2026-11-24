@@ -79,8 +79,8 @@ jobs:
                   applicationId = "com.m.launchervoice"
                   minSdk = 23
                   targetSdk = 35
-                  versionCode = 15
-                  versionName = "2.13"
+                  versionCode = 16
+                  versionName = "2.14"
               }
 
               signingConfigs {
@@ -331,6 +331,8 @@ jobs:
               var previewTheme by remember { mutableStateOf<String?>(null) }
               var selectedTheme by remember { mutableStateOf("Midnight Cyan") }
               var appSearchQuery by remember { mutableStateOf("") }
+              var appDrawerGrid by remember { mutableStateOf(true) }
+              var favoritesOnly by remember { mutableStateOf(false) }
               var selectedVipPayment by remember { mutableStateOf("QRIS") }
               var selectedVipPlan by remember { mutableStateOf("VIP+ Bulanan") }
               val context = LocalContext.current
@@ -627,11 +629,44 @@ jobs:
                                           cursorColor = Cyan
                                       )
                                   )
-                                  Spacer(Modifier.height(12.dp))
+                                  Spacer(Modifier.height(10.dp))
+                                  Row(
+                                      modifier = Modifier.fillMaxWidth(),
+                                      horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                  ) {
+                                      FilterChip(
+                                          selected = !favoritesOnly,
+                                          onClick = { favoritesOnly = false },
+                                          label = { Text("Semua") },
+                                          colors = FilterChipDefaults.filterChipColors(
+                                              selectedContainerColor = Cyan.copy(alpha = 0.20f),
+                                              selectedLabelColor = Cyan,
+                                              labelColor = Muted
+                                          )
+                                      )
+                                      FilterChip(
+                                          selected = favoritesOnly,
+                                          onClick = { favoritesOnly = true },
+                                          label = { Text("★ Favorit") },
+                                          colors = FilterChipDefaults.filterChipColors(
+                                              selectedContainerColor = Cyan.copy(alpha = 0.20f),
+                                              selectedLabelColor = Cyan,
+                                              labelColor = Muted
+                                          )
+                                      )
+                                      Spacer(Modifier.weight(1f))
+                                      TextButton(onClick = { appDrawerGrid = true }) {
+                                          Text("GRID", color = if (appDrawerGrid) Cyan else Muted, fontWeight = FontWeight.Bold)
+                                      }
+                                      TextButton(onClick = { appDrawerGrid = false }) {
+                                          Text("LIST", color = if (!appDrawerGrid) Cyan else Muted, fontWeight = FontWeight.Bold)
+                                      }
+                                  }
                                   val filteredApps = launchableApps
                                       .filter {
                                           it.loadLabel(context.packageManager).toString()
-                                              .contains(appSearchQuery.trim(), ignoreCase = true)
+                                              .contains(appSearchQuery.trim(), ignoreCase = true) &&
+                                              (!favoritesOnly || favoritePackages.contains(it.activityInfo.packageName))
                                       }
                                       .sortedWith(
                                           compareByDescending<android.content.pm.ResolveInfo> {
@@ -661,65 +696,114 @@ jobs:
                                           fontSize = 12.sp
                                       )
                                   } else {
-                                      filteredApps.forEach { app ->
-                                          val appName = app.loadLabel(context.packageManager).toString()
-                                          Row(
-                                              modifier = Modifier
-                                                  .fillMaxWidth()
-                                                  .clip(RoundedCornerShape(13.dp))
-                                                  .background(Brush.horizontalGradient(listOf(Panel, Cyan.copy(alpha = 0.075f))))
-                                                  .clickable {
-                                                      val launchIntent = context.packageManager.getLaunchIntentForPackage(app.activityInfo.packageName)
-                                                      if (launchIntent != null) {
-                                                          context.startActivity(launchIntent)
-                                                          showAppDrawer = false
+                                      if (appDrawerGrid) {
+                                          filteredApps.chunked(3).forEach { appRow ->
+                                              Row(
+                                                  modifier = Modifier.fillMaxWidth(),
+                                                  horizontalArrangement = Arrangement.spacedBy(9.dp)
+                                              ) {
+                                                  appRow.forEach { app ->
+                                                      val appName = app.loadLabel(context.packageManager).toString()
+                                                      val appIconBitmap = remember(app.activityInfo.packageName) {
+                                                          val drawable = app.loadIcon(context.packageManager)
+                                                          val bitmap = Bitmap.createBitmap(96, 96, Bitmap.Config.ARGB_8888)
+                                                          val canvas = Canvas(bitmap)
+                                                          drawable.setBounds(0, 0, canvas.width, canvas.height)
+                                                          drawable.draw(canvas)
+                                                          bitmap.asImageBitmap()
+                                                      }
+                                                      Column(
+                                                          modifier = Modifier
+                                                              .weight(1f)
+                                                              .clip(RoundedCornerShape(16.dp))
+                                                              .background(Brush.verticalGradient(listOf(Panel, Cyan.copy(alpha = 0.09f))))
+                                                              .clickable {
+                                                                  context.packageManager.getLaunchIntentForPackage(app.activityInfo.packageName)?.let {
+                                                                      context.startActivity(it)
+                                                                      showAppDrawer = false
+                                                                  }
+                                                              }
+                                                              .padding(horizontal = 5.dp, vertical = 12.dp),
+                                                          horizontalAlignment = Alignment.CenterHorizontally
+                                                      ) {
+                                                          Image(
+                                                              bitmap = appIconBitmap,
+                                                              contentDescription = "$appName icon",
+                                                              modifier = Modifier.size(48.dp),
+                                                              contentScale = ContentScale.Fit
+                                                          )
+                                                          Spacer(Modifier.height(7.dp))
+                                                          Text(
+                                                              appName,
+                                                              color = Color.White,
+                                                              fontSize = 10.sp,
+                                                              fontWeight = FontWeight.SemiBold,
+                                                              textAlign = TextAlign.Center,
+                                                              maxLines = 2,
+                                                              lineHeight = 13.sp
+                                                          )
+                                                          Text(
+                                                              if (favoritePackages.contains(app.activityInfo.packageName)) "★" else "☆",
+                                                              color = if (favoritePackages.contains(app.activityInfo.packageName)) Color(0xFFFFD166) else Muted,
+                                                              fontSize = 20.sp,
+                                                              modifier = Modifier.clickable {
+                                                                  val packageName = app.activityInfo.packageName
+                                                                  if (favoritePackages.contains(packageName)) favoritePackages.remove(packageName)
+                                                                  else favoritePackages.add(packageName)
+                                                                  context.getSharedPreferences("m_launcher_preferences", android.content.Context.MODE_PRIVATE)
+                                                                      .edit().putStringSet("favorite_packages", favoritePackages.toSet()).apply()
+                                                              }
+                                                          )
                                                       }
                                                   }
-                                                  .padding(horizontal = 10.dp, vertical = 12.dp),
-                                              verticalAlignment = Alignment.CenterVertically
-                                          ) {
-                                              val appIconBitmap = remember(app.activityInfo.packageName) {
-                                                  val drawable = app.loadIcon(context.packageManager)
-                                                  val bitmap = Bitmap.createBitmap(96, 96, Bitmap.Config.ARGB_8888)
-                                                  val canvas = Canvas(bitmap)
-                                                  drawable.setBounds(0, 0, canvas.width, canvas.height)
-                                                  drawable.draw(canvas)
-                                                  bitmap.asImageBitmap()
+                                                  repeat(3 - appRow.size) { Spacer(Modifier.weight(1f)) }
                                               }
-                                              Image(
-                                                  bitmap = appIconBitmap,
-                                                  contentDescription = "$appName icon",
-                                                  modifier = Modifier.size(42.dp).clip(RoundedCornerShape(11.dp)),
-                                                  contentScale = ContentScale.Fit
-                                              )
-                                              Spacer(Modifier.width(12.dp))
-                                              Column(modifier = Modifier.weight(1f)) {
-                                                  Text(appName, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                                                  if (favoritePackages.contains(app.activityInfo.packageName)) {
-                                                      Text("FAVORIT", color = Cyan, fontSize = 8.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp)
-                                                  }
-                                              }
-                                              Text(
-                                                  if (favoritePackages.contains(app.activityInfo.packageName)) "★" else "☆",
-                                                  color = if (favoritePackages.contains(app.activityInfo.packageName)) Color(0xFFFFD166) else Muted,
-                                                  fontSize = 24.sp,
-                                                  modifier = Modifier
+                                              Spacer(Modifier.height(9.dp))
+                                          }
+                                      } else {
+                                          filteredApps.forEach { app ->
+                                              val appName = app.loadLabel(context.packageManager).toString()
+                                              Row(
+                                                  modifier = Modifier.fillMaxWidth()
+                                                      .clip(RoundedCornerShape(13.dp))
+                                                      .background(Brush.horizontalGradient(listOf(Panel, Cyan.copy(alpha = 0.075f))))
                                                       .clickable {
-                                                          val packageName = app.activityInfo.packageName
-                                                          if (favoritePackages.contains(packageName)) {
-                                                              favoritePackages.remove(packageName)
-                                                          } else {
-                                                              favoritePackages.add(packageName)
+                                                          context.packageManager.getLaunchIntentForPackage(app.activityInfo.packageName)?.let {
+                                                              context.startActivity(it)
+                                                              showAppDrawer = false
                                                           }
-                                                          context.getSharedPreferences(
-                                                              "m_launcher_preferences",
-                                                              android.content.Context.MODE_PRIVATE
-                                                          ).edit()
-                                                              .putStringSet("favorite_packages", favoritePackages.toSet())
-                                                              .apply()
                                                       }
-                                                      .padding(horizontal = 8.dp)
-                                              )
+                                                      .padding(horizontal = 10.dp, vertical = 12.dp),
+                                                  verticalAlignment = Alignment.CenterVertically
+                                              ) {
+                                                  val appIconBitmap = remember(app.activityInfo.packageName) {
+                                                      val drawable = app.loadIcon(context.packageManager)
+                                                      val bitmap = Bitmap.createBitmap(96, 96, Bitmap.Config.ARGB_8888)
+                                                      val canvas = Canvas(bitmap)
+                                                      drawable.setBounds(0, 0, canvas.width, canvas.height)
+                                                      drawable.draw(canvas)
+                                                      bitmap.asImageBitmap()
+                                                  }
+                                                  Image(bitmap = appIconBitmap, contentDescription = "$appName icon",
+                                                      modifier = Modifier.size(42.dp).clip(RoundedCornerShape(11.dp)), contentScale = ContentScale.Fit)
+                                                  Spacer(Modifier.width(12.dp))
+                                                  Column(modifier = Modifier.weight(1f)) {
+                                                      Text(appName, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                                      if (favoritePackages.contains(app.activityInfo.packageName)) Text("FAVORIT", color = Cyan, fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                                                  }
+                                                  Text(
+                                                      if (favoritePackages.contains(app.activityInfo.packageName)) "★" else "☆",
+                                                      color = if (favoritePackages.contains(app.activityInfo.packageName)) Color(0xFFFFD166) else Muted,
+                                                      fontSize = 24.sp,
+                                                      modifier = Modifier.clickable {
+                                                          val packageName = app.activityInfo.packageName
+                                                          if (favoritePackages.contains(packageName)) favoritePackages.remove(packageName)
+                                                          else favoritePackages.add(packageName)
+                                                          context.getSharedPreferences("m_launcher_preferences", android.content.Context.MODE_PRIVATE)
+                                                              .edit().putStringSet("favorite_packages", favoritePackages.toSet()).apply()
+                                                      }.padding(horizontal = 8.dp)
+                                                  )
+                                              }
                                           }
                                       }
                                   }
