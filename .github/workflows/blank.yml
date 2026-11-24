@@ -79,8 +79,8 @@ jobs:
                   applicationId = "com.m.launchervoice"
                   minSdk = 23
                   targetSdk = 35
-                  versionCode = 4
-                  versionName = "2.2"
+                  versionCode = 5
+                  versionName = "2.3"
               }
 
               signingConfigs {
@@ -357,17 +357,17 @@ jobs:
                                   .background(Color(0xFF123344))
                                   .padding(horizontal = 11.dp, vertical = 7.dp)
                           ) {
-                              Text("VOICE AI", color = Cyan, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                              Text("VIP+", color = Cyan, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                           }
                       }
 
                       Spacer(Modifier.height(34.dp))
 
                       Image(
-                          painter = painterResource(id = R.mipmap.ic_launcher),
+                          painter = painterResource(id = R.drawable.launcher_home),
                           contentDescription = "Ikon resmi M Launcher Voice",
                           modifier = Modifier.size(176.dp).clip(RoundedCornerShape(38.dp)),
-                          contentScale = ContentScale.Crop
+                          contentScale = ContentScale.Fit
                       )
 
                       Spacer(Modifier.height(25.dp))
@@ -1176,6 +1176,11 @@ jobs:
               raise SystemExit("launcher_icon.png tidak ditemukan!")
 
           image = Image.open(source).convert("RGBA")
+
+          # Simpan sumber resolusi tinggi untuk logo besar di halaman beranda.
+          home_icon_dir = Path("app/src/main/res/drawable-nodpi")
+          home_icon_dir.mkdir(parents=True, exist_ok=True)
+          image.save(home_icon_dir / "launcher_home.png", optimize=True)
 
           sizes = {
               "mdpi": 48,
