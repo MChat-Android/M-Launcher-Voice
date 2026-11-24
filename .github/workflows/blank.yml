@@ -2038,9 +2038,14 @@ jobs:
           test -s "$APK"
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$APK"
 
+      - name: Prepare Download Filename
+        run: |
+          cp app/build/outputs/apk/release/app-release.apk masisten.apk
+          test -s masisten.apk
+
       - name: Upload Signed APK
         uses: actions/upload-artifact@v4
         with:
-          name: M-Launcher-Voice-Release
-          path: app/build/outputs/apk/release/app-release.apk
+          name: M-Asisten-APK
+          path: masisten.apk
           if-no-files-found: error
