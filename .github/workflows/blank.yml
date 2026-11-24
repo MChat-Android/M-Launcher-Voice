@@ -521,6 +521,10 @@ jobs:
           ) {
               var showVipPlus by remember { mutableStateOf(false) }
               var selectedVipPlan by remember { mutableStateOf("VIP+ Bulanan") }
+              var payerName by remember { mutableStateOf("") }
+              var transferReference by remember { mutableStateOf("") }
+              var paymentSubmitting by remember { mutableStateOf(false) }
+              var paymentSubmitMessage by remember { mutableStateOf("") }
               val context = LocalContext.current
               val accountPrefs = remember {
                   context.getSharedPreferences("m_asisten_account", android.content.Context.MODE_PRIVATE)
@@ -947,9 +951,110 @@ jobs:
                                           Text("Nama pemilik rekening terdaftar: Muhamad Soleh", color = Muted, fontSize = 10.sp)
                                       }
                                   }
+                                  Spacer(Modifier.height(10.dp))
+                                  OutlinedTextField(
+                                      value = payerName,
+                                      onValueChange = { payerName = it },
+                                      modifier = Modifier.fillMaxWidth(),
+                                      label = { Text("Nama pengirim sesuai rekening") },
+                                      singleLine = true,
+                                      enabled = !paymentSubmitting,
+                                      colors = OutlinedTextFieldDefaults.colors(
+                                          focusedBorderColor = Cyan,
+                                          focusedLabelColor = Cyan,
+                                          unfocusedBorderColor = Muted,
+                                          focusedTextColor = Color.White,
+                                          unfocusedTextColor = Color.White
+                                      )
+                                  )
+                                  Spacer(Modifier.height(7.dp))
+                                  OutlinedTextField(
+                                      value = transferReference,
+                                      onValueChange = { transferReference = it },
+                                      modifier = Modifier.fillMaxWidth(),
+                                      label = { Text("Nomor referensi transfer (opsional)") },
+                                      singleLine = true,
+                                      enabled = !paymentSubmitting,
+                                      colors = OutlinedTextFieldDefaults.colors(
+                                          focusedBorderColor = Cyan,
+                                          focusedLabelColor = Cyan,
+                                          unfocusedBorderColor = Muted,
+                                          focusedTextColor = Color.White,
+                                          unfocusedTextColor = Color.White
+                                      )
+                                  )
+                                  Spacer(Modifier.height(10.dp))
+                                  Button(
+                                      onClick = {
+                                          val user = FirebaseAuth.getInstance().currentUser
+                                          if (user == null) {
+                                              paymentSubmitMessage = "Hubungkan akun Google terlebih dahulu."
+                                          } else if (payerName.trim().length < 2) {
+                                              paymentSubmitMessage = "Isi nama pengirim sesuai rekening sebelum mengirim konfirmasi."
+                                          } else if (paymentSubmitting) {
+                                              // Abaikan ketukan berulang saat permintaan sedang dikirim.
+                                          } else {
+                                              val amount = when (selectedVipPlan) {
+                                                  "VIP+ Mingguan (7 hari)" -> 15000
+                                                  "VIP+ Bulanan (30 hari)" -> 50000
+                                                  "VIP+ Tahunan (365 hari)" -> 200000
+                                                  else -> 500000
+                                              }
+                                              paymentSubmitting = true
+                                              paymentSubmitMessage = "Mengirim konfirmasi..."
+                                              val request = hashMapOf<String, Any>(
+                                                  "uid" to user.uid,
+                                                  "email" to (user.email ?: ""),
+                                                  "displayName" to (user.displayName ?: ""),
+                                                  "plan" to selectedVipPlan,
+                                                  "amountIdr" to amount,
+                                                  "paymentMethod" to "SEABANK_TRANSFER",
+                                                  "bankName" to "SeaBank",
+                                                  "accountNumber" to "901023118338",
+                                                  "accountBrandName" to "M Asisten",
+                                                  "registeredAccountHolder" to "Muhamad Soleh",
+                                                  "payerName" to payerName.trim(),
+                                                  "transferReference" to transferReference.trim(),
+                                                  "status" to "PENDING_REVIEW",
+                                                  "createdAt" to FieldValue.serverTimestamp()
+                                              )
+                                              FirebaseFirestore.getInstance()
+                                                  .collection("vip_payment_requests")
+                                                  .add(request)
+                                                  .addOnSuccessListener {
+                                                      paymentSubmitting = false
+                                                      paymentSubmitMessage = "Konfirmasi berhasil dikirim. Status: MENUNGGU VERIFIKASI ADMIN. VIP+ belum aktif."
+                                                      payerName = ""
+                                                      transferReference = ""
+                                                  }
+                                                  .addOnFailureListener { error ->
+                                                      paymentSubmitting = false
+                                                      paymentSubmitMessage = "Gagal mengirim konfirmasi: " + (error.localizedMessage ?: "Periksa koneksi dan aturan keamanan server.")
+                                                  }
+                                          }
+                                      },
+                                      enabled = !paymentSubmitting && googleAccountEmail.isNotBlank(),
+                                      modifier = Modifier.fillMaxWidth(),
+                                      colors = ButtonDefaults.buttonColors(
+                                          containerColor = Cyan,
+                                          contentColor = Navy,
+                                          disabledContainerColor = Color(0xFF26384A),
+                                          disabledContentColor = Muted
+                                      )
+                                  ) {
+                                      if (paymentSubmitting) {
+                                          CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = Navy)
+                                          Spacer(Modifier.width(8.dp))
+                                      }
+                                      Text("KIRIM KONFIRMASI TRANSFER", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                  }
+                                  if (paymentSubmitMessage.isNotBlank()) {
+                                      Spacer(Modifier.height(7.dp))
+                                      Text(paymentSubmitMessage, color = if (paymentSubmitMessage.contains("berhasil")) Cyan else Muted, fontSize = 10.sp, lineHeight = 15.sp)
+                                  }
                                   Spacer(Modifier.height(8.dp))
                                   Text(
-                                      "Pilih paket terlebih dahulu. Rekening ini ditampilkan sebagai informasi tujuan transfer sementara. Jangan transfer sebelum harga dan paket dikonfirmasi melalui kanal resmi M Asisten. Pembayaran belum otomatis terverifikasi dan transfer tidak langsung mengaktifkan VIP+. Aktivasi hanya dilakukan setelah bukti pembayaran diperiksa dan status keanggotaan disahkan oleh server.",
+                                      "Langkah: pilih paket, transfer sesuai nominal, lalu kirim konfirmasi dengan nama pengirim. Nomor referensi membantu pencocokan transaksi. Ini belum mengunggah bukti transfer. Permintaan akan berstatus menunggu pemeriksaan admin; VIP+ hanya diaktifkan setelah pembayaran diverifikasi dan status keanggotaan diperbarui oleh server. Jangan mengirim data rahasia seperti PIN, OTP, atau kata sandi.",
                                       color = Muted,
                                       fontSize = 10.sp,
                                       lineHeight = 16.sp
