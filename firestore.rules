@@ -16,6 +16,41 @@ service cloud.firestore {
         && value.matches('^[A-Za-z0-9_-]+$');
     }
 
+    // Profil VIP+ yang terikat pada akun Google/Firebase.
+    // Klien hanya boleh membaca status. Klien tidak pernah boleh mengubah
+    // membershipStatus, masa berlaku, bukti pembayaran, atau peran admin.
+    match /vip_members/{userId} {
+      allow read: if signedInAs(userId);
+
+      allow create: if verifiedOwner(userId)
+        && request.resource.data.keys().hasOnly([
+          'uid', 'email', 'displayName', 'provider',
+          'lastLoginAt', 'updatedAt'
+        ])
+        && request.resource.data.uid == userId
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() > 0
+        && request.resource.data.displayName.size() <= 128
+        && request.resource.data.provider == 'google'
+        && request.resource.data.lastLoginAt == request.time
+        && request.resource.data.updatedAt == request.time;
+
+      allow update: if verifiedOwner(userId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'email', 'displayName', 'provider', 'lastLoginAt', 'updatedAt'
+        ])
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() > 0
+        && request.resource.data.displayName.size() <= 128
+        && request.resource.data.provider == 'google'
+        && request.resource.data.lastLoginAt == request.time
+        && request.resource.data.updatedAt == request.time;
+
+      allow delete: if false;
+    }
+
     match /users/{userId} {
       allow read: if signedInAs(userId);
 
