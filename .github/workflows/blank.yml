@@ -79,8 +79,8 @@ jobs:
                   applicationId = "com.m.launchervoice"
                   minSdk = 23
                   targetSdk = 35
-                  versionCode = 14
-                  versionName = "2.12"
+                  versionCode = 15
+                  versionName = "2.13"
               }
 
               signingConfigs {
@@ -212,6 +212,7 @@ jobs:
           import androidx.compose.ui.platform.LocalContext
           import androidx.compose.ui.unit.dp
           import androidx.compose.ui.unit.sp
+          import androidx.compose.ui.window.DialogProperties
 
           private val Navy = Color(0xFF07111F)
           private val Panel = Color(0xFF111F32)
@@ -569,6 +570,8 @@ jobs:
                   if (showAppDrawer) {
                       AlertDialog(
                           onDismissRequest = { showAppDrawer = false },
+                          modifier = Modifier.fillMaxSize(),
+                          properties = DialogProperties(usePlatformDefaultWidth = false),
                           containerColor = Panel,
                           title = {
                               Text("DAFTAR APLIKASI", color = Cyan, fontWeight = FontWeight.ExtraBold)
@@ -576,7 +579,7 @@ jobs:
                           text = {
                               Column(
                                   modifier = Modifier
-                                      .heightIn(max = 440.dp)
+                                      .fillMaxHeight()
                                       .verticalScroll(rememberScrollState())
                               ) {
                                   Card(
