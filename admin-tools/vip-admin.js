@@ -77,7 +77,7 @@ async function main() {
       });
       tx.update(requestRef, {
         status: "VERIFIED",
-        adminUid: "trusted-admin-tool",
+        adminUid: operatorUid,
         reviewedAt: admin.firestore.FieldValue.serverTimestamp(),
         adminNote: note || "Pembayaran diverifikasi."
       });
