@@ -84,8 +84,8 @@ jobs:
                   applicationId = "com.m.launchervoice"
                   minSdk = 23
                   targetSdk = 35
-                  versionCode = 25
-                  versionName = "2.32"
+                  versionCode = 26
+                  versionName = "2.33"
               }
 
               signingConfigs {
@@ -1147,7 +1147,17 @@ jobs:
                               textToSpeechReady =
                                   languageResult != TextToSpeech.LANG_MISSING_DATA &&
                                   languageResult != TextToSpeech.LANG_NOT_SUPPORTED
-                              engine.setSpeechRate(0.95f)
+                              // Brighter, upbeat delivery; prefer a male Indonesian voice if available.
+                              engine.setPitch(1.08f)
+                              engine.setSpeechRate(1.06f)
+                              val indonesianVoices = engine.voices?.filter {
+                                  it.locale.language.equals("id", ignoreCase = true)
+                              }.orEmpty()
+                              val maleVoice = indonesianVoices.firstOrNull {
+                                  it.name.contains("male", ignoreCase = true) ||
+                                  it.name.contains("man", ignoreCase = true)
+                              }
+                              if (maleVoice != null) engine.voice = maleVoice
                           }
                       }
                   }
@@ -1158,7 +1168,7 @@ jobs:
                   val engine = textToSpeech
                   if (textToSpeechReady && engine != null) {
                       try {
-                          showMessage("Ya, saya mendengarkan...")
+                          showMessage("Silahkan ucapkan perintah.")
                           val utteranceId = "m_voice_ready_" + System.currentTimeMillis()
                           engine.setOnUtteranceProgressListener(
                               object : android.speech.tts.UtteranceProgressListener() {
@@ -1173,7 +1183,7 @@ jobs:
                               }
                           )
                           val result = engine.speak(
-                              "Ya, saya mendengarkan. Silakan ucapkan perintah.",
+                              "Silahkan ucapkan perintah.",
                               TextToSpeech.QUEUE_FLUSH,
                               null,
                               utteranceId
