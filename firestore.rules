@@ -75,7 +75,7 @@ service cloud.firestore {
     // Klien hanya boleh membaca status. Klien tidak pernah boleh mengubah
     // membershipStatus, masa berlaku, bukti pembayaran, atau peran admin.
     match /vip_members/{userId} {
-      allow read: if signedInAs(userId);
+      allow read: if signedInAs(userId) || isAdmin();
 
       allow create: if verifiedOwner(userId)
         && request.resource.data.keys().hasOnly([
