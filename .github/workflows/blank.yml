@@ -199,7 +199,7 @@ jobs:
 
               <application
                   android:theme="@android:style/Theme.Material.Light.NoActionBar"
-                  android:label="M Voice"
+                  android:label="M Asisten"
                   android:icon="@mipmap/ic_launcher"
                   android:roundIcon="@mipmap/ic_launcher"
                   android:allowBackup="false">
@@ -1489,7 +1489,7 @@ jobs:
                               )
 
                           text.contains("diam") || text.contains("mute") ||
-                          text.contains("silence") ->
+                          text.contains("silence") || text.contains("matikan") ->
                               audio.adjustStreamVolume(
                                   AudioManager.STREAM_MUSIC,
                                   AudioManager.ADJUST_MUTE,
@@ -1710,7 +1710,8 @@ jobs:
                           startActivity(
                               Intent(action).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                           )
-                          return
+                              else -> showMessage("Ucapkan naikkan volume, turunkan volume, atau matikan suara")
+                       return
                       } catch (_: Exception) {
                           // Try the next supported settings screen.
                       }
