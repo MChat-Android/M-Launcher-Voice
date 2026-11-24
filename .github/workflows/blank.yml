@@ -791,6 +791,11 @@ jobs:
                       return
                   }
 
+                  if (text.contains("video") || text.contains("rekam")) {
+                      launchIntent(Intent("android.media.action.VIDEO_CAPTURE"))
+                      return
+                  }
+
                   if (text.contains("kamera") || text == "foto") {
                       if (!openAppByName("kamera", "camera")) {
                           launchIntent(Intent("android.media.action.IMAGE_CAPTURE"))
