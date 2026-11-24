@@ -43,7 +43,7 @@ async function main() {
     const requestId = value;
     if (!requestId) throw new Error("Usage: node vip-admin.js verify|reject <payment-request-id> [admin-note]");
     const note = rest.join(" ").slice(0, 500);
-    const requestRef = db.collection("vip_payment_requests").doc(requestId);
+    const operatorUid = process.env.M_ASISTEN_ADMIN_UID;\n    if (!operatorUid) throw new Error("Set M_ASISTEN_ADMIN_UID to the Firebase UID of the verified admin operator.");\n    const operator = await auth.getUser(operatorUid);\n    if (operator.customClaims?.admin !== true) throw new Error("The configured operator UID does not have the admin custom claim.");\n    const requestRef = db.collection("vip_payment_requests").doc(requestId);
     await db.runTransaction(async tx => {
       const requestSnap = await tx.get(requestRef);
       if (!requestSnap.exists) throw new Error("Payment request not found.");
@@ -53,7 +53,7 @@ async function main() {
       if (command === "reject") {
         tx.update(requestRef, {
           status: "REJECTED",
-          adminUid: "trusted-admin-tool",
+          adminUid: operatorUid,
           reviewedAt: admin.firestore.FieldValue.serverTimestamp(),
           adminNote: note || "Pembayaran belum dapat diverifikasi."
         });
