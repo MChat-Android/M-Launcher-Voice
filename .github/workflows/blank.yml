@@ -84,8 +84,8 @@ jobs:
                   applicationId = "com.m.launchervoice"
                   minSdk = 23
                   targetSdk = 35
-                  versionCode = 27
-                  versionName = "2.34"
+                  versionCode = 28
+                  versionName = "2.35"
               }
 
               signingConfigs {
@@ -462,18 +462,26 @@ jobs:
               val Panel = Color(0xFF111F32)
               val Cyan = Color(0xFF35D6E8)
               val Muted = Color(0xFF9DB2C9)
-              Box(
+              BoxWithConstraints(
                   modifier = Modifier
                       .fillMaxSize()
                       .background(
                           Brush.verticalGradient(listOf(Navy, Panel, Navy))
-                      )
+                      ),
+                  contentAlignment = Alignment.TopCenter
               ) {
+                  val compactWidth = maxWidth < 360.dp
+                  val pageHorizontalPadding = if (compactWidth) 14.dp else 22.dp
+                  val pageVerticalPadding = if (maxHeight < 650.dp) 16.dp else 28.dp
+                  val heroImageSize = (maxWidth * 0.46f).coerceIn(128.dp, 176.dp)
+                  val contentWidth = maxWidth.coerceAtMost(600.dp)
+
                   Column(
                       modifier = Modifier
-                          .fillMaxSize()
+                          .width(contentWidth)
+                          .fillMaxHeight()
                           .verticalScroll(rememberScrollState())
-                          .padding(horizontal = 22.dp, vertical = 28.dp),
+                          .padding(horizontal = pageHorizontalPadding, vertical = pageVerticalPadding),
                       horizontalAlignment = Alignment.CenterHorizontally
                   ) {
                       Row(
@@ -483,13 +491,13 @@ jobs:
                           Image(
                               painter = painterResource(id = R.mipmap.ic_launcher),
                               contentDescription = "Ikon M Launcher Voice",
-                              modifier = Modifier.size(52.dp).clip(RoundedCornerShape(14.dp)),
+                              modifier = Modifier.size(if (compactWidth) 44.dp else 52.dp).clip(RoundedCornerShape(14.dp)),
                               contentScale = ContentScale.Crop
                           )
                           Spacer(Modifier.width(13.dp))
                           Column {
-                              Text("M LAUNCHER VOICE", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
-                              Text("SMART  •  VOICE  •  ASSISTANT", color = Cyan, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp)
+                              Text("M LAUNCHER VOICE", color = Color.White, fontSize = if (compactWidth) 15.sp else 18.sp, fontWeight = FontWeight.ExtraBold)
+                              Text("SMART  •  VOICE  •  ASSISTANT", color = Cyan, fontSize = if (compactWidth) 7.sp else 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp)
                               Text("MADE IN INDONESIA", color = Muted, fontSize = 8.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.1.sp)
                           }
                           Spacer(Modifier.weight(1f))
@@ -509,7 +517,7 @@ jobs:
                       Image(
                           painter = painterResource(id = R.drawable.launcher_home),
                           contentDescription = "Ikon resmi M Launcher Voice",
-                          modifier = Modifier.size(176.dp).clip(RoundedCornerShape(38.dp)),
+                          modifier = Modifier.size(heroImageSize).clip(RoundedCornerShape(38.dp)),
                           contentScale = ContentScale.Fit
                       )
 
@@ -517,7 +525,7 @@ jobs:
                       Text(
                           "Semua jadi lebih mudah.",
                           color = Color.White,
-                          fontSize = 25.sp,
+                          fontSize = if (compactWidth) 21.sp else 25.sp,
                           fontWeight = FontWeight.ExtraBold,
                           textAlign = TextAlign.Center
                       )
@@ -720,7 +728,7 @@ jobs:
                           text = {
                               Column(
                                   modifier = Modifier
-                                      .heightIn(max = 440.dp)
+                                      .heightIn(max = maxHeight * 0.72f)
                                       .verticalScroll(rememberScrollState())
                               ) {
                                   Text(
