@@ -1,40 +1,38 @@
-# Akun dan Pemulihan M Asisten
+# Akun Google dan Keanggotaan VIP+ M Asisten
 
-## Tujuan
-- Satu akun M Asisten hanya memiliki satu perangkat aktif pada satu waktu.
-- Akun menggunakan email dan kata sandi melalui Firebase Authentication.
-- Perangkat baru dapat mengambil alih akun setelah pemilik masuk dan memverifikasi email.
-- Data aplikasi dicadangkan ke Cloud Firestore dan dipulihkan pada perangkat baru.
-- Perangkat lama kehilangan hak baca/tulis backup setelah perangkat aktif berpindah.
+## Rancangan akun
+- Aplikasi Android: `com.m.launchervoice`.
+- Pengguna masuk dengan akun Google melalui Firebase Authentication.
+- Firebase UID menjadi identitas akun yang stabil; jangan memakai ID acak lokal sebagai identitas keanggotaan.
+- Profil anggota disimpan di Cloud Firestore pada `vip_members/{uid}`.
+- Aplikasi hanya dapat membaca status VIP+. Aplikasi tidak boleh mengubah status aktif, masa berlaku, peran admin, atau bukti pembayaran.
+- Status VIP+ hanya boleh diubah oleh proses tepercaya di sisi server setelah pembayaran diverifikasi.
 
-## Identitas aplikasi
-- Android applicationId: `com.m.launchervoice`
-- Firebase products: Authentication (Email/Password), Cloud Firestore.
-- Firebase Android SDK harus memakai Firebase BoM; jangan menyimpan kata sandi sendiri.
+## Persiapan Firebase Console (wajib sebelum login Google dapat dipakai)
+1. Buka project Firebase yang dipakai oleh M Asisten.
+2. Di **Project settings → General → Your apps**, pastikan aplikasi Android memiliki package name persis `com.m.launchervoice`.
+3. Tambahkan SHA-1 dan SHA-256 sertifikat signing release aplikasi Android pada pengaturan aplikasi Firebase. Gunakan sertifikat signing yang sama dengan APK release.
+4. Buka **Authentication → Sign-in method** lalu aktifkan provider **Google**.
+5. Pastikan alamat email dukungan project diatur jika Firebase memintanya.
+6. Buka **Project settings → Your apps → Android app**, unduh ulang `google-services.json` setelah konfigurasi Google selesai.
+7. Ganti secret GitHub Actions `GOOGLE_SERVICES_JSON_BASE64` dengan Base64 dari file terbaru. Jangan mengunggah atau menempelkan file yang berisi konfigurasi privat ke percakapan publik.
+8. Pastikan file baru memiliki OAuth client untuk aplikasi Android dan web. Gradle Google Services menghasilkan resource `default_web_client_id` yang dipakai proses login.
 
-## Menyiapkan Firebase
-1. Buat project Firebase milik pengelola M Asisten di https://console.firebase.google.com/.
-2. Tambahkan aplikasi Android dengan package name persis `com.m.launchervoice`.
-3. Unduh `google-services.json` dan unggah ke direktori utama repository dengan nama persis `google-services.json`. Workflow CI perlu menyalinnya ke `app/google-services.json` sebelum build.
-4. Authentication → Sign-in method → aktifkan Email/Password.
-5. Authentication → Settings → pastikan verifikasi email diwajibkan oleh alur aplikasi.
-6. Buat Cloud Firestore dalam production mode.
-7. Pasang aturan dari file `firestore.rules` melalui tab Rules.
-8. Jangan mengaktifkan Firestore test mode untuk aplikasi yang digunakan pengguna.
+## Firestore
+1. Buat database Cloud Firestore dalam **production mode**.
+2. Pasang isi file `firestore.rules` pada tab **Firestore Database → Rules**, lalu terbitkan/publish.
+3. Aturan `vip_members` mengizinkan pemilik akun Google terverifikasi membaca profil dan memperbarui data profil terbatas. Klien tidak dapat menulis `membershipStatus` atau data pembayaran.
+4. Backend tepercaya (misalnya Cloud Functions/Admin SDK) harus mengelola status VIP+ setelah pembayaran dikonfirmasi. Jangan pernah memberikan hak admin atau kredensial service account ke aplikasi Android.
+5. Jangan menggunakan Firestore test mode untuk aplikasi rilis.
 
-## Alur satu perangkat
-1. Pendaftaran membuat akun Firebase Auth. Aplikasi mengirim email verifikasi.
-2. Setelah email diverifikasi, aplikasi membuat profil Firestore dengan `activeDeviceId`.
-3. Setiap instalasi membuat ID perangkat acak yang disimpan lokal; bukan IMEI atau nomor seri perangkat.
-4. Perangkat aktif mendengarkan dokumen profil. Jika `activeDeviceId` berubah, perangkat lama harus mengunci fitur akun dan menghentikan sinkronisasi.
-5. Saat pindah HP, pengguna masuk di HP baru, memverifikasi email, lalu memilih **Pindahkan akun ke HP ini**.
-6. HP baru mengganti `activeDeviceId`, kemudian membaca backup terakhir. Aturan Firestore otomatis menolak akses backup dari HP lama.
+## Status implementasi
+- Login Google Android dan sinkronisasi profil VIP+ telah ditambahkan ke kode aplikasi.
+- Aplikasi membaca status keanggotaan dari Firestore; status baru dianggap aktif jika dokumen server berisi `membershipStatus: "ACTIVE"`.
+- Integrasi pembayaran QRIS/transfer, verifikasi otomatis, pengelolaan masa berlaku, dan panel admin belum diaktifkan.
+- Build CI tidak dapat mengaktifkan provider Google di Firebase Console atau menerbitkan Firestore Rules secara otomatis. Dua langkah Console di atas perlu dilakukan oleh pemilik project.
 
-## Bentuk data backup
-Simpan hanya data aplikasi yang memang diperlukan, misalnya nama profil dan preferensi M Asisten. Jangan pernah mencadangkan kata sandi, token autentikasi, rekaman mikrofon mentah, atau data sensitif yang tidak diperlukan. Data VIP+ harus menjadi data terverifikasi dan tidak boleh dapat diubah melalui backup pengguna.
-
-## Penting sebelum rilis
-- Integrasi Android belum aktif sampai Firebase project dibuat, `google-services.json` ditambahkan, dan SDK dihubungkan ke aplikasi.
-- Uji registrasi, verifikasi email, reset kata sandi, login, perpindahan perangkat, pemulihan backup, serta penolakan perangkat lama.
-- Aktifkan Firebase App Check sebelum rilis publik dan batasi API key Google untuk aplikasi Android ini.
-- Buat kebijakan privasi dan jelaskan data yang dicadangkan serta cara menghapus akun/data.
+## Keamanan sebelum rilis
+- Aktifkan Firebase App Check dan batasi API key Google untuk aplikasi Android.
+- Siapkan backend tepercaya untuk verifikasi pembayaran dan pembaruan status.
+- Jangan menyimpan kata sandi, token Google, atau kredensial service account di Firestore maupun kode aplikasi.
+- Siapkan kebijakan privasi, ketentuan VIP+, kebijakan pengembalian dana, dan saluran bantuan.
