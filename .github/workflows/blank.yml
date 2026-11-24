@@ -885,7 +885,11 @@ jobs:
                                                                   val payer = d.getString("payerName") ?: "?"
                                                                   val email = d.getString("email") ?: "?"
                                                                   val amount = d.getLong("amountIdr") ?: 0L
-                                                                  d.id to "$plan • Rp$amount\n$payer • $email"
+                                                                  val reference = d.getString("transferReference").orEmpty().ifBlank { "Tidak dicantumkan" }
+                                                                  val created = d.getTimestamp("createdAt")?.toDate()?.let {
+                                                                      java.text.SimpleDateFormat("dd MMM yyyy, HH:mm", java.util.Locale("id", "ID")).format(it)
+                                                                  } ?: "Waktu tidak tersedia"
+                                                                  d.id to "$plan • Rp$amount\nPengirim: $payer\nAkun: $email\nReferensi: $reference\nDikirim: $created"
                                                               }
                                                               adminBusy = false
                                                               adminMessage = if (adminItems.isEmpty()) "Tidak ada permintaan tertunda." else "Periksa mutasi bank sebelum memproses."
