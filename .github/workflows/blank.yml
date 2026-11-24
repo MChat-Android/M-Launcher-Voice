@@ -369,8 +369,14 @@ jobs:
               private val permissionLauncher =
                   registerForActivityResult(
                       ActivityResultContracts.RequestMultiplePermissions()
-                  ) {
-                      continueSetup()
+                  ) { grants ->
+                      if (grants[Manifest.permission.RECORD_AUDIO] == false ||
+                          checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED
+                      ) {
+                          message = "Izin mikrofon diperlukan untuk menjalankan widget Standar maupun VIP+."
+                      } else {
+                          continueSetup()
+                      }
                   }
 
               private val overlayLauncher =
@@ -417,8 +423,8 @@ jobs:
               }
 
               private fun beginSetup() {
-                  // Paket Standar tidak meminta akses mikrofon atau kamera.
-                  val permissions = mutableListOf<String>()
+                  // Kedua paket memakai mikrofon setelah widget diketuk.
+                  val permissions = mutableListOf(Manifest.permission.RECORD_AUDIO)
 
                   if (Build.VERSION.SDK_INT >= 33) {
                       permissions.add(Manifest.permission.POST_NOTIFICATIONS)
@@ -436,6 +442,10 @@ jobs:
               }
 
               private fun continueSetup() {
+                  if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                      message = "Izinkan akses mikrofon untuk mengaktifkan widget."
+                      return
+                  }
                   if (!Settings.canDrawOverlays(this)) {
                       message = "Izinkan M Asisten tampil di atas aplikasi lain"
                       val intent = Intent(
@@ -453,17 +463,16 @@ jobs:
                       try {
                           val intent = Intent(this, FloatingVoiceService::class.java)
                               .putExtra(FloatingVoiceService.EXTRA_MODE, mode)
-                          if (mode == FloatingVoiceService.MODE_VIP &&
-                              Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
-                          ) {
+                          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                              // Layanan mikrofon harus dimulai sebagai foreground service pada kedua paket.
                               startForegroundService(intent)
                           } else {
                               startService(intent)
                           }
                           message = if (mode == FloatingVoiceService.MODE_VIP) {
-                              "Widget asisten suara VIP aktif"
+                              "Widget VIP+ aktif. Ketuk untuk sapaan dan perintah suara."
                           } else {
-                              "Widget Standar aktif. Ketuk untuk membuka M Launcher Voice."
+                              "Widget Standar aktif. Ketuk lalu ucapkan perintah untuk aplikasi bawaan."
                           }
                       } catch (e: Exception) {
                           message = "Tidak dapat mengaktifkan widget: ${e.message}"
@@ -1020,8 +1029,9 @@ jobs:
                   getSharedPreferences("m_widget_mode", MODE_PRIVATE)
                       .edit().putString("active_mode", if (vipMode) MODE_VIP else MODE_STANDARD).apply()
 
+                  // Standar dan VIP+ sama-sama memerlukan foreground service mikrofon.
+                  createNotification()
                   if (vipMode) {
-                      createNotification()
                       initializeVoiceAssistant()
                       watchVipMembership()
                   } else {
@@ -1340,18 +1350,11 @@ jobs:
 
               private fun handleWidgetTap() {
                   if (vipMode) {
-                      // VIP: ketukan hanya mengaktifkan pendengaran; tanpa sapaan suara.
-                      beginManualListening()
+                      // VIP+: sapa pengguna, lalu dengarkan satu perintah.
+                      speakAndListen()
                   } else {
-                      // Standar: ketukan membuka aplikasi, tanpa mikrofon atau TTS.
-                      try {
-                          val openApp = Intent(this, MainActivity::class.java).apply {
-                              addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-                          }
-                          startActivity(openApp)
-                      } catch (_: Exception) {
-                          showMessage("M Launcher Voice tidak dapat dibuka")
-                      }
+                      // Standar: langsung dengarkan satu perintah tanpa sapaan suara.
+                      beginManualListening()
                   }
               }
 
@@ -1370,7 +1373,7 @@ jobs:
               private fun speakAndListen() {
                   if (listening) return
                   awaitingWakeWord = false
-                  speakTextThenListen("Silahkan ucapkan perintah.")
+                  speakTextThenListen("Hallo M, silakan ucapkan perintah.")
               }
 
               private fun speakTextThenListen(message: String) {
@@ -1467,39 +1470,31 @@ jobs:
 
                               override fun onError(error: Int) {
                                   listening = false
-                                  if (awaitingWakeWord) {
-                                      showMessage("M Asisten siap dipanggil dengan Hallo M")
-                                      scheduleWakeWordListening(1200L)
-                                  } else {
-                                      showMessage("Tidak terdengar. Silahkan coba lagi.")
-                                      awaitingWakeWord = true
-                                      scheduleWakeWordListening(1600L)
+                                  awaitingWakeWord = false
+                                  val detail = when (error) {
+                                      SpeechRecognizer.ERROR_AUDIO -> "Masalah pada input mikrofon"
+                                      SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Izin mikrofon belum diberikan"
+                                      SpeechRecognizer.ERROR_NETWORK,
+                                      SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "Koneksi pengenalan suara bermasalah"
+                                      SpeechRecognizer.ERROR_NO_MATCH,
+                                      SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "Suara tidak dikenali. Ketuk widget untuk mencoba lagi."
+                                      else -> "Pengenalan suara gagal (kode $error). Ketuk widget untuk mencoba lagi."
                                   }
+                                  showMessage(detail)
                               }
 
                               override fun onResults(results: android.os.Bundle?) {
                                   listening = false
+                                  awaitingWakeWord = false
                                   val words = results?.getStringArrayList(
                                       SpeechRecognizer.RESULTS_RECOGNITION
                                   )?.firstOrNull()
 
-                                  if (awaitingWakeWord) {
-                                      if (!words.isNullOrBlank() && isWakeWord(words)) {
-                                          showMessage("Panggilan diterima")
-                                          speakWakeWordResponse()
-                                      } else {
-                                          // Abaikan ucapan lain saat menunggu kata pemicu.
-                                          scheduleWakeWordListening(500L)
-                                      }
+                                  if (!words.isNullOrBlank()) {
+                                      showMessage("Perintah: $words")
+                                      executeCommand(words)
                                   } else {
-                                      if (!words.isNullOrBlank()) {
-                                          showMessage("Perintah: $words")
-                                          executeCommand(words)
-                                      } else {
-                                          showMessage("Perintah tidak dikenali")
-                                      }
-                                      awaitingWakeWord = true
-                                      scheduleWakeWordListening(1800L)
+                                      showMessage("Perintah tidak dikenali. Ketuk widget untuk mencoba lagi.")
                                   }
                               }
 
@@ -1995,7 +1990,15 @@ jobs:
                           addCategory(Intent.CATEGORY_LAUNCHER)
                       }
 
-                      val apps = packageManager.queryIntentActivities(intent, 0)
+                      val apps = if (Build.VERSION.SDK_INT >= 33) {
+                          packageManager.queryIntentActivities(
+                              intent,
+                              PackageManager.ResolveInfoFlags.of(0L)
+                          )
+                      } else {
+                          @Suppress("DEPRECATION")
+                          packageManager.queryIntentActivities(intent, 0)
+                      }
                       val aliases = names.map {
                           it.lowercase(Locale("id", "ID"))
                               .replace(Regex("[^a-z0-9 ]"), " ")
@@ -2003,7 +2006,10 @@ jobs:
                               .trim()
                       }.filter { it.length >= 3 }
                       val matched = apps.mapNotNull { app ->
-                          if (app.activityInfo.packageName == packageName) {
+                          val targetPackage = app.activityInfo.packageName
+                          if (targetPackage == packageName ||
+                              (!vipMode && !isBuiltInSystemApp(targetPackage))
+                          ) {
                               null
                           } else {
                               val label = app.loadLabel(packageManager).toString()
@@ -2022,14 +2028,18 @@ jobs:
                           }
                       }.sortedBy { it.second }.firstOrNull()?.first
 
-                       if (matched != null) {
-                          val launch = packageManager.getLaunchIntentForPackage(
-                              matched.activityInfo.packageName
-                          )
-                          if (launch != null) {
-                              launchIntent(launch)
-                              true
-                          } else false
+                      if (matched != null) {
+                          // Jalankan komponen launcher yang benar-benar ditemukan, bukan menebak nama paket.
+                          val launch = Intent(Intent.ACTION_MAIN).apply {
+                              addCategory(Intent.CATEGORY_LAUNCHER)
+                              setClassName(
+                                  matched.activityInfo.packageName,
+                                  matched.activityInfo.name
+                              )
+                              addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                          }
+                          launchIntent(launch)
+                          true
                       } else false
                   } catch (_: Exception) {
                       false
