@@ -417,10 +417,8 @@ jobs:
               }
 
               private fun beginSetup() {
-                  val permissions = mutableListOf(
-                      Manifest.permission.RECORD_AUDIO,
-                      Manifest.permission.CAMERA
-                  )
+                  // Paket Standar tidak meminta akses mikrofon atau kamera.
+                  val permissions = mutableListOf<String>()
 
                   if (Build.VERSION.SDK_INT >= 33) {
                       permissions.add(Manifest.permission.POST_NOTIFICATIONS)
@@ -438,13 +436,6 @@ jobs:
               }
 
               private fun continueSetup() {
-                  if (checkSelfPermission(Manifest.permission.RECORD_AUDIO)
-                      != PackageManager.PERMISSION_GRANTED
-                  ) {
-                      message = "Izin mikrofon diperlukan"
-                      return
-                  }
-
                   if (!Settings.canDrawOverlays(this)) {
                       message = "Izinkan M Asisten tampil di atas aplikasi lain"
                       val intent = Intent(
@@ -458,17 +449,55 @@ jobs:
               }
 
               private fun startFloatingService() {
-                  try {
-                      val intent = Intent(this, FloatingVoiceService::class.java)
-                      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                          startForegroundService(intent)
-                      } else {
-                          startService(intent)
+                  fun launchWidget(mode: String) {
+                      try {
+                          val intent = Intent(this, FloatingVoiceService::class.java)
+                              .putExtra(FloatingVoiceService.EXTRA_MODE, mode)
+                          if (mode == FloatingVoiceService.MODE_VIP &&
+                              Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                          ) {
+                              startForegroundService(intent)
+                          } else {
+                              startService(intent)
+                          }
+                          message = if (mode == FloatingVoiceService.MODE_VIP) {
+                              "Widget asisten suara VIP aktif"
+                          } else {
+                              "Widget Standar aktif. Ketuk untuk membuka M Launcher Voice."
+                          }
+                      } catch (e: Exception) {
+                          message = "Tidak dapat mengaktifkan widget: ${e.message}"
                       }
-                      message = "Widget mikrofon sudah diaktifkan"
-                  } catch (e: Exception) {
-                      message = "Tidak dapat mengaktifkan widget: ${e.message}"
                   }
+
+                  val user = FirebaseAuth.getInstance().currentUser
+                  if (user == null) {
+                      launchWidget(FloatingVoiceService.MODE_STANDARD)
+                      return
+                  }
+
+                  FirebaseFirestore.getInstance()
+                      .collection("vip_members")
+                      .document(user.uid)
+                      .get()
+                      .addOnSuccessListener { member ->
+                          val vipActive = member.getString("membershipStatus") == "ACTIVE"
+                          if (vipActive &&
+                              checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED
+                          ) {
+                              message = "VIP aktif. Izinkan mikrofon untuk memakai asisten suara."
+                              permissionLauncher.launch(arrayOf(Manifest.permission.RECORD_AUDIO))
+                              return@addOnSuccessListener
+                          }
+                          launchWidget(
+                              if (vipActive) FloatingVoiceService.MODE_VIP
+                              else FloatingVoiceService.MODE_STANDARD
+                          )
+                      }
+                      .addOnFailureListener {
+                          // Jika status VIP tidak dapat diverifikasi, selalu gunakan mode Standar.
+                          launchWidget(FloatingVoiceService.MODE_STANDARD)
+                      }
               }
           }
 
@@ -936,6 +965,14 @@ jobs:
 
           class FloatingVoiceService : Service() {
 
+              companion object {
+                  const val EXTRA_MODE = "com.m.launchervoice.EXTRA_WIDGET_MODE"
+                  const val MODE_STANDARD = "standard"
+                  const val MODE_VIP = "vip"
+              }
+
+              private var vipMode = false
+              private var serviceInitialized = false
               private lateinit var windowManager: WindowManager
               private lateinit var container: LinearLayout
               private lateinit var micButton: TextView
@@ -953,13 +990,6 @@ jobs:
 
               override fun onCreate() {
                   super.onCreate()
-                  createNotification()
-                  initializeVoiceAssistant()
-                  createOverlay()
-                  // Mulai menunggu kata pemicu setelah layanan mikrofon aktif.
-                  handler.postDelayed({
-                      if (!listening) startVoiceRecognition()
-                  }, 1200)
               }
 
               override fun onStartCommand(
@@ -967,6 +997,18 @@ jobs:
                   flags: Int,
                   startId: Int
               ): Int {
+                  if (!serviceInitialized) {
+                      serviceInitialized = true
+                      vipMode = intent?.getStringExtra(EXTRA_MODE) == MODE_VIP
+
+                      if (vipMode) {
+                          // Hanya anggota VIP yang menjalankan layanan mikrofon.
+                          createNotification()
+                          initializeVoiceAssistant()
+                      }
+
+                      createOverlay()
+                  }
                   return START_STICKY
               }
 
@@ -1028,16 +1070,17 @@ jobs:
                   }
 
                   micButton = TextView(this).apply {
-                      text = "🎙️"
-                      textSize = 27f
+                      text = if (vipMode) "🎙️" else "M"
+                      textSize = if (vipMode) 27f else 30f
+                      typeface = Typeface.DEFAULT_BOLD
                       gravity = Gravity.CENTER
                       setTextColor(Color.WHITE)
-                      background = roundedBackground(0xFF1769D2.toInt(), 100)
+                      background = roundedBackground(
+                          if (vipMode) 0xFF1769D2.toInt() else 0xFF087F9C.toInt(),
+                          100
+                      )
                       setPadding(15, 10, 15, 10)
-                      setOnClickListener {
-                          // Ketukan manual langsung mendengarkan tanpa balasan suara.
-                          beginManualListening()
-                      }
+                      setOnClickListener { handleWidgetTap() }
                   }
 
                   container.addView(prompt)
@@ -1176,8 +1219,7 @@ jobs:
                 if (dismiss) {
                     stopSelf()
                 } else if (!moved) {
-                    // Ketukan manual langsung mendengarkan tanpa balasan suara.
-                    beginManualListening()
+                    handleWidgetTap()
                 }
                 return true
             }
@@ -1219,6 +1261,23 @@ jobs:
                               }
                               if (maleVoice != null) engine.voice = maleVoice
                           }
+                      }
+                  }
+              }
+
+              private fun handleWidgetTap() {
+                  if (vipMode) {
+                      // VIP: ketukan hanya mengaktifkan pendengaran; tanpa sapaan suara.
+                      beginManualListening()
+                  } else {
+                      // Standar: ketukan membuka aplikasi, tanpa mikrofon atau TTS.
+                      try {
+                          val openApp = Intent(this, MainActivity::class.java).apply {
+                              addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                          }
+                          startActivity(openApp)
+                      } catch (_: Exception) {
+                          showMessage("M Launcher Voice tidak dapat dibuka")
                       }
                   }
               }
