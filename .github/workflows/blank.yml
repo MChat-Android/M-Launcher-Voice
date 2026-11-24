@@ -1331,6 +1331,54 @@ jobs:
                       return
                   }
 
+                  if (text.contains("alarm") || text.contains("jam weker")) {
+                      launchIntent(Intent(android.provider.AlarmClock.ACTION_SHOW_ALARMS))
+                      return
+                  }
+
+                  if (text.contains("kalender") || text.contains("calendar")) {
+                      val calendarIntent = Intent(Intent.ACTION_MAIN).apply {
+                          addCategory(Intent.CATEGORY_APP_CALENDAR)
+                      }
+                      launchIntent(calendarIntent)
+                      return
+                  }
+
+                  if (text.contains("kontak") || text.contains("contacts") || text == "contact") {
+                      val contactsIntent = Intent(Intent.ACTION_MAIN).apply {
+                          addCategory(Intent.CATEGORY_APP_CONTACTS)
+                      }
+                      launchIntent(contactsIntent)
+                      return
+                  }
+
+                  if (text.contains("kalkulator") || text.contains("calculator") || text.contains("hitung")) {
+                      if (!openAppByName("kalkulator", "calculator")) {
+                          showMessage("Aplikasi kalkulator tidak ditemukan")
+                      }
+                      return
+                  }
+
+                  if (text.contains("youtube")) {
+                      if (!openAppByName("youtube")) {
+                          showMessage("Aplikasi YouTube tidak ditemukan")
+                      }
+                      return
+                  }
+
+                  if (text.contains("browser") || text.contains("peramban") || text.contains("internet") || text == "chrome") {
+                      val browserIntent = Intent(Intent.ACTION_MAIN).apply {
+                          addCategory(Intent.CATEGORY_APP_BROWSER)
+                      }
+                      launchIntent(browserIntent)
+                      return
+                  }
+
+                  if (text.contains("peta") || text.contains("maps") || text.contains("navigasi") || text.contains("google map")) {
+                      launchIntent(Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=")))
+                      return
+                  }
+
                   if (text.contains("menu utama") ||
                       text.contains("main screen") ||
                       text.contains("home screen") ||
