@@ -1262,12 +1262,7 @@ jobs:
                       text.contains("sms") ||
                       text.contains("pesan")
                   ) {
-                      launchIntent(
-                          Intent(Intent.ACTION_MAIN).apply {
-                              addCategory(Intent.CATEGORY_DEFAULT)
-                              type = "vnd.android-dir/mms-sms"
-                          }
-                      )
+                      openMessagingApp()
                       return
                   }
 
@@ -1297,6 +1292,27 @@ jobs:
                       }
                   } else {
                       showMessage("Perintah tidak dikenali")
+                  }
+              }
+
+              private fun openMessagingApp() {
+                  val mainIntent = Intent(Intent.ACTION_MAIN).apply {
+                      addCategory(Intent.CATEGORY_APP_MESSAGING)
+                      addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                  }
+
+                  try {
+                      startActivity(mainIntent)
+                  } catch (_: Exception) {
+                      try {
+                          val fallbackIntent = Intent(
+                              Intent.ACTION_SENDTO,
+                              Uri.parse("smsto:")
+                          ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                          startActivity(fallbackIntent)
+                      } catch (_: Exception) {
+                          showMessage("Aplikasi Pesan/SMS tidak ditemukan")
+                      }
                   }
               }
 
