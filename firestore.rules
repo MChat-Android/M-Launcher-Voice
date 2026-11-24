@@ -1,0 +1,82 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedInAs(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    function verifiedOwner(userId) {
+      return signedInAs(userId) && request.auth.token.email_verified == true;
+    }
+
+    function validDeviceId(value) {
+      return value is string
+        && value.size() >= 20
+        && value.size() <= 64
+        && value.matches('^[A-Za-z0-9_-]+$');
+    }
+
+    match /users/{userId} {
+      allow read: if signedInAs(userId);
+
+      // Profil pertama hanya boleh dibuat oleh pemilik akun yang emailnya terverifikasi.
+      allow create: if verifiedOwner(userId)
+        && request.resource.data.keys().hasOnly([
+          'memberId', 'displayName', 'activeDeviceId',
+          'deviceChangedAt', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.memberId is string
+        && request.resource.data.memberId.matches('^MA-[A-Z0-9]{10}$')
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() > 0
+        && request.resource.data.displayName.size() <= 32
+        && validDeviceId(request.resource.data.activeDeviceId)
+        && request.resource.data.deviceChangedAt == request.time
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+
+      // Hanya pemilik terverifikasi yang dapat memperbarui profil/perangkat.
+      // Field hak VIP+, peran admin, dan status pembayaran tidak dapat ditulis klien.
+      allow update: if verifiedOwner(userId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'displayName', 'activeDeviceId', 'deviceChangedAt', 'updatedAt'
+        ])
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() > 0
+        && request.resource.data.displayName.size() <= 32
+        && validDeviceId(request.resource.data.activeDeviceId)
+        && request.resource.data.deviceChangedAt == request.time
+        && request.resource.data.updatedAt == request.time;
+
+      allow delete: if false;
+
+      match /backups/{backupId} {
+        function isActiveDevice() {
+          return signedInAs(userId)
+            && get(/databases/$(database)/documents/users/$(userId))
+              .data.activeDeviceId == request.resource.data.deviceId;
+        }
+
+        allow read: if signedInAs(userId)
+          && get(/databases/$(database)/documents/users/$(userId))
+            .data.activeDeviceId == resource.data.deviceId;
+
+        allow create, update: if isActiveDevice()
+          && request.resource.data.keys().hasOnly([
+            'deviceId', 'schemaVersion', 'payload', 'updatedAt'
+          ])
+          && validDeviceId(request.resource.data.deviceId)
+          && request.resource.data.schemaVersion is int
+          && request.resource.data.payload is map
+          && request.resource.data.updatedAt == request.time
+          && request.resource.data.payload.keys().hasOnly([
+            'displayName', 'preferences'
+          ]);
+
+        allow delete: if signedInAs(userId)
+          && get(/databases/$(database)/documents/users/$(userId))
+            .data.activeDeviceId == resource.data.deviceId;
+      }
+    }
+  }
+}
