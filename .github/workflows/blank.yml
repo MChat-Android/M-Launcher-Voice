@@ -1035,13 +1035,8 @@ jobs:
                       background = roundedBackground(0xFF1769D2.toInt(), 100)
                       setPadding(15, 10, 15, 10)
                       setOnClickListener {
-                          // Tombol tetap menyediakan cara manual tanpa menunggu kata pemicu.
-                          if (awaitingWakeWord && listening) {
-                              speechRecognizer?.cancel()
-                              listening = false
-                          }
-                          awaitingWakeWord = false
-                          speakAndListen()
+                          // Ketukan manual langsung mendengarkan tanpa balasan suara.
+                          beginManualListening()
                       }
                   }
 
@@ -1181,15 +1176,8 @@ jobs:
                 if (dismiss) {
                     stopSelf()
                 } else if (!moved) {
-                    // Ketukan manual harus mengambil alih sesi wake-word yang sedang aktif.
-                    if (awaitingWakeWord && listening) {
-                        try {
-                            speechRecognizer?.cancel()
-                        } catch (_: Exception) {}
-                        listening = false
-                    }
-                    awaitingWakeWord = false
-                    speakAndListen()
+                    // Ketukan manual langsung mendengarkan tanpa balasan suara.
+                    beginManualListening()
                 }
                 return true
             }
@@ -1233,6 +1221,18 @@ jobs:
                           }
                       }
                   }
+              }
+
+              private fun beginManualListening() {
+                  if (listening && awaitingWakeWord) {
+                      try {
+                          speechRecognizer?.cancel()
+                      } catch (_: Exception) {}
+                      listening = false
+                  }
+                  awaitingWakeWord = false
+                  textToSpeech?.stop()
+                  startVoiceRecognition()
               }
 
               private fun speakAndListen() {
