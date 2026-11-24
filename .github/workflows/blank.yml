@@ -520,7 +520,7 @@ jobs:
               onGoogleSignIn: () -> Unit
           ) {
               var showVipPlus by remember { mutableStateOf(false) }
-              var selectedVipPlan by remember { mutableStateOf("VIP+ Bulanan") }
+              var selectedVipPlan by remember { mutableStateOf("VIP+ Bulanan (30 hari)") }
               var payerName by remember { mutableStateOf("") }
               var transferReference by remember { mutableStateOf("") }
               var paymentSubmitting by remember { mutableStateOf(false) }
