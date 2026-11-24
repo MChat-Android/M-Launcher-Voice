@@ -882,16 +882,10 @@ jobs:
                                   Spacer(Modifier.height(8.dp))
                                   listOf(
                                       "Wallpaper beranda VIP+ dengan tampilan khusus",
-                                      "Asisten suara dengan sapaan otomatis saat widget diketuk",
-                                      "Aktivasi suara hands-free melalui kata pemicu Halo M (dalam pengembangan)",
-                                      "Kunci Suara Pemilik: verifikasi suara sebelum perintah dijalankan (dalam pengembangan)",
-                                      "Perintah suara untuk membuka aplikasi yang terpasang; penggunaan di dalam aplikasi tetap manual",
+                                      "Sapaan dan panduan suara khusus VIP+ saat widget digunakan",
+                                      "Perintah suara untuk membuka aplikasi apa pun yang terpasang; penggunaan di dalam aplikasi tetap manual",
                                       "Widget mengambang dengan pilihan desain ikon premium",
-                                      "Layanan berbasis AI khusus VIP+",
-                                      "Backup dan pemulihan pengaturan melalui cloud",
-                                      "Sinkronisasi pengaturan antarperangkat",
-                                      "Kontrol perangkat terhubung dan perlindungan akun tambahan",
-                                      "Prioritas bantuan dan akses awal fitur baru"
+                                      "Layanan berbasis AI khusus VIP+"
                                   ).forEach { benefit ->
                                       Row(
                                           modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
@@ -935,20 +929,27 @@ jobs:
                                   Spacer(Modifier.height(8.dp))
                                   Text("Pilihan saat ini: $selectedVipPlan", color = Color.White, fontSize = 11.sp)
                                   Spacer(Modifier.height(10.dp))
-                                  Button(
-                                      onClick = {},
-                                      enabled = false,
+                                  Spacer(Modifier.height(12.dp))
+                                  Text("PEMBAYARAN TRANSFER BANK", color = Cyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                  Spacer(Modifier.height(7.dp))
+                                  Card(
                                       modifier = Modifier.fillMaxWidth(),
-                                      colors = ButtonDefaults.buttonColors(
-                                          disabledContainerColor = Color(0xFF26384A),
-                                          disabledContentColor = Muted
-                                      )
+                                      colors = CardDefaults.cardColors(containerColor = Color(0xFF172B42)),
+                                      shape = RoundedCornerShape(12.dp)
                                   ) {
-                                      Text("PEMBAYARAN SEGERA HADIR", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                      Column(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
+                                          Text("SeaBank", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                          Spacer(Modifier.height(5.dp))
+                                          Text("Nomor rekening", color = Muted, fontSize = 10.sp)
+                                          Text("901023118338", color = Cyan, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
+                                          Spacer(Modifier.height(5.dp))
+                                          Text("Nama penerima: M Asisten", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                          Text("Nama pemilik rekening terdaftar: Muhamad Soleh", color = Muted, fontSize = 10.sp)
+                                      }
                                   }
                                   Spacer(Modifier.height(8.dp))
                                   Text(
-                                      "Daftar di atas adalah rancangan manfaat VIP+ yang akan dirilis bertahap. Paket Mingguan berlaku 7 hari, Bulanan 30 hari, Tahunan 365 hari, dan Lifetime berlaku selamanya. VIP+ belum dapat dibeli atau diaktifkan. Harga paket yang ditampilkan adalah harga rencana: Mingguan Rp15.000, Bulanan Rp50.000, Tahunan Rp200.000, dan Lifetime Rp500.000. Pembelian dan aktivasi tetap menunggu sistem pembayaran serta verifikasi server siap. Belum ada transaksi atau pemotongan saldo.",
+                                      "Pilih paket terlebih dahulu. Rekening ini ditampilkan sebagai informasi tujuan transfer sementara. Jangan transfer sebelum harga dan paket dikonfirmasi melalui kanal resmi M Asisten. Pembayaran belum otomatis terverifikasi dan transfer tidak langsung mengaktifkan VIP+. Aktivasi hanya dilakukan setelah bukti pembayaran diperiksa dan status keanggotaan disahkan oleh server.",
                                       color = Muted,
                                       fontSize = 10.sp,
                                       lineHeight = 16.sp
