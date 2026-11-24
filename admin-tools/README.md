@@ -24,6 +24,19 @@ $env:GOOGLE_APPLICATION_CREDENTIALS="C:\lokasi-aman\firebase-admin-key.json"
 npm install
 ```
 
+## Publikasikan Firestore Rules
+
+Sebelum panel admin di APK dipakai, publikasikan isi file `firestore.rules` ke Firebase:
+
+1. Buka Firebase Console dan pilih proyek M Asisten.
+2. Masuk ke **Build → Firestore Database → Rules**.
+3. Ganti isi editor dengan isi file `firestore.rules` dari repository ini.
+4. Klik **Publish** dan pastikan tidak ada pesan kesalahan.
+
+Aturan terbaru mengizinkan akun dengan custom claim `admin: true` membaca permintaan pembayaran dan profil VIP pelanggan. Pengguna biasa tetap hanya dapat membaca profilnya sendiri dan tidak dapat mengaktifkan VIP atau mengubah status pembayaran.
+
+Panel admin sudah tersedia di aplikasi pada menu VIP+ setelah token akun memuat custom claim admin. Panel menampilkan paket, nominal, nama pengirim, email, referensi transfer, dan waktu pengajuan. Verifikasi tetap wajib didahului pemeriksaan mutasi SeaBank secara manual.
+
 ## Jadikan akun sebagai admin
 
 Pengguna harus sudah masuk ke M Asisten dan akun Firebase Authentication-nya sudah ada. Ambil UID dari Firebase Console → Authentication → Users, lalu:
