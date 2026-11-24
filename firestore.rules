@@ -16,6 +16,61 @@ service cloud.firestore {
         && value.matches('^[A-Za-z0-9_-]+$');
     }
 
+    function isAdmin() {
+      return request.auth != null && request.auth.token.admin == true;
+    }
+
+    function validVipPlan(plan, amount) {
+      return (plan == 'VIP+ Mingguan (7 hari)' && amount == 15000)
+        || (plan == 'VIP+ Bulanan (30 hari)' && amount == 50000)
+        || (plan == 'VIP+ Tahunan (365 hari)' && amount == 200000)
+        || (plan == 'VIP+ Lifetime' && amount == 500000);
+    }
+
+    match /vip_payment_requests/{requestId} {
+      allow create: if request.auth != null
+        && request.auth.token.email_verified == true
+        && request.resource.data.keys().hasOnly([
+          'uid', 'email', 'displayName', 'plan', 'amountIdr',
+          'paymentMethod', 'bankName', 'accountNumber',
+          'accountBrandName', 'registeredAccountHolder',
+          'payerName', 'transferReference', 'status', 'createdAt'
+        ])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() <= 128
+        && request.resource.data.plan is string
+        && request.resource.data.amountIdr is int
+        && validVipPlan(request.resource.data.plan, request.resource.data.amountIdr)
+        && request.resource.data.paymentMethod == 'SEABANK_TRANSFER'
+        && request.resource.data.bankName == 'SeaBank'
+        && request.resource.data.accountNumber == '901023118338'
+        && request.resource.data.accountBrandName == 'M Asisten'
+        && request.resource.data.registeredAccountHolder == 'Muhamad Soleh'
+        && request.resource.data.payerName is string
+        && request.resource.data.payerName.size() >= 2
+        && request.resource.data.payerName.size() <= 100
+        && request.resource.data.transferReference is string
+        && request.resource.data.transferReference.size() <= 120
+        && request.resource.data.status == 'PENDING_REVIEW'
+        && request.resource.data.createdAt == request.time;
+
+      allow read: if (request.auth != null && resource.data.uid == request.auth.uid) || isAdmin();
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'status', 'adminUid', 'reviewedAt', 'adminNote'
+        ])
+        && request.resource.data.status in ['VERIFIED', 'REJECTED']
+        && request.resource.data.adminUid == request.auth.uid
+        && request.resource.data.reviewedAt == request.time
+        && (!('adminNote' in request.resource.data)
+          || (request.resource.data.adminNote is string
+            && request.resource.data.adminNote.size() <= 500));
+      allow delete: if false;
+    }
+
+
     // Profil VIP+ yang terikat pada akun Google/Firebase.
     // Klien hanya boleh membaca status. Klien tidak pernah boleh mengubah
     // membershipStatus, masa berlaku, bukti pembayaran, atau peran admin.
@@ -36,7 +91,7 @@ service cloud.firestore {
         && request.resource.data.lastLoginAt == request.time
         && request.resource.data.updatedAt == request.time;
 
-      allow update: if verifiedOwner(userId)
+      allow update: if (verifiedOwner(userId)
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'email', 'displayName', 'provider', 'lastLoginAt', 'updatedAt'
         ])
@@ -46,7 +101,14 @@ service cloud.firestore {
         && request.resource.data.displayName.size() <= 128
         && request.resource.data.provider == 'google'
         && request.resource.data.lastLoginAt == request.time
-        && request.resource.data.updatedAt == request.time;
+        && request.resource.data.updatedAt == request.time)
+        || (isAdmin()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'membershipStatus', 'membershipPlan', 'startedAt',
+            'expiresAt', 'verifiedPaymentRequestId', 'updatedAt'
+          ])
+          && request.resource.data.membershipStatus in ['ACTIVE', 'FREE']
+          && request.resource.data.updatedAt == request.time);
 
       allow delete: if false;
     }
