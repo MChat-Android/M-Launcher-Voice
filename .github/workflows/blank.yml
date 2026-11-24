@@ -84,8 +84,8 @@ jobs:
                   applicationId = "com.m.launchervoice"
                   minSdk = 23
                   targetSdk = 35
-                  versionCode = 23
-                  versionName = "2.30"
+                  versionCode = 24
+                  versionName = "2.31"
               }
 
               signingConfigs {
@@ -762,9 +762,16 @@ jobs:
                                   Text("KEUNTUNGAN VIP+", color = Cyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                   Spacer(Modifier.height(8.dp))
                                   listOf(
-                                      "Pengalaman bebas iklan saat sistem iklan resmi diluncurkan",
-                                      "Akses ke fitur eksklusif VIP+ yang dirilis bertahap",
-                                      "Dukungan untuk pengembangan M Launcher Voice"
+                                      "Wallpaper beranda VIP+ dengan tampilan khusus",
+                                      "Asisten suara dengan sapaan otomatis saat widget diketuk",
+                                      "Aktivasi suara hands-free melalui kata pemicu Halo M (dalam pengembangan)",
+                                      "Perintah suara untuk membuka aplikasi yang terpasang; penggunaan di dalam aplikasi tetap manual",
+                                      "Widget mengambang dengan pilihan desain ikon premium",
+                                      "Layanan berbasis AI khusus VIP+",
+                                      "Backup dan pemulihan pengaturan melalui cloud",
+                                      "Sinkronisasi pengaturan antarperangkat",
+                                      "Kontrol perangkat terhubung dan perlindungan akun tambahan",
+                                      "Prioritas bantuan dan akses awal fitur baru"
                                   ).forEach { benefit ->
                                       Row(
                                           modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
@@ -778,7 +785,7 @@ jobs:
                                   Spacer(Modifier.height(14.dp))
                                   Text("PILIHAN PAKET", color = Cyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                   Spacer(Modifier.height(7.dp))
-                                  listOf("VIP+ Bulanan", "VIP+ Tahunan", "VIP+ Lifetime").forEach { plan ->
+                                  listOf("VIP+ Mingguan (7 hari)", "VIP+ Bulanan (30 hari)", "VIP+ Tahunan (365 hari)", "VIP+ Lifetime").forEach { plan ->
                                       Card(
                                           modifier = Modifier
                                               .fillMaxWidth()
@@ -816,7 +823,7 @@ jobs:
                                   }
                                   Spacer(Modifier.height(8.dp))
                                   Text(
-                                      "VIP+ belum dapat dibeli atau diaktifkan. Harga dan pembayaran akan diumumkan setelah sistem pembayaran serta verifikasi server siap. Belum ada transaksi atau pemotongan saldo.",
+                                      "Daftar di atas adalah rancangan manfaat VIP+ yang akan dirilis bertahap. Paket Mingguan berlaku 7 hari, Bulanan 30 hari, Tahunan 365 hari, dan Lifetime berlaku selamanya. VIP+ belum dapat dibeli atau diaktifkan. Harga dan pembayaran akan diumumkan setelah sistem pembayaran serta verifikasi server siap. Belum ada transaksi atau pemotongan saldo.",
                                       color = Muted,
                                       fontSize = 10.sp,
                                       lineHeight = 16.sp
