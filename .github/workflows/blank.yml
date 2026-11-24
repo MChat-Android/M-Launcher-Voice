@@ -84,8 +84,8 @@ jobs:
                   applicationId = "com.m.launchervoice"
                   minSdk = 23
                   targetSdk = 35
-                  versionCode = 29
-                  versionName = "2.36"
+                  versionCode = 30
+                  versionName = "2.37"
               }
 
               signingConfigs {
@@ -773,6 +773,7 @@ jobs:
                                       "Wallpaper beranda VIP+ dengan tampilan khusus",
                                       "Asisten suara dengan sapaan otomatis saat widget diketuk",
                                       "Aktivasi suara hands-free melalui kata pemicu Halo M (dalam pengembangan)",
+                                      "Kunci Suara Pemilik: verifikasi suara sebelum perintah dijalankan (dalam pengembangan)",
                                       "Perintah suara untuk membuka aplikasi yang terpasang; penggunaan di dalam aplikasi tetap manual",
                                       "Widget mengambang dengan pilihan desain ikon premium",
                                       "Layanan berbasis AI khusus VIP+",
