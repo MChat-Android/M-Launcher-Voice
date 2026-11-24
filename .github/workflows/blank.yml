@@ -149,9 +149,51 @@ jobs:
                   android:required="false"/>
 
               <queries>
+                  <!-- Aplikasi yang ditampilkan di daftar launcher -->
                   <intent>
                       <action android:name="android.intent.action.MAIN"/>
                       <category android:name="android.intent.category.LAUNCHER"/>
+                  </intent>
+                  <!-- Aplikasi bawaan yang dibuka melalui intent Android -->
+                  <intent>
+                      <action android:name="android.intent.action.DIAL"/>
+                  </intent>
+                  <intent>
+                      <action android:name="android.intent.action.SENDTO"/>
+                      <data android:scheme="smsto"/>
+                  </intent>
+                  <intent>
+                      <action android:name="android.intent.action.MAIN"/>
+                      <category android:name="android.intent.category.APP_MESSAGING"/>
+                  </intent>
+                  <intent>
+                      <action android:name="android.intent.action.MAIN"/>
+                      <category android:name="android.intent.category.APP_CONTACTS"/>
+                  </intent>
+                  <intent>
+                      <action android:name="android.intent.action.MAIN"/>
+                      <category android:name="android.intent.category.APP_CALENDAR"/>
+                  </intent>
+                  <intent>
+                      <action android:name="android.intent.action.MAIN"/>
+                      <category android:name="android.intent.category.APP_BROWSER"/>
+                  </intent>
+                  <intent>
+                      <action android:name="android.media.action.STILL_IMAGE_CAMERA"/>
+                  </intent>
+                  <intent>
+                      <action android:name="android.media.action.IMAGE_CAPTURE"/>
+                  </intent>
+                  <intent>
+                      <action android:name="android.media.action.VIDEO_CAPTURE"/>
+                  </intent>
+                  <intent>
+                      <action android:name="android.intent.action.VIEW"/>
+                      <data android:scheme="geo"/>
+                  </intent>
+                  <intent>
+                      <action android:name="android.intent.action.VIEW"/>
+                      <data android:mimeType="image/*"/>
                   </intent>
               </queries>
 
@@ -1811,12 +1853,25 @@ jobs:
                       }
 
                       val apps = packageManager.queryIntentActivities(intent, 0)
-                      val matched = apps.firstOrNull { app ->
-                          val label = app.loadLabel(packageManager)
-                              .toString().lowercase()
-                          app.activityInfo.packageName != packageName &&
-                              names.any { label.contains(it.lowercase()) }
-                      }
+                      val aliases = names.map { it.lowercase(Locale("id", "ID")).trim() }
+                      val matched = apps
+                          .filter { app ->
+                              app.activityInfo.packageName != packageName &&
+                                  aliases.any { alias ->
+                                      app.loadLabel(packageManager).toString()
+                                          .lowercase(Locale("id", "ID")).contains(alias)
+                                  }
+                          }
+                          .sortedBy { app ->
+                              val label = app.loadLabel(packageManager).toString()
+                                  .lowercase(Locale("id", "ID")).trim()
+                              when {
+                                  aliases.any { label == it } -> 0
+                                  aliases.any { label.startsWith(it) } -> 1
+                                  else -> 2
+                              }
+                          }
+                          .firstOrNull()
 
                       if (matched != null) {
                           val launch = packageManager.getLaunchIntentForPackage(
