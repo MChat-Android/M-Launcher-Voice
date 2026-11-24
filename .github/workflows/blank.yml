@@ -84,8 +84,8 @@ jobs:
                   applicationId = "com.m.launchervoice"
                   minSdk = 23
                   targetSdk = 35
-                  versionCode = 22
-                  versionName = "2.20"
+                  versionCode = 23
+                  versionName = "2.30"
               }
 
               signingConfigs {
@@ -127,6 +127,7 @@ jobs:
               implementation("androidx.compose.material3:material3")
 
               implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
+              implementation("com.google.android.gms:play-services-auth:21.3.0")
               implementation("com.google.firebase:firebase-auth")
               implementation("com.google.firebase:firebase-firestore")
           }
@@ -200,6 +201,13 @@ jobs:
           import androidx.activity.ComponentActivity
           import androidx.activity.compose.setContent
           import androidx.activity.result.contract.ActivityResultContracts
+          import com.google.android.gms.auth.api.signin.GoogleSignIn
+          import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+          import com.google.android.gms.common.api.ApiException
+          import com.google.firebase.auth.FirebaseAuth
+          import com.google.firebase.auth.GoogleAuthProvider
+          import com.google.firebase.firestore.FieldValue
+          import com.google.firebase.firestore.FirebaseFirestore
           import androidx.compose.foundation.Image
           import androidx.compose.foundation.background
           import androidx.compose.foundation.clickable
@@ -234,6 +242,73 @@ jobs:
           class MainActivity : ComponentActivity() {
 
               private var message by mutableStateOf("Widget mikrofon siap diaktifkan")
+              private var googleAccountName by mutableStateOf("")
+              private var googleAccountEmail by mutableStateOf("")
+              private var vipMembershipStatus by mutableStateOf("BELUM AKTIF")
+
+              private val googleSignInLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                  if (result.resultCode == RESULT_OK) {
+                      try {
+                          val account = GoogleSignIn.getSignedInAccountFromIntent(result.data).getResult(ApiException::class.java)
+                          val token = account.idToken
+                          if (token.isNullOrBlank()) {
+                              message = "Token Google tidak tersedia. Periksa konfigurasi OAuth Firebase."
+                          } else {
+                              FirebaseAuth.getInstance().signInWithCredential(GoogleAuthProvider.getCredential(token, null))
+                                  .addOnSuccessListener { authResult ->
+                                      val user = authResult.user
+                                      if (user == null) {
+                                          message = "Login Google gagal membaca akun."
+                                      } else {
+                                          googleAccountName = user.displayName ?: account.displayName ?: "Pengguna M Asisten"
+                                          googleAccountEmail = user.email ?: account.email.orEmpty()
+                                          val data = hashMapOf<String, Any>(
+                                              "uid" to user.uid, "email" to googleAccountEmail,
+                                              "displayName" to googleAccountName, "provider" to "google",
+                                              "membershipStatus" to "FREE",
+                                              "lastLoginAt" to FieldValue.serverTimestamp(),
+                                              "updatedAt" to FieldValue.serverTimestamp()
+                                          )
+                                          FirebaseFirestore.getInstance().collection("vip_members").document(user.uid)
+                                              .set(data, com.google.firebase.firestore.SetOptions.merge())
+                                              .addOnSuccessListener {
+                                                  message = "Akun Google berhasil terhubung."
+                                                  loadVipMembership(user.uid)
+                                              }
+                                              .addOnFailureListener { err -> message = "Sinkronisasi VIP gagal: " + err.localizedMessage }
+                                      }
+                                  }
+                                  .addOnFailureListener { err -> message = "Login Firebase gagal: " + err.localizedMessage }
+                          }
+                      } catch (err: ApiException) {
+                          message = "Login Google gagal (kode " + err.statusCode + ")."
+                      } catch (err: Exception) {
+                          message = "Gagal memproses akun Google: " + err.localizedMessage
+                      }
+                  } else {
+                      message = "Login Google dibatalkan."
+                  }
+              }
+
+              private fun startGoogleSignIn() {
+                  val id = resources.getIdentifier("default_web_client_id", "string", packageName)
+                  if (id == 0) {
+                      message = "OAuth Google belum dikonfigurasi di Firebase."
+                      return
+                  }
+                  val options = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                      .requestEmail().requestIdToken(getString(id)).build()
+                  googleSignInLauncher.launch(GoogleSignIn.getClient(this, options).signInIntent)
+              }
+
+              private fun loadVipMembership(uid: String) {
+                  FirebaseFirestore.getInstance().collection("vip_members").document(uid).get()
+                      .addOnSuccessListener { snap ->
+                          val status = snap.getString("membershipStatus") ?: "FREE"
+                          vipMembershipStatus = if (status == "ACTIVE") "VIP+ AKTIF" else "BELUM AKTIF"
+                      }
+                      .addOnFailureListener { vipMembershipStatus = "STATUS BELUM TERSINKRON" }
+              }
 
               private val permissionLauncher =
                   registerForActivityResult(
@@ -256,6 +331,12 @@ jobs:
               override fun onCreate(savedInstanceState: Bundle?) {
                   super.onCreate(savedInstanceState)
 
+                  FirebaseAuth.getInstance().currentUser?.let { user ->
+                      googleAccountName = user.displayName ?: "Pengguna M Asisten"
+                      googleAccountEmail = user.email.orEmpty()
+                      loadVipMembership(user.uid)
+                  }
+
                   setContent {
                       MaterialTheme(
                           colorScheme = darkColorScheme(
@@ -269,7 +350,11 @@ jobs:
                       ) {
                           MLauncherHome(
                               message = message,
-                              onActivate = { beginSetup() }
+                              onActivate = { beginSetup() },
+                              googleAccountName = googleAccountName,
+                              googleAccountEmail = googleAccountEmail,
+                              vipMembershipStatus = vipMembershipStatus,
+                              onGoogleSignIn = { startGoogleSignIn() }
                           )
                       }
                   }
@@ -334,7 +419,11 @@ jobs:
           @Composable
           private fun MLauncherHome(
               message: String,
-              onActivate: () -> Unit
+              onActivate: () -> Unit,
+              googleAccountName: String,
+              googleAccountEmail: String,
+              vipMembershipStatus: String,
+              onGoogleSignIn: () -> Unit
           ) {
               var showVipPlus by remember { mutableStateOf(false) }
               var selectedVipPlan by remember { mutableStateOf("VIP+ Bulanan") }
@@ -640,11 +729,20 @@ jobs:
                                           Column {
                                               Text("STATUS KEANGGOTAAN", color = Muted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                                               Spacer(Modifier.height(3.dp))
-                                              Text("Belum ada keanggotaan aktif", color = Color.White, fontSize = 11.sp)
+                                              Text(if (googleAccountEmail.isBlank()) "Hubungkan akun Google untuk memulai" else googleAccountName + " • " + vipMembershipStatus, color = Color.White, fontSize = 11.sp)
                                           }
                                           Spacer(Modifier.weight(1f))
-                                          Text("BELUM AKTIF", color = Cyan, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
+                                          Text(vipMembershipStatus, color = Cyan, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
                                       }
+                                  }
+                                  Spacer(Modifier.height(10.dp))
+                                  if (googleAccountEmail.isBlank()) {
+                                      Button(onClick = onGoogleSignIn, modifier = Modifier.fillMaxWidth(),
+                                          colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color(0xFF202124))) {
+                                          Text("G   LANJUTKAN DENGAN GOOGLE", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                      }
+                                  } else {
+                                      Text("Akun: " + googleAccountEmail, color = Muted, fontSize = 10.sp)
                                   }
                                   Spacer(Modifier.height(15.dp))
                                   Text("KEUNTUNGAN VIP+", color = Cyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
