@@ -79,8 +79,8 @@ jobs:
                   applicationId = "com.m.launchervoice"
                   minSdk = 23
                   targetSdk = 35
-                  versionCode = 19
-                  versionName = "2.17"
+                  versionCode = 20
+                  versionName = "2.18"
               }
 
               signingConfigs {
@@ -328,6 +328,22 @@ jobs:
               var showVipPlus by remember { mutableStateOf(false) }
               var selectedVipPlan by remember { mutableStateOf("VIP+ Bulanan") }
               val context = LocalContext.current
+              val accountPrefs = remember {
+                  context.getSharedPreferences("m_asisten_account", android.content.Context.MODE_PRIVATE)
+              }
+              var memberName by remember {
+                  mutableStateOf(accountPrefs.getString("display_name", "Pengguna M Asisten") ?: "Pengguna M Asisten")
+              }
+              val memberId = remember {
+                  accountPrefs.getString("member_id", null) ?: (
+                      "MA-" + java.util.UUID.randomUUID().toString()
+                          .replace("-", "").take(10).uppercase()
+                  ).also { generatedId ->
+                      accountPrefs.edit().putString("member_id", generatedId).apply()
+                  }
+              }
+              var showAccountEditor by remember { mutableStateOf(false) }
+              var editedMemberName by remember { mutableStateOf(memberName) }
               val Navy = Color(0xFF07111F)
               val Panel = Color(0xFF111F32)
               val Cyan = Color(0xFF35D6E8)
@@ -424,6 +440,39 @@ jobs:
                           }
                       }
 
+                      Spacer(Modifier.height(22.dp))
+                      Card(
+                          modifier = Modifier.fillMaxWidth(),
+                          shape = RoundedCornerShape(20.dp),
+                          colors = CardDefaults.cardColors(containerColor = Color(0xFF102238))
+                      ) {
+                          Column(modifier = Modifier.padding(17.dp)) {
+                              Row(verticalAlignment = Alignment.CenterVertically) {
+                                  Column(modifier = Modifier.weight(1f)) {
+                                      Text("AKUN M ASISTEN", color = Cyan, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                                      Spacer(Modifier.height(5.dp))
+                                      Text(memberName, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+                                      Text("ID Anggota: $memberId", color = Muted, fontSize = 11.sp)
+                                  }
+                                  Text("M", color = Cyan, fontSize = 25.sp, fontWeight = FontWeight.ExtraBold)
+                              }
+                              Spacer(Modifier.height(10.dp))
+                              Text("Profil tersimpan di perangkat ini. Sinkronisasi akun online belum tersedia.", color = Muted, fontSize = 10.sp, lineHeight = 15.sp)
+                              Spacer(Modifier.height(12.dp))
+                              OutlinedButton(
+                                  onClick = {
+                                      editedMemberName = memberName
+                                      showAccountEditor = true
+                                  },
+                                  modifier = Modifier.fillMaxWidth(),
+                                  colors = ButtonDefaults.outlinedButtonColors(contentColor = Cyan),
+                                  border = androidx.compose.foundation.BorderStroke(1.dp, Cyan)
+                              ) {
+                                  Text("UBAH NAMA PROFIL", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                              }
+                          }
+                      }
+
                       Spacer(Modifier.height(25.dp))
                       Row(
                           modifier = Modifier.fillMaxWidth(),
@@ -473,7 +522,7 @@ jobs:
                               )
                               Spacer(Modifier.height(10.dp))
                               Text(
-                                  "Aplikasi ini tidak menyediakan akun pengguna. Penggunaan layanan Android atau aplikasi lain yang dibuka melalui perintah suara mengikuti kebijakan privasi penyedia masing-masing.",
+                                  "Profil anggota saat ini disimpan hanya di perangkat. Akun online, pencadangan, dan sinkronisasi antarperangkat belum tersedia. Penggunaan layanan Android atau aplikasi lain yang dibuka melalui perintah suara mengikuti kebijakan privasi penyedia masing-masing.",
                                   color = Muted, fontSize = 10.sp, lineHeight = 16.sp
                               )
                           }
@@ -493,6 +542,55 @@ jobs:
                           fontSize = 10.sp
                       )
                       Spacer(Modifier.height(12.dp))
+                  }
+                  if (showAccountEditor) {
+                      AlertDialog(
+                          onDismissRequest = { showAccountEditor = false },
+                          containerColor = Panel,
+                          title = {
+                              Text("PROFIL ANGGOTA", color = Cyan, fontWeight = FontWeight.ExtraBold)
+                          },
+                          text = {
+                              Column {
+                                  Text("ID anggota perangkat", color = Muted, fontSize = 11.sp)
+                                  Spacer(Modifier.height(4.dp))
+                                  Text(memberId, color = Color.White, fontWeight = FontWeight.Bold)
+                                  Spacer(Modifier.height(14.dp))
+                                  OutlinedTextField(
+                                      value = editedMemberName,
+                                      onValueChange = { editedMemberName = it.take(32) },
+                                      label = { Text("Nama profil") },
+                                      singleLine = true,
+                                      colors = OutlinedTextFieldDefaults.colors(
+                                          focusedBorderColor = Cyan,
+                                          focusedLabelColor = Cyan,
+                                          cursorColor = Cyan
+                                      )
+                                  )
+                                  Spacer(Modifier.height(8.dp))
+                                  Text("Nama dan ID ini hanya tersimpan di perangkat ini, belum menjadi akun online.", color = Muted, fontSize = 10.sp, lineHeight = 15.sp)
+                              }
+                          },
+                          confirmButton = {
+                              TextButton(
+                                  onClick = {
+                                      val cleanName = editedMemberName.trim()
+                                      if (cleanName.isNotEmpty()) {
+                                          memberName = cleanName
+                                          accountPrefs.edit().putString("display_name", cleanName).apply()
+                                      }
+                                      showAccountEditor = false
+                                  }
+                              ) {
+                                  Text("SIMPAN", color = Cyan, fontWeight = FontWeight.Bold)
+                              }
+                          },
+                          dismissButton = {
+                              TextButton(onClick = { showAccountEditor = false }) {
+                                  Text("BATAL", color = Muted)
+                              }
+                          }
+                      )
                   }
                   if (showVipPlus) {
                       AlertDialog(
