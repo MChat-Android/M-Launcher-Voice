@@ -367,9 +367,6 @@ jobs:
                       .distinctBy { it.activityInfo.packageName }
                       .sortedBy { it.loadLabel(context.packageManager).toString().lowercase() }
               }
-              val homeFavoriteApps = launchableApps
-                  .filter { favoritePackages.contains(it.activityInfo.packageName) }
-                  .take(4)
               Box(
                   modifier = Modifier
                       .fillMaxSize()
@@ -458,83 +455,6 @@ jobs:
                               }
                               Spacer(Modifier.height(12.dp))
                               Text(message, color = if (message.contains("diaktifkan")) Cyan else Muted, fontSize = 12.sp, textAlign = TextAlign.Center)
-                          }
-                      }
-
-                      Spacer(Modifier.height(22.dp))
-                      Card(
-                          modifier = Modifier.fillMaxWidth(),
-                          shape = RoundedCornerShape(20.dp),
-                          colors = CardDefaults.cardColors(containerColor = Panel)
-                      ) {
-                          Column(modifier = Modifier.padding(16.dp)) {
-                              Row(verticalAlignment = Alignment.CenterVertically) {
-                                  Text("AKSES CEPAT", color = Cyan, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold)
-                                  Spacer(Modifier.weight(1f))
-                                  Text("FAVORIT", color = Muted, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
-                              }
-                              Spacer(Modifier.height(12.dp))
-                              if (homeFavoriteApps.isEmpty()) {
-                                  Text(
-                                      "Tambahkan aplikasi ke Favorit dari App Drawer agar tampil di sini.",
-                                      color = Muted, fontSize = 11.sp, lineHeight = 16.sp
-                                  )
-                                  Spacer(Modifier.height(8.dp))
-                                  TextButton(onClick = { showAppDrawer = true }) {
-                                      Text("PILIH APLIKASI FAVORIT  ›", color = Cyan, fontWeight = FontWeight.Bold)
-                                  }
-                              } else {
-                                  Row(
-                                      modifier = Modifier.fillMaxWidth(),
-                                      horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                  ) {
-                                      homeFavoriteApps.forEach { app ->
-                                          val appName = app.loadLabel(context.packageManager).toString()
-                                          val appIcon = remember(app.activityInfo.packageName) {
-                                              val drawable = app.loadIcon(context.packageManager)
-                                              val bitmap = Bitmap.createBitmap(96, 96, Bitmap.Config.ARGB_8888)
-                                              val canvas = Canvas(bitmap)
-                                              drawable.setBounds(0, 0, canvas.width, canvas.height)
-                                              drawable.draw(canvas)
-                                              bitmap.asImageBitmap()
-                                          }
-                                          Column(
-                                              modifier = Modifier.weight(1f)
-                                                  .clip(RoundedCornerShape(14.dp))
-                                                  .clickable {
-                                                      context.packageManager.getLaunchIntentForPackage(app.activityInfo.packageName)?.let {
-                                                          context.startActivity(it)
-                                                      }
-                                                  }
-                                                  .padding(vertical = 9.dp, horizontal = 3.dp),
-                                              horizontalAlignment = Alignment.CenterHorizontally
-                                          ) {
-                                              Image(
-                                                  bitmap = appIcon,
-                                                  contentDescription = "$appName icon",
-                                                  modifier = Modifier.size(42.dp),
-                                                  contentScale = ContentScale.Fit
-                                              )
-                                              Spacer(Modifier.height(6.dp))
-                                              Text(
-                                                  appName,
-                                                  color = Color.White,
-                                                  fontSize = 9.sp,
-                                                  textAlign = TextAlign.Center,
-                                                  maxLines = 1
-                                              )
-                                          }
-                                      }
-                                      repeat(4 - homeFavoriteApps.size) { Spacer(Modifier.weight(1f)) }
-                                  }
-                                  Spacer(Modifier.height(5.dp))
-                                  TextButton(
-                                      onClick = { showAppDrawer = true },
-                                      modifier = Modifier.align(Alignment.End)
-                                  ) {
-                                      Text("KELOLA FAVORIT  ›", color = Cyan, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                                  }
-                              }
                           }
                       }
 
