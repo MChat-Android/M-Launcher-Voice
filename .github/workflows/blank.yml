@@ -79,8 +79,8 @@ jobs:
                   applicationId = "com.m.launchervoice"
                   minSdk = 23
                   targetSdk = 35
-                  versionCode = 11
-                  versionName = "2.9"
+                  versionCode = 12
+                  versionName = "2.10"
               }
 
               signingConfigs {
@@ -324,6 +324,7 @@ jobs:
               var showVipPlus by remember { mutableStateOf(false) }
               var showAppDrawer by remember { mutableStateOf(false) }
               var showThemePicker by remember { mutableStateOf(false) }
+              var previewTheme by remember { mutableStateOf<String?>(null) }
               var selectedTheme by remember { mutableStateOf("Midnight Cyan") }
               var appSearchQuery by remember { mutableStateOf("") }
               var selectedVipPayment by remember { mutableStateOf("QRIS") }
@@ -696,10 +697,14 @@ jobs:
                                   themeOptions.forEach { option ->
                                       val standard = option.first == "Midnight Cyan"
                                       val chosen = selectedTheme == option.first
-                                      Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).then(if (standard) Modifier.clickable {
-                                          selectedTheme = option.first
-                                          context.getSharedPreferences("m_launcher_preferences", android.content.Context.MODE_PRIVATE).edit().putString("selected_theme", option.first).apply()
-                                      } else Modifier), colors = CardDefaults.cardColors(containerColor = if (chosen) Color(0xFF164354) else Color(0xFF172B42)), border = if (chosen) androidx.compose.foundation.BorderStroke(1.dp, Cyan) else null, shape = RoundedCornerShape(13.dp)) {
+                                      Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable {
+                                          if (standard) {
+                                              selectedTheme = option.first
+                                              context.getSharedPreferences("m_launcher_preferences", android.content.Context.MODE_PRIVATE).edit().putString("selected_theme", option.first).apply()
+                                          } else {
+                                              previewTheme = option.first
+                                          }
+                                      }, colors = CardDefaults.cardColors(containerColor = if (chosen) Color(0xFF164354) else Color(0xFF172B42)), border = if (chosen) androidx.compose.foundation.BorderStroke(1.dp, Cyan) else null, shape = RoundedCornerShape(13.dp)) {
                                           Row(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                                               Box(modifier = Modifier.size(38.dp).clip(RoundedCornerShape(10.dp)).background(Brush.horizontalGradient(option.third)))
                                               Spacer(Modifier.width(11.dp))
@@ -716,6 +721,77 @@ jobs:
                               }
                           },
                           confirmButton = { TextButton(onClick = { showThemePicker = false }) { Text("SELESAI", color = Cyan, fontWeight = FontWeight.Bold) } }
+                      )
+                  }
+                  if (previewTheme != null) {
+                      val previewName = previewTheme ?: "Royal Gold"
+                      val previewColors = when (previewName) {
+                          "Royal Gold" -> listOf(Color(0xFF100D0A), Color(0xFF2A1E12), Color(0xFFD6A84F), Color(0xFFFFE8B0))
+                          "Galaxy Nebula" -> listOf(Color(0xFF100B20), Color(0xFF24133F), Color(0xFFB58CFF), Color(0xFFE5D5FF))
+                          "Cyber Neon" -> listOf(Color(0xFF050F20), Color(0xFF102B4A), Color(0xFF27D9FF), Color(0xFFB5F3FF))
+                          "Aurora Luxe" -> listOf(Color(0xFF071A1B), Color(0xFF103A38), Color(0xFF57E0B0), Color(0xFFC7FFE9))
+                          else -> listOf(Color(0xFF080A0E), Color(0xFF1B2029), Color(0xFFC7D0DC), Color(0xFFF2F5FA))
+                      }
+                      AlertDialog(
+                          onDismissRequest = { previewTheme = null },
+                          containerColor = previewColors[0],
+                          title = { Text(previewName.uppercase(), color = previewColors[2], fontWeight = FontWeight.ExtraBold) },
+                          text = {
+                              Column(modifier = Modifier.fillMaxWidth().heightIn(max = 430.dp).verticalScroll(rememberScrollState())) {
+                                  Text("PRATINJAU TEMA VIP+", color = previewColors[2], fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp)
+                                  Spacer(Modifier.height(10.dp))
+                                  Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = previewColors[1])) {
+                                      Column(modifier = Modifier.fillMaxWidth().background(Brush.verticalGradient(listOf(previewColors[0], previewColors[1], previewColors[0]))).padding(16.dp)) {
+                                          Row(verticalAlignment = Alignment.CenterVertically) {
+                                              Box(modifier = Modifier.size(34.dp).clip(RoundedCornerShape(10.dp)).background(previewColors[2]), contentAlignment = Alignment.Center) {
+                                                  Text("M", color = previewColors[0], fontWeight = FontWeight.Black, fontSize = 20.sp)
+                                              }
+                                              Spacer(Modifier.width(9.dp))
+                                              Column {
+                                                  Text("M LAUNCHER", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold)
+                                                  Text("SMART • VOICE • ASSISTANT", color = previewColors[2], fontSize = 7.sp, fontWeight = FontWeight.Bold)
+                                              }
+                                              Spacer(Modifier.weight(1f))
+                                              Text("VIP+", color = previewColors[2], fontSize = 10.sp, fontWeight = FontWeight.Black)
+                                          }
+                                          Spacer(Modifier.height(18.dp))
+                                          Box(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(17.dp)).background(Brush.horizontalGradient(listOf(previewColors[1], previewColors[2].copy(alpha = 0.38f)))).padding(vertical = 20.dp), contentAlignment = Alignment.Center) {
+                                              Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                  Text("✦", color = previewColors[3], fontSize = 34.sp, fontWeight = FontWeight.Black)
+                                                  Text(previewName.uppercase(), color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold)
+                                                  Text("YOUR PHONE • YOUR STYLE", color = previewColors[3], fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                                              }
+                                          }
+                                          Spacer(Modifier.height(14.dp))
+                                          Text("APLIKASI FAVORIT", color = previewColors[2], fontSize = 9.sp, fontWeight = FontWeight.ExtraBold)
+                                          Spacer(Modifier.height(8.dp))
+                                          Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                              listOf("☎", "▶", "✉", "◎").forEach { symbol ->
+                                                  Box(modifier = Modifier.weight(1f).height(48.dp).clip(RoundedCornerShape(12.dp)).background(previewColors[0]).then(Modifier), contentAlignment = Alignment.Center) {
+                                                      Text(symbol, color = previewColors[3], fontSize = 19.sp, fontWeight = FontWeight.Bold)
+                                                  }
+                                              }
+                                          }
+                                          Spacer(Modifier.height(12.dp))
+                                          Box(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(13.dp)).background(previewColors[0]).padding(12.dp)) {
+                                              Row(verticalAlignment = Alignment.CenterVertically) {
+                                                  Text("☷  Semua aplikasi", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                                  Spacer(Modifier.weight(1f))
+                                                  Text("⌕", color = previewColors[2], fontSize = 18.sp)
+                                              }
+                                          }
+                                      }
+                                  }
+                                  Spacer(Modifier.height(10.dp))
+                                  Text("Setiap tema VIP+ memiliki kombinasi warna, aksen, dan nuansa visual tersendiri. Ini pratinjau desain; tema belum dapat diterapkan sebelum VIP+ aktif.", color = Color(0xFFB8C5D6), fontSize = 10.sp, lineHeight = 16.sp)
+                              }
+                          },
+                          confirmButton = {
+                              TextButton(onClick = { previewTheme = null }) { Text("TUTUP", color = previewColors[2], fontWeight = FontWeight.Bold) }
+                          },
+                          dismissButton = {
+                              TextButton(onClick = { previewTheme = null; showThemePicker = false; showVipPlus = true }) { Text("INFO VIP+", color = previewColors[2], fontWeight = FontWeight.Bold) }
+                          }
                       )
                   }
                   if (showVipPlus) {
