@@ -785,7 +785,12 @@ jobs:
                                   Spacer(Modifier.height(14.dp))
                                   Text("PILIHAN PAKET", color = Cyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                   Spacer(Modifier.height(7.dp))
-                                  listOf("VIP+ Mingguan (7 hari)", "VIP+ Bulanan (30 hari)", "VIP+ Tahunan (365 hari)", "VIP+ Lifetime").forEach { plan ->
+                                  listOf(
+                                      "VIP+ Mingguan (7 hari)" to "Rp15.000",
+                                      "VIP+ Bulanan (30 hari)" to "Rp50.000",
+                                      "VIP+ Tahunan (365 hari)" to "Rp200.000",
+                                      "VIP+ Lifetime" to "Rp500.000"
+                                  ).forEach { (plan, price) ->
                                       Card(
                                           modifier = Modifier
                                               .fillMaxWidth()
@@ -803,7 +808,7 @@ jobs:
                                           ) {
                                               Text(plan, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                               Spacer(Modifier.weight(1f))
-                                              Text(if (selectedVipPlan == plan) "DIPILIH" else "Harga menyusul", color = if (selectedVipPlan == plan) Cyan else Muted, fontSize = 10.sp)
+                                              Text(price, color = Cyan, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold)
                                           }
                                       }
                                   }
@@ -823,7 +828,7 @@ jobs:
                                   }
                                   Spacer(Modifier.height(8.dp))
                                   Text(
-                                      "Daftar di atas adalah rancangan manfaat VIP+ yang akan dirilis bertahap. Paket Mingguan berlaku 7 hari, Bulanan 30 hari, Tahunan 365 hari, dan Lifetime berlaku selamanya. VIP+ belum dapat dibeli atau diaktifkan. Harga dan pembayaran akan diumumkan setelah sistem pembayaran serta verifikasi server siap. Belum ada transaksi atau pemotongan saldo.",
+                                      "Daftar di atas adalah rancangan manfaat VIP+ yang akan dirilis bertahap. Paket Mingguan berlaku 7 hari, Bulanan 30 hari, Tahunan 365 hari, dan Lifetime berlaku selamanya. VIP+ belum dapat dibeli atau diaktifkan. Harga paket yang ditampilkan adalah harga rencana: Mingguan Rp15.000, Bulanan Rp50.000, Tahunan Rp200.000, dan Lifetime Rp500.000. Pembelian dan aktivasi tetap menunggu sistem pembayaran serta verifikasi server siap. Belum ada transaksi atau pemotongan saldo.",
                                       color = Muted,
                                       fontSize = 10.sp,
                                       lineHeight = 16.sp
