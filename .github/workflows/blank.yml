@@ -289,6 +289,7 @@ jobs:
               private var googleAccountName by mutableStateOf("")
               private var googleAccountEmail by mutableStateOf("")
               private var vipMembershipStatus by mutableStateOf("BELUM AKTIF")
+              private var isAdminAccount by mutableStateOf(false)
 
               private val googleSignInLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
                   if (result.resultCode == RESULT_OK) {
@@ -304,6 +305,7 @@ jobs:
                                       if (user == null) {
                                           message = "Login Google gagal membaca akun."
                                       } else {
+                                          refreshAdminClaim(user)
                                           googleAccountName = user.displayName ?: account.displayName ?: "Pengguna M Asisten"
                                           googleAccountEmail = user.email ?: account.email.orEmpty()
                                           val memberRef = FirebaseFirestore.getInstance().collection("vip_members").document(user.uid)
@@ -359,6 +361,11 @@ jobs:
                   googleSignInLauncher.launch(GoogleSignIn.getClient(this, options).signInIntent)
               }
 
+              private fun refreshAdminClaim(user: com.google.firebase.auth.FirebaseUser) {
+                  user.getIdToken(true).addOnSuccessListener { token -> isAdminAccount = token.claims["admin"] == true }
+                      .addOnFailureListener { isAdminAccount = false }
+              }
+
               private fun loadVipMembership(uid: String) {
                   FirebaseFirestore.getInstance().collection("vip_members").document(uid).get()
                       .addOnSuccessListener { snap ->
@@ -400,6 +407,7 @@ jobs:
                   FirebaseAuth.getInstance().currentUser?.let { user ->
                       googleAccountName = user.displayName ?: "Pengguna M Asisten"
                       googleAccountEmail = user.email.orEmpty()
+                      refreshAdminClaim(user)
                       loadVipMembership(user.uid)
                   }
 
@@ -420,6 +428,7 @@ jobs:
                               googleAccountName = googleAccountName,
                               googleAccountEmail = googleAccountEmail,
                               vipMembershipStatus = vipMembershipStatus,
+                              isAdminAccount = isAdminAccount,
                               onGoogleSignIn = { startGoogleSignIn() }
                           )
                       }
@@ -523,6 +532,7 @@ jobs:
               googleAccountName: String,
               googleAccountEmail: String,
               vipMembershipStatus: String,
+              isAdminAccount: Boolean,
               onGoogleSignIn: () -> Unit
           ) {
               var showVipPlus by remember { mutableStateOf(false) }
@@ -533,6 +543,9 @@ jobs:
               var paymentSubmitMessage by remember { mutableStateOf("") }
               var paymentHistory by remember { mutableStateOf(listOf<String>()) }
               var historyLoading by remember { mutableStateOf(false) }
+              var adminItems by remember { mutableStateOf(listOf<Pair<String, String>>()) }
+              var adminBusy by remember { mutableStateOf(false) }
+              var adminMessage by remember { mutableStateOf("") }
               val context = LocalContext.current
               val accountPrefs = remember {
                   context.getSharedPreferences("m_asisten_account", android.content.Context.MODE_PRIVATE)
@@ -854,6 +867,91 @@ jobs:
                                       .heightIn(max = maxHeight * 0.72f)
                                       .verticalScroll(rememberScrollState())
                               ) {
+                                  if (isAdminAccount) {
+                                      Card(Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                                          colors = CardDefaults.cardColors(containerColor = Color(0xFF0D2932)),
+                                          border = androidx.compose.foundation.BorderStroke(1.dp, Cyan)) {
+                                          Column(Modifier.padding(12.dp)) {
+                                              Text("PANEL ADMIN VIP+", color = Cyan, fontWeight = FontWeight.ExtraBold)
+                                              Text("Cocokkan pembayaran dengan mutasi SeaBank secara manual sebelum verifikasi.", color = Muted, fontSize = 10.sp)
+                                              OutlinedButton(onClick = {
+                                                  if (!adminBusy) {
+                                                      adminBusy = true
+                                                      FirebaseFirestore.getInstance().collection("vip_payment_requests")
+                                                          .whereEqualTo("status", "PENDING_REVIEW").get()
+                                                          .addOnSuccessListener { snap ->
+                                                              adminItems = snap.documents.map { d ->
+                                                                  val plan = d.getString("plan") ?: "Paket?"
+                                                                  val payer = d.getString("payerName") ?: "?"
+                                                                  val email = d.getString("email") ?: "?"
+                                                                  val amount = d.getLong("amountIdr") ?: 0L
+                                                                  d.id to "$plan • Rp$amount\n$payer • $email"
+                                                              }
+                                                              adminBusy = false
+                                                              adminMessage = if (adminItems.isEmpty()) "Tidak ada permintaan tertunda." else "Periksa mutasi bank sebelum memproses."
+                                                          }.addOnFailureListener { e -> adminBusy = false; adminMessage = "Gagal memuat: ${e.localizedMessage}" }
+                                                  }
+                                              }, enabled = !adminBusy, modifier = Modifier.fillMaxWidth()) {
+                                                  Text(if (adminBusy) "MEMUAT..." else "MUAT PERMINTAAN VIP+")
+                                              }
+                                              Text(adminMessage, color = Muted, fontSize = 10.sp)
+                                              adminItems.forEach { (id, info) ->
+                                                  Card(Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                                      colors = CardDefaults.cardColors(containerColor = Panel)) {
+                                                      Column(Modifier.padding(8.dp)) {
+                                                          Text(info, color = Color.White, fontSize = 10.sp)
+                                                          Text("ID: $id", color = Muted, fontSize = 8.sp)
+                                                          Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                              Button(onClick = {
+                                                                  val operator = FirebaseAuth.getInstance().currentUser
+                                                                  if (operator == null || adminBusy) { adminMessage = "Sesi admin tidak tersedia."; return@Button }
+                                                                  adminBusy = true
+                                                                  val db = FirebaseFirestore.getInstance()
+                                                                  val reqRef = db.collection("vip_payment_requests").document(id)
+                                                                  db.runTransaction { tx ->
+                                                                      val req = tx.get(reqRef)
+                                                                      check(req.exists() && req.getString("status") == "PENDING_REVIEW") { "Permintaan sudah diproses." }
+                                                                      val uid = req.getString("uid") ?: error("UID pelanggan tidak valid.")
+                                                                      val plan = req.getString("plan") ?: error("Paket tidak valid.")
+                                                                      val amount = req.getLong("amountIdr") ?: 0L
+                                                                      val days = when (plan) {
+                                                                          "VIP+ Mingguan (7 hari)" -> if (amount == 15000L) 7 else 0
+                                                                          "VIP+ Bulanan (30 hari)" -> if (amount == 50000L) 30 else 0
+                                                                          "VIP+ Tahunan (365 hari)" -> if (amount == 200000L) 365 else 0
+                                                                          "VIP+ Lifetime" -> if (amount == 500000L) -1 else 0
+                                                                          else -> 0
+                                                                      }
+                                                                      check(days != 0) { "Paket dan nominal tidak cocok." }
+                                                                      val memberRef = db.collection("vip_members").document(uid)
+                                                                      check(tx.get(memberRef).exists()) { "Profil pelanggan belum ada." }
+                                                                      val now = com.google.firebase.Timestamp.now()
+                                                                      val expires = if (days < 0) null else com.google.firebase.Timestamp(java.util.Date(now.toDate().time + days.toLong() * 86400000L))
+                                                                      tx.update(memberRef, mapOf("membershipStatus" to "ACTIVE", "membershipPlan" to plan, "startedAt" to now, "expiresAt" to expires, "verifiedPaymentRequestId" to id, "updatedAt" to com.google.firebase.firestore.FieldValue.serverTimestamp()))
+                                                                      tx.update(reqRef, mapOf("status" to "VERIFIED", "adminUid" to operator.uid, "reviewedAt" to com.google.firebase.firestore.FieldValue.serverTimestamp(), "adminNote" to "Pembayaran diverifikasi oleh admin."))
+                                                                      null
+                                                                  }.addOnSuccessListener { adminBusy = false; adminItems = adminItems.filterNot { it.first == id }; adminMessage = "VIP+ berhasil diaktifkan." }
+                                                                      .addOnFailureListener { e -> adminBusy = false; adminMessage = "Gagal verifikasi: ${e.localizedMessage}" }
+                                                              }, enabled = !adminBusy, modifier = Modifier.weight(1f)) { Text("VERIFIKASI", fontSize = 9.sp) }
+                                                              OutlinedButton(onClick = {
+                                                                  val operator = FirebaseAuth.getInstance().currentUser
+                                                                  if (operator == null || adminBusy) { adminMessage = "Sesi admin tidak tersedia."; return@OutlinedButton }
+                                                                  adminBusy = true
+                                                                  val ref = FirebaseFirestore.getInstance().collection("vip_payment_requests").document(id)
+                                                                  FirebaseFirestore.getInstance().runTransaction { tx ->
+                                                                      val req = tx.get(ref)
+                                                                      check(req.exists() && req.getString("status") == "PENDING_REVIEW") { "Permintaan sudah diproses." }
+                                                                      tx.update(ref, mapOf("status" to "REJECTED", "adminUid" to operator.uid, "reviewedAt" to com.google.firebase.firestore.FieldValue.serverTimestamp(), "adminNote" to "Pembayaran ditolak oleh admin."))
+                                                                      null
+                                                                  }.addOnSuccessListener { adminBusy = false; adminItems = adminItems.filterNot { it.first == id }; adminMessage = "Permintaan ditolak." }
+                                                                      .addOnFailureListener { e -> adminBusy = false; adminMessage = "Gagal menolak: ${e.localizedMessage}" }
+                                                              }, enabled = !adminBusy, modifier = Modifier.weight(1f)) { Text("TOLAK", fontSize = 9.sp) }
+                                                          }
+                                                      }
+                                                  }
+                                              }
+                                          }
+                                      }
+                                  }
                                   Text(
                                       "Pengalaman lebih nyaman, dengan dukungan untuk pengembangan M Asisten.",
                                       color = Color.White,
