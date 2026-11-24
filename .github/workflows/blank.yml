@@ -279,8 +279,8 @@ jobs:
                                                           }
                                                           .addOnFailureListener { err -> message = "Pembaruan akun gagal: " + err.localizedMessage }
                                                   } else {
-                                                      profileData["membershipStatus"] = "FREE"
-                                                      profileData["createdAt"] = FieldValue.serverTimestamp()
+                                                      // Status keanggotaan hanya boleh ditetapkan oleh server.
+                                                      // Dokumen awal hanya berisi profil Google yang diizinkan Firestore Rules.
                                                       memberRef.set(profileData)
                                                           .addOnSuccessListener {
                                                               message = "Akun Google berhasil terhubung."
