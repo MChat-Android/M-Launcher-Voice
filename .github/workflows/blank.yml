@@ -79,8 +79,8 @@ jobs:
                   applicationId = "com.m.launchervoice"
                   minSdk = 23
                   targetSdk = 35
-                  versionCode = 5
-                  versionName = "2.3"
+                  versionCode = 6
+                  versionName = "2.4"
               }
 
               signingConfigs {
@@ -189,6 +189,7 @@ jobs:
           import androidx.activity.result.contract.ActivityResultContracts
           import androidx.compose.foundation.Image
           import androidx.compose.foundation.background
+          import androidx.compose.foundation.clickable
           import androidx.compose.foundation.layout.*
           import androidx.compose.foundation.rememberScrollState
           import androidx.compose.foundation.shape.CircleShape
@@ -319,6 +320,8 @@ jobs:
               message: String,
               onActivate: () -> Unit
           ) {
+              var showVipPlus by remember { mutableStateOf(false) }
+              var selectedVipPayment by remember { mutableStateOf("QRIS") }
               Box(
                   modifier = Modifier
                       .fillMaxSize()
@@ -354,6 +357,7 @@ jobs:
                           Box(
                               modifier = Modifier
                                   .clip(CircleShape)
+                                  .clickable { showVipPlus = true }
                                   .background(Color(0xFF123344))
                                   .padding(horizontal = 11.dp, vertical = 7.dp)
                           ) {
@@ -480,6 +484,102 @@ jobs:
                           fontSize = 10.sp
                       )
                       Spacer(Modifier.height(12.dp))
+                  }
+                  if (showVipPlus) {
+                      AlertDialog(
+                          onDismissRequest = { showVipPlus = false },
+                          containerColor = Panel,
+                          title = {
+                              Text(
+                                  "VIP+ MEMBERSHIP",
+                                  color = Cyan,
+                                  fontWeight = FontWeight.ExtraBold
+                              )
+                          },
+                          text = {
+                              Column(
+                                  modifier = Modifier
+                                      .heightIn(max = 440.dp)
+                                      .verticalScroll(rememberScrollState())
+                              ) {
+                                  Text(
+                                      "Buka pengalaman khusus M Launcher Voice.",
+                                      color = Color.White,
+                                      fontSize = 14.sp,
+                                      fontWeight = FontWeight.SemiBold
+                                  )
+                                  Spacer(Modifier.height(12.dp))
+                                  Text("FITUR KHUSUS VIP+", color = Cyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                  Spacer(Modifier.height(7.dp))
+                                  Text(
+                                      "• Perintah suara dan kemampuan asisten eksklusif\n• Pilihan tampilan premium\n• Personalisasi pengalaman launcher\n• Fitur tambahan yang akan hadir bertahap",
+                                      color = Color.White,
+                                      fontSize = 12.sp,
+                                      lineHeight = 19.sp
+                                  )
+                                  Spacer(Modifier.height(16.dp))
+                                  Text("PILIHAN KEANGGOTAAN", color = Cyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                  Spacer(Modifier.height(7.dp))
+                                  listOf("VIP+ Bulanan", "VIP+ Tahunan", "VIP+ Lifetime").forEach { plan ->
+                                      Card(
+                                          modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                          colors = CardDefaults.cardColors(containerColor = Color(0xFF172B42)),
+                                          shape = RoundedCornerShape(12.dp)
+                                      ) {
+                                          Row(
+                                              modifier = Modifier.fillMaxWidth().padding(12.dp),
+                                              verticalAlignment = Alignment.CenterVertically
+                                          ) {
+                                              Text(plan, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                              Spacer(Modifier.weight(1f))
+                                              Text("Harga menyusul", color = Muted, fontSize = 10.sp)
+                                          }
+                                      }
+                                  }
+                                  Spacer(Modifier.height(12.dp))
+                                  Text("METODE PEMBAYARAN", color = Cyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                  Spacer(Modifier.height(7.dp))
+                                  Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                      listOf("QRIS", "Transfer Bank").forEach { method ->
+                                          if (selectedVipPayment == method) {
+                                              Button(
+                                                  onClick = { selectedVipPayment = method },
+                                                  contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                                                  colors = ButtonDefaults.buttonColors(containerColor = Cyan, contentColor = Navy)
+                                              ) {
+                                                  Text(method, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                              }
+                                          } else {
+                                              OutlinedButton(
+                                                  onClick = { selectedVipPayment = method },
+                                                  contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                                              ) {
+                                                  Text(method, fontSize = 11.sp, color = Color.White)
+                                              }
+                                          }
+                                      }
+                                  }
+                                  Spacer(Modifier.height(10.dp))
+                                  Text(
+                                      "Pilihan saat ini: $selectedVipPayment",
+                                      color = Color.White,
+                                      fontSize = 11.sp
+                                  )
+                                  Spacer(Modifier.height(8.dp))
+                                  Text(
+                                      "Pembayaran belum diaktifkan. Sistem akan dihubungkan ke server dan penyedia pembayaran setelah konfigurasi akun founder selesai. Belum ada transaksi atau pemotongan saldo.",
+                                      color = Muted,
+                                      fontSize = 10.sp,
+                                      lineHeight = 16.sp
+                                  )
+                              }
+                          },
+                          confirmButton = {
+                              TextButton(onClick = { showVipPlus = false }) {
+                                  Text("TUTUP", color = Cyan, fontWeight = FontWeight.Bold)
+                              }
+                          }
+                      )
                   }
               }
           }
