@@ -1495,6 +1495,7 @@ jobs:
                                   AudioManager.ADJUST_MUTE,
                                   AudioManager.FLAG_SHOW_UI
                               )
+                          else -> showMessage("Ucapkan naikkan volume, turunkan volume, atau matikan suara")
                       }
                       return
                   }
@@ -1712,7 +1713,6 @@ jobs:
                           startActivity(
                               Intent(action).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                           )
-                              else -> showMessage("Ucapkan naikkan volume, turunkan volume, atau matikan suara")
                        return
                       } catch (_: Exception) {
                           // Try the next supported settings screen.
