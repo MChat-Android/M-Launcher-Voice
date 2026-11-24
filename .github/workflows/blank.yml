@@ -1,5 +1,5 @@
 
-name: Build M Asisten
+name: Build M Launcher Voice
 
 on:
   workflow_dispatch:
@@ -157,7 +157,7 @@ jobs:
 
               <application
                   android:theme="@android:style/Theme.Material.Light.NoActionBar"
-                  android:label="M Asisten"
+                  android:label="M Launcher Voice"
                   android:icon="@mipmap/ic_launcher"
                   android:roundIcon="@mipmap/ic_launcher"
                   android:allowBackup="false">
@@ -260,7 +260,7 @@ jobs:
                                       if (user == null) {
                                           message = "Login Google gagal membaca akun."
                                       } else {
-                                          googleAccountName = user.displayName ?: account.displayName ?: "Pengguna M Asisten"
+                                          googleAccountName = user.displayName ?: account.displayName ?: "Pengguna M Launcher Voice"
                                           googleAccountEmail = user.email ?: account.email.orEmpty()
                                           val memberRef = FirebaseFirestore.getInstance().collection("vip_members").document(user.uid)
                                           memberRef.get()
@@ -346,7 +346,7 @@ jobs:
                   super.onCreate(savedInstanceState)
 
                   FirebaseAuth.getInstance().currentUser?.let { user ->
-                      googleAccountName = user.displayName ?: "Pengguna M Asisten"
+                      googleAccountName = user.displayName ?: "Pengguna M Launcher Voice"
                       googleAccountEmail = user.email.orEmpty()
                       loadVipMembership(user.uid)
                   }
@@ -404,7 +404,7 @@ jobs:
                   }
 
                   if (!Settings.canDrawOverlays(this)) {
-                      message = "Izinkan M Asisten tampil di atas aplikasi lain"
+                      message = "Izinkan M Launcher Voice tampil di atas aplikasi lain"
                       val intent = Intent(
                           Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                           Uri.parse("package:$packageName")
@@ -446,7 +446,7 @@ jobs:
                   context.getSharedPreferences("m_asisten_account", android.content.Context.MODE_PRIVATE)
               }
               var memberName by remember {
-                  mutableStateOf(accountPrefs.getString("display_name", "Pengguna M Asisten") ?: "Pengguna M Asisten")
+                  mutableStateOf(accountPrefs.getString("display_name", "Pengguna M Launcher Voice") ?: "Pengguna M Launcher Voice")
               }
               val memberId = remember {
                   accountPrefs.getString("member_id", null) ?: (
@@ -482,13 +482,13 @@ jobs:
                       ) {
                           Image(
                               painter = painterResource(id = R.mipmap.ic_launcher),
-                              contentDescription = "Ikon M Asisten",
+                              contentDescription = "Ikon M Launcher Voice",
                               modifier = Modifier.size(52.dp).clip(RoundedCornerShape(14.dp)),
                               contentScale = ContentScale.Crop
                           )
                           Spacer(Modifier.width(13.dp))
                           Column {
-                              Text("M ASISTEN", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
+                              Text("M LAUNCHER VOICE", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
                               Text("SMART  •  VOICE  •  ASSISTANT", color = Cyan, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp)
                               Text("MADE IN INDONESIA", color = Muted, fontSize = 8.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.1.sp)
                           }
@@ -508,7 +508,7 @@ jobs:
 
                       Image(
                           painter = painterResource(id = R.drawable.launcher_home),
-                          contentDescription = "Ikon resmi M Asisten",
+                          contentDescription = "Ikon resmi M Launcher Voice",
                           modifier = Modifier.size(176.dp).clip(RoundedCornerShape(38.dp)),
                           contentScale = ContentScale.Fit
                       )
@@ -563,7 +563,7 @@ jobs:
                           Column(modifier = Modifier.padding(17.dp)) {
                               Row(verticalAlignment = Alignment.CenterVertically) {
                                   Column(modifier = Modifier.weight(1f)) {
-                                      Text("AKUN M ASISTEN", color = Cyan, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                                      Text("AKUN M LAUNCHER VOICE", color = Cyan, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                                       Spacer(Modifier.height(5.dp))
                                       Text(memberName, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold)
                                       Text("ID Anggota: $memberId", color = Muted, fontSize = 11.sp)
@@ -607,7 +607,7 @@ jobs:
                               Text("Privasi Anda penting", color = Cyan, fontSize = 15.sp, fontWeight = FontWeight.Bold)
                               Spacer(Modifier.height(8.dp))
                               Text(
-                                  "M Asisten menggunakan izin hanya untuk menjalankan fitur yang Anda pilih.",
+                                  "M Launcher Voice menggunakan izin hanya untuk menjalankan fitur yang Anda pilih.",
                                   color = Color.White, fontSize = 12.sp, lineHeight = 19.sp
                               )
                               Spacer(Modifier.height(12.dp))
@@ -644,7 +644,7 @@ jobs:
 
                       Spacer(Modifier.height(25.dp))
                       Text(
-                          "M Asisten",
+                          "M Launcher Voice",
                           color = Cyan,
                           fontSize = 12.sp,
                           fontWeight = FontWeight.Bold
@@ -724,7 +724,7 @@ jobs:
                                       .verticalScroll(rememberScrollState())
                               ) {
                                   Text(
-                                      "Pengalaman lebih nyaman, dengan dukungan untuk pengembangan M Asisten.",
+                                      "Pengalaman lebih nyaman, dengan dukungan untuk pengembangan M Launcher Voice.",
                                       color = Color.White,
                                       fontSize = 14.sp,
                                       fontWeight = FontWeight.SemiBold,
@@ -764,7 +764,7 @@ jobs:
                                   listOf(
                                       "Pengalaman bebas iklan saat sistem iklan resmi diluncurkan",
                                       "Akses ke fitur eksklusif VIP+ yang dirilis bertahap",
-                                      "Dukungan untuk pengembangan M Asisten"
+                                      "Dukungan untuk pengembangan M Launcher Voice"
                                   ).forEach { benefit ->
                                       Row(
                                           modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
@@ -902,7 +902,7 @@ jobs:
                   if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                       val channel = NotificationChannel(
                           channelId,
-                          "M Asisten",
+                          "M Launcher Voice",
                           NotificationManager.IMPORTANCE_LOW
                       )
                       val manager =
@@ -911,7 +911,7 @@ jobs:
                   }
 
                   val notification = Notification.Builder(this, channelId)
-                      .setContentTitle("M Asisten aktif")
+                      .setContentTitle("M Launcher Voice aktif")
                       .setContentText("Widget mikrofon sedang berjalan")
                       .setSmallIcon(android.R.drawable.ic_btn_speak_now)
                       .setOngoing(true)
@@ -1527,7 +1527,7 @@ jobs:
                   if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
                       !Settings.System.canWrite(this)
                   ) {
-                      showMessage("Izinkan M Asisten mengubah kecerahan layar")
+                      showMessage("Izinkan M Launcher Voice mengubah kecerahan layar")
                       val permissionIntent = Intent(
                           Settings.ACTION_MANAGE_WRITE_SETTINGS,
                           Uri.parse("package:$packageName")
@@ -1683,7 +1683,7 @@ jobs:
           packages = [c.get("client_info", {}).get("android_client_info", {}).get("package_name") for c in config.get("client", [])]
           if "com.m.launchervoice" not in packages:
               raise SystemExit("Firebase config tidak memiliki package com.m.launchervoice")
-          print("Firebase config valid untuk M Asisten.")
+          print("Firebase config valid untuk M Launcher Voice.")
           PY
           else
             echo "Secret Firebase belum dipasang; build tetap berjalan tanpa konfigurasi Firebase."
