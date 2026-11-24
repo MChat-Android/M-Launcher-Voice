@@ -1617,8 +1617,7 @@ jobs:
               }
 
               private fun openCameraApp() {
-                  val cameraIntent = Intent(Intent.ACTION_MAIN).apply {
-                      addCategory(Intent.CATEGORY_APP_CAMERA)
+                  val cameraIntent = Intent("android.media.action.STILL_IMAGE_CAMERA").apply {
                       addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                   }
 
