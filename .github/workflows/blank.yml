@@ -1544,9 +1544,7 @@ jobs:
                   }
 
                   if (text.contains("kamera") || text.contains("camera") || text == "foto" || text.contains("photo")) {
-                      if (!openAppByName("kamera", "camera")) {
-                          launchIntent(Intent("android.media.action.IMAGE_CAPTURE"))
-                      }
+                      openCameraApp()
                       return
                   }
 
@@ -1618,6 +1616,27 @@ jobs:
                   launchIntent(videoIntent)
               }
 
+              private fun openCameraApp() {
+                  val cameraIntent = Intent(Intent.ACTION_MAIN).apply {
+                      addCategory(Intent.CATEGORY_APP_CAMERA)
+                      addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                  }
+
+                  try {
+                      // Minta Android membuka aplikasi kamera bawaan secara langsung.
+                      startActivity(cameraIntent)
+                  } catch (_: Exception) {
+                      try {
+                          startActivity(
+                              Intent("android.media.action.IMAGE_CAPTURE")
+                                  .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                          )
+                      } catch (_: Exception) {
+                          showMessage("Aplikasi kamera tidak dapat dibuka")
+                      }
+                  }
+              }
+
               private fun openMessagingApp() {
                   val mainIntent = Intent(Intent.ACTION_MAIN).apply {
                       addCategory(Intent.CATEGORY_APP_MESSAGING)
@@ -1625,13 +1644,17 @@ jobs:
                   }
 
                   try {
-                      launchIntent(mainIntent)
+                      // Pembukaan aplikasi SMS bawaan tidak melewati pemeriksaan VIP+.
+                      startActivity(mainIntent)
                   } catch (_: Exception) {
-                      val fallbackIntent = Intent(
-                          Intent.ACTION_SENDTO,
-                          Uri.parse("smsto:")
-                      ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                      launchIntent(fallbackIntent)
+                      try {
+                          startActivity(
+                              Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:"))
+                                  .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                          )
+                      } catch (_: Exception) {
+                          showMessage("Aplikasi pesan/SMS tidak dapat dibuka")
+                      }
                   }
               }
 
