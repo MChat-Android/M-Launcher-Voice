@@ -990,6 +990,7 @@ jobs:
               private var speechRecognizer: SpeechRecognizer? = null
               private var textToSpeech: TextToSpeech? = null
               private var textToSpeechReady = false
+              private var vipGreetingPending = false
               private val handler = Handler(Looper.getMainLooper())
               private var listening = false
               private var awaitingWakeWord = true
@@ -1054,6 +1055,7 @@ jobs:
                   try { textToSpeech?.shutdown() } catch (_: Exception) {}
                   textToSpeech = null
                   textToSpeechReady = false
+                  vipGreetingPending = false
                   handler.removeCallbacksAndMessages(null)
 
                   try {
@@ -1332,7 +1334,6 @@ jobs:
                               textToSpeechReady =
                                   languageResult != TextToSpeech.LANG_MISSING_DATA &&
                                   languageResult != TextToSpeech.LANG_NOT_SUPPORTED
-                              // Brighter, upbeat delivery; prefer a male Indonesian voice if available.
                               engine.setPitch(1.08f)
                               engine.setSpeechRate(1.06f)
                               val indonesianVoices = engine.voices?.filter {
@@ -1343,6 +1344,25 @@ jobs:
                                   it.name.contains("man", ignoreCase = true)
                               }
                               if (maleVoice != null) engine.voice = maleVoice
+                              if (vipGreetingPending && vipMode) {
+                                  handler.post {
+                                      if (vipGreetingPending && vipMode) {
+                                          vipGreetingPending = false
+                                          if (textToSpeechReady) {
+                                              speakTextThenListen("Hallo M, silakan ucapkan perintah.")
+                                          } else {
+                                              showMessage("Sapaan suara tidak tersedia. Silakan ucapkan perintah.")
+                                              startVoiceRecognition()
+                                          }
+                                      }
+                                  }
+                              }
+                          }
+                      } else if (vipGreetingPending && vipMode) {
+                          handler.post {
+                              vipGreetingPending = false
+                              showMessage("Sapaan suara tidak tersedia. Silakan ucapkan perintah.")
+                              startVoiceRecognition()
                           }
                       }
                   }
@@ -1373,6 +1393,12 @@ jobs:
               private fun speakAndListen() {
                   if (listening) return
                   awaitingWakeWord = false
+                  if (!textToSpeechReady || textToSpeech == null) {
+                      vipGreetingPending = true
+                      showMessage("Menyiapkan sapaan suara...")
+                      return
+                  }
+                  vipGreetingPending = false
                   speakTextThenListen("Hallo M, silakan ucapkan perintah.")
               }
 
@@ -1800,19 +1826,22 @@ jobs:
                   val cameraIntent = Intent("android.media.action.STILL_IMAGE_CAMERA").apply {
                       addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                   }
-
+                  val fallbackIntent = Intent("android.media.action.IMAGE_CAPTURE").apply {
+                      addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                  }
                   try {
-                      // Minta Android membuka aplikasi kamera bawaan secara langsung.
-                      startActivity(cameraIntent)
-                  } catch (_: Exception) {
-                      try {
-                          startActivity(
-                              Intent("android.media.action.IMAGE_CAPTURE")
-                                  .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                          )
-                      } catch (_: Exception) {
-                          showMessage("Aplikasi kamera tidak dapat dibuka")
+                      // Lewat pemeriksaan paket agar Standar hanya membuka kamera bawaan.
+                      val resolved = packageManager.resolveActivity(
+                          cameraIntent,
+                          PackageManager.MATCH_DEFAULT_ONLY
+                      )
+                      if (resolved != null) {
+                          launchIntent(cameraIntent)
+                      } else {
+                          launchIntent(fallbackIntent)
                       }
+                  } catch (_: Exception) {
+                      showMessage("Aplikasi kamera tidak dapat dibuka")
                   }
               }
 
@@ -1821,19 +1850,23 @@ jobs:
                       addCategory(Intent.CATEGORY_APP_MESSAGING)
                       addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                   }
+                  val fallbackIntent = Intent(
+                      Intent.ACTION_SENDTO,
+                      Uri.parse("smsto:")
+                  ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
                   try {
-                      // Pembukaan aplikasi SMS bawaan tidak melewati pemeriksaan VIP+.
-                      startActivity(mainIntent)
-                  } catch (_: Exception) {
-                      try {
-                          startActivity(
-                              Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:"))
-                                  .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                          )
-                      } catch (_: Exception) {
-                          showMessage("Aplikasi pesan/SMS tidak dapat dibuka")
+                      val resolved = packageManager.resolveActivity(
+                          mainIntent,
+                          PackageManager.MATCH_DEFAULT_ONLY
+                      )
+                      if (resolved != null) {
+                          launchIntent(mainIntent)
+                      } else {
+                          launchIntent(fallbackIntent)
                       }
+                  } catch (_: Exception) {
+                      showMessage("Aplikasi pesan/SMS tidak dapat dibuka")
                   }
               }
 
