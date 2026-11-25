@@ -2081,6 +2081,37 @@ jobs:
                       return
                   }
 
+                  // Menjawab tanggal, hari, dan waktu lokal dari jam perangkat.
+                  val asksDate = text.contains("tanggal berapa") ||
+                      text.contains("tanggal hari ini") ||
+                      text.contains("hari apa") ||
+                      text == "tanggal sekarang" ||
+                      text == "tanggal"
+                  val asksTime = text.contains("jam berapa") ||
+                      text.contains("pukul berapa") ||
+                      text == "waktu sekarang" ||
+                      text == "jam sekarang"
+                  if ((asksDate || asksTime) &&
+                      (text.contains("sekarang") || text.contains("hari ini") ||
+                       text.contains("berapa") || text == "tanggal" ||
+                       text == "jam sekarang" || text == "waktu sekarang")
+                  ) {
+                      val now = java.util.Date()
+                      val dateFormat = java.text.SimpleDateFormat(
+                          "EEEE, d MMMM yyyy", Locale("id", "ID")
+                      )
+                      val timeFormat = java.text.SimpleDateFormat(
+                          "HH:mm", Locale("id", "ID")
+                      )
+                      val answer = when {
+                          asksDate && asksTime -> "Sekarang ${dateFormat.format(now)}, pukul ${timeFormat.format(now)}."
+                          asksDate -> "Hari ini ${dateFormat.format(now)}."
+                          else -> "Sekarang pukul ${timeFormat.format(now)}."
+                      }
+                      showMessage(answer)
+                      return
+                  }
+
                   // Informasi baterai perangkat, dibaca langsung dari status Android.
                   if (text.contains("baterai") || text.contains("battery")) {
                       try {
