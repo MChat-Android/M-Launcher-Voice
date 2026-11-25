@@ -2195,6 +2195,77 @@ jobs:
                       return
                   }
 
+                  // Pengingat suara memakai timer atau alarm bawaan Android.
+                  if (text.contains("ingatkan") ||
+                      text.contains("pengingat") ||
+                      text.contains("reminder")
+                  ) {
+                      val reminderDurationPattern = Regex(
+                          "(\\d+)\\s*(detik|det|seconds?|secs?|menit|mnt|minutes?|jam|hours?|hr)",
+                          RegexOption.IGNORE_CASE
+                      )
+                      var reminderSeconds = 0L
+                      reminderDurationPattern.findAll(text).forEach { match ->
+                          val amount = match.groupValues[1].toLongOrNull() ?: 0L
+                          val unit = match.groupValues[2].lowercase(Locale.ROOT)
+                          val multiplier = when {
+                              unit.startsWith("det") || unit.startsWith("sec") -> 1L
+                              unit.startsWith("men") || unit.startsWith("mnt") || unit.startsWith("min") -> 60L
+                              else -> 3600L
+                          }
+                          reminderSeconds += amount * multiplier
+                      }
+
+                      val reminderLabel = text
+                          .replace(Regex("\\b(ingatkan saya|ingatkan|pengingat|reminder|tolong|nanti|lagi|untuk|supaya|agar)\\b"), " ")
+                          .replace(reminderDurationPattern, " ")
+                          .replace(Regex("(?:jam|pukul)\\s*\\d{1,2}[:.]\\d{2}"), " ")
+                          .replace(Regex("\\s+"), " ")
+                          .trim()
+                          .ifBlank { "Pengingat dari M Asisten" }
+
+                      when {
+                          reminderSeconds in 1L..604800L -> {
+                              val reminderIntent = Intent(android.provider.AlarmClock.ACTION_SET_TIMER).apply {
+                                  putExtra(android.provider.AlarmClock.EXTRA_LENGTH, reminderSeconds.toInt())
+                                  putExtra(android.provider.AlarmClock.EXTRA_MESSAGE, reminderLabel)
+                                  putExtra(android.provider.AlarmClock.EXTRA_SKIP_UI, false)
+                              }
+                              launchIntent(reminderIntent)
+                              showMessage("Membuka timer pengingat: $reminderLabel. Mulai timer pada aplikasi Jam agar pengingat berjalan.")
+                          }
+
+                          reminderSeconds > 604800L -> {
+                              showMessage("Durasi pengingat maksimal tujuh hari.")
+                          }
+
+                          else -> {
+                              val reminderTime = Regex(
+                                  "(?:jam|pukul)\\s*(\\d{1,2})[:.](\\d{2})"
+                              ).find(text)
+                              if (reminderTime != null) {
+                                  val hour = reminderTime.groupValues[1].toIntOrNull()
+                                  val minute = reminderTime.groupValues[2].toIntOrNull()
+                                  if (hour != null && minute != null && hour in 0..23 && minute in 0..59) {
+                                      val reminderIntent = Intent(android.provider.AlarmClock.ACTION_SET_ALARM).apply {
+                                          putExtra(android.provider.AlarmClock.EXTRA_HOUR, hour)
+                                          putExtra(android.provider.AlarmClock.EXTRA_MINUTES, minute)
+                                          putExtra(android.provider.AlarmClock.EXTRA_MESSAGE, reminderLabel)
+                                          putExtra(android.provider.AlarmClock.EXTRA_SKIP_UI, false)
+                                      }
+                                      launchIntent(reminderIntent)
+                                      showMessage("Membuka alarm pengingat pukul %02d:%02d: %s. Simpan alarm pada aplikasi Jam.".format(hour, minute, reminderLabel))
+                                  } else {
+                                      showMessage("Waktu pengingat tidak valid. Gunakan format jam 07:30.")
+                                  }
+                              } else {
+                                  showMessage("Sebutkan waktunya, misalnya ingatkan saya 10 menit lagi untuk minum, atau ingatkan saya jam 07:30 untuk rapat.")
+                              }
+                          }
+                      }
+                      return
+                  }
+
                   // Timer dan hitung mundur memakai aplikasi Jam bawaan Android.
                   if (text.contains("timer") ||
                       text.contains("hitung mundur") ||
