@@ -1373,6 +1373,7 @@ jobs:
           import android.view.View
           import android.view.WindowManager
           import android.widget.LinearLayout
+          import android.widget.FrameLayout
           import android.widget.TextView
           import android.graphics.drawable.GradientDrawable
           import java.util.Locale
@@ -1392,7 +1393,7 @@ jobs:
               private var modeVerificationRequest = 0
               private var membershipListener: com.google.firebase.firestore.ListenerRegistration? = null
               private lateinit var windowManager: WindowManager
-              private lateinit var container: LinearLayout
+              private lateinit var container: FrameLayout
               private lateinit var micButton: TextView
               private var speechRecognizer: SpeechRecognizer? = null
               private var textToSpeech: TextToSpeech? = null
@@ -1581,34 +1582,48 @@ jobs:
 
                   windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
 
-                  // Widget mengambang hanya berisi satu tombol kontrol.
-                  container = LinearLayout(this).apply {
-                      orientation = LinearLayout.VERTICAL
-                      gravity = Gravity.CENTER
+                  // Widget mengambang tetap menjadi tombol mikrofon; mode VIP mendapat identitas visual premium.
+                  container = FrameLayout(this).apply {
                       setPadding(0, 0, 0, 0)
                       background = null
                   }
 
                   micButton = TextView(this).apply {
-                      text = "🎤"
+                      text = if (vipMode) "🎙" else "🎤"
                       textSize = 25f
                       typeface = Typeface.DEFAULT
                       gravity = Gravity.CENTER
                       textAlignment = View.TEXT_ALIGNMENT_CENTER
                       includeFontPadding = false
                       setTextColor(Color.WHITE)
-                      background = roundedBackground(
-                          if (vipMode) 0xFF1769D2.toInt() else 0xFF087F9C.toInt(),
-                          100
-                      )
+                      background = if (vipMode) vipWidgetBackground()
+                          else roundedBackground(0xFF087F9C.toInt(), 100)
+                      elevation = if (vipMode) 14f else 8f
                       setPadding(0, 0, 0, 0)
                       setOnClickListener { handleWidgetTap() }
                   }
 
                   container.addView(
                       micButton,
-                      LinearLayout.LayoutParams(62, 62)
+                      FrameLayout.LayoutParams(62, 62, Gravity.CENTER)
                   )
+
+                  if (vipMode) {
+                      val vipCrown = TextView(this).apply {
+                          text = "♛"
+                          textSize = 13f
+                          typeface = Typeface.DEFAULT_BOLD
+                          gravity = Gravity.CENTER
+                          includeFontPadding = false
+                          setTextColor(0xFF182235.toInt())
+                          background = roundedBackground(0xFFFFD76A.toInt(), 100)
+                          elevation = 18f
+                      }
+                      container.addView(
+                          vipCrown,
+                          FrameLayout.LayoutParams(24, 24, Gravity.TOP or Gravity.END)
+                      )
+                  }
 
                   layoutParams = WindowManager.LayoutParams(
                       WindowManager.LayoutParams.WRAP_CONTENT,
@@ -1637,6 +1652,16 @@ jobs:
                   return GradientDrawable().apply {
                       setColor(color)
                       cornerRadius = radius.toFloat()
+                  }
+              }
+
+              private fun vipWidgetBackground(): GradientDrawable {
+                  return GradientDrawable(
+                      GradientDrawable.Orientation.TL_BR,
+                      intArrayOf(0xFF07111F.toInt(), 0xFF123B5A.toInt())
+                  ).apply {
+                      shape = GradientDrawable.OVAL
+                      setStroke(3, 0xFF35D6E8.toInt())
                   }
               }
 
