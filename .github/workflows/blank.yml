@@ -2112,6 +2112,36 @@ jobs:
                       return
                   }
 
+                  // Informasi ruang penyimpanan internal perangkat.
+                  if (text.contains("penyimpanan") ||
+                      text.contains("storage internal") ||
+                      text.contains("ruang internal")
+                  ) {
+                      try {
+                          val storage = android.os.StatFs(
+                              android.os.Environment.getDataDirectory().path
+                          )
+                          val freeBytes = storage.availableBytes
+                          val totalBytes = storage.totalBytes
+                          val usedBytes = (totalBytes - freeBytes).coerceAtLeast(0L)
+                          val divisor = 1024.0 * 1024.0 * 1024.0
+                          val numberFormat = java.text.DecimalFormat(
+                              "0.0",
+                              java.text.DecimalFormatSymbols(Locale("id", "ID"))
+                          )
+                          val freeGb = numberFormat.format(freeBytes / divisor)
+                          val totalGb = numberFormat.format(totalBytes / divisor)
+                          val usedGb = numberFormat.format(usedBytes / divisor)
+                          showMessage(
+                              "Penyimpanan internal: tersisa $freeGb GB dari $totalGb GB. " +
+                                  "Yang sudah digunakan sekitar $usedGb GB."
+                          )
+                      } catch (_: Exception) {
+                          showMessage("Informasi penyimpanan internal tidak dapat dibaca.")
+                      }
+                      return
+                  }
+
                   // Informasi baterai perangkat, dibaca langsung dari status Android.
                   if (text.contains("baterai") || text.contains("battery")) {
                       try {
