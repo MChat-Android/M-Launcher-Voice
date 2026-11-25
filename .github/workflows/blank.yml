@@ -3825,6 +3825,18 @@ jobs:
                       return
                   }
 
+                  // Membuka halaman pengaturan penyimpanan internal Android.
+                  if (
+                      text == "buka pengaturan penyimpanan" ||
+                      text == "pengaturan penyimpanan hp" ||
+                      text == "kelola penyimpanan perangkat" ||
+                      text == "buka storage hp" ||
+                      text == "atur ruang penyimpanan"
+                  ) {
+                      openSettings(Settings.ACTION_INTERNAL_STORAGE_SETTINGS)
+                      return
+                  }
+
                   if (text.contains("pengaturan") || text.contains("setelan") || text.contains("settings")) {
                       openSettings(Settings.ACTION_SETTINGS)
                       return
