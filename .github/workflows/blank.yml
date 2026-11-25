@@ -20,6 +20,11 @@ jobs:
       - name: Validate VIP admin tool
         run: node --check admin-tools/vip-admin.js
 
+      - name: Audit admin dependencies
+        run: |
+          npm ci --prefix admin-tools
+          npm audit --prefix admin-tools --audit-level=high
+
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
