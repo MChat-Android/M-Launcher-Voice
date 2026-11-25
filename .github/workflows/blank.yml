@@ -2945,6 +2945,32 @@ jobs:
                       return
                   }
 
+                  if (text.contains("status rotasi layar") ||
+                      text.contains("cek rotasi layar") ||
+                      text.contains("rotasi otomatis") ||
+                      text.contains("putar otomatis") ||
+                      text.contains("auto rotate") ||
+                      text.contains("layar berputar otomatis")
+                  ) {
+                      try {
+                          val rotationEnabled = android.provider.Settings.System.getInt(
+                              contentResolver,
+                              android.provider.Settings.System.ACCELEROMETER_ROTATION,
+                              0
+                          ) == 1
+                          showMessage(
+                              if (rotationEnabled) {
+                                  "Rotasi otomatis layar sedang aktif."
+                              } else {
+                                  "Rotasi otomatis layar sedang nonaktif. Layar terkunci pada orientasi saat ini."
+                              }
+                          )
+                      } catch (_: Exception) {
+                          showMessage("Maaf, status rotasi otomatis layar tidak dapat dibaca.")
+                      }
+                      return
+                  }
+
                   if (text.contains("status lokasi") ||
                       text.contains("cek lokasi") ||
                       text.contains("status gps") ||
