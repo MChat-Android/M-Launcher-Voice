@@ -23,7 +23,7 @@ service cloud.firestore {
     function validVipPlan(plan, amount) {
       return (plan == 'VIP+ Mingguan (7 hari)' && amount == 15000)
         || (plan == 'VIP+ Bulanan (30 hari)' && amount == 50000)
-        || (plan == 'VIP+ Tahunan (365 hari)' && amount == 200000)
+        || (plan == 'VIP+ Tahunan (365 hari)' && amount == 250000)
         || (plan == 'VIP+ Lifetime' && amount == 500000);
     }
 
