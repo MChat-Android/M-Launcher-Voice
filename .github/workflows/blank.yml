@@ -2534,6 +2534,37 @@ jobs:
                       return
                   }
 
+                  // Jumlah boot/restart yang dicatat Android sejak reset pabrik.
+                  if (
+                      text.contains("berapa kali hp restart") ||
+                      text.contains("berapa kali ponsel restart") ||
+                      text.contains("jumlah restart perangkat") ||
+                      text.contains("jumlah restart hp") ||
+                      text.contains("berapa kali hp dinyalakan") ||
+                      text.contains("boot count") ||
+                      text.contains("jumlah boot perangkat")
+                  ) {
+                      try {
+                          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                              val bootCount = Settings.Global.getInt(
+                                  contentResolver,
+                                  Settings.Global.BOOT_COUNT,
+                                  -1
+                              )
+                              if (bootCount >= 0) {
+                                  showMessage("Android mencatat perangkat sudah melakukan boot atau restart sebanyak $bootCount kali sejak reset pabrik.")
+                              } else {
+                                  showMessage("Informasi jumlah restart tidak tersedia pada perangkat ini.")
+                              }
+                          } else {
+                              showMessage("Jumlah restart memerlukan Android 7.0 atau lebih baru.")
+                          }
+                      } catch (_: Exception) {
+                          showMessage("Maaf, jumlah restart perangkat tidak dapat dibaca pada perangkat ini.")
+                      }
+                      return
+                  }
+
                   // Lama perangkat menyala sejak boot/restart terakhir.
                   if (
                       text.contains("lama hp menyala") ||
