@@ -2945,6 +2945,36 @@ jobs:
                       return
                   }
 
+                  if (text.contains("status getaran") ||
+                      text.contains("cek getaran") ||
+                      text.contains("mode getar") ||
+                      text.contains("getaran perangkat") ||
+                      text.contains("vibrate mode") ||
+                      text.contains("status vibrasi")
+                  ) {
+                      try {
+                          val audioManager = getSystemService(AUDIO_SERVICE) as android.media.AudioManager
+                          val ringerMode = audioManager.ringerMode
+                          val vibrateSetting = android.provider.Settings.System.getInt(
+                              contentResolver,
+                              android.provider.Settings.System.VIBRATE_WHEN_RINGING,
+                              0
+                          )
+                          val description = when (ringerMode) {
+                              android.media.AudioManager.RINGER_MODE_SILENT -> "mode senyap aktif"
+                              android.media.AudioManager.RINGER_MODE_VIBRATE -> "mode getar aktif"
+                              android.media.AudioManager.RINGER_MODE_NORMAL ->
+                                  if (vibrateSetting == 1) "mode suara aktif dan getar saat dering diaktifkan"
+                                  else "mode suara aktif dan getar saat dering nonaktif"
+                              else -> "mode dering tidak diketahui"
+                          }
+                          showMessage("Status suara dan getaran: $description.")
+                      } catch (_: Exception) {
+                          showMessage("Maaf, status suara dan getaran tidak dapat dibaca.")
+                      }
+                      return
+                  }
+
                   if (text.contains("status kecerahan layar") ||
                       text.contains("cek kecerahan layar") ||
                       text.contains("berapa persen kecerahan") ||
