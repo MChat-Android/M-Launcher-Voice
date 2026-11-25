@@ -2002,7 +2002,6 @@ jobs:
                   return !lower.startsWith("perintah:") &&
                       lower != "mendengarkan..." &&
                       lower != "memproses suara..." &&
-                      lower == lower && // Pesan status sementara tidak dibacakan.
                       !lower.startsWith("memeriksa akses vip+") &&
                       !lower.startsWith("menyiapkan sapaan suara") &&
                       !lower.startsWith("aplikasi vip+ sedang diperiksa")
