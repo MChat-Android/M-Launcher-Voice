@@ -3746,6 +3746,18 @@ jobs:
                       return
                   }
 
+                  // Membuka halaman pengaturan tampilan layar Android.
+                  if (
+                      text == "buka pengaturan tampilan" ||
+                      text == "pengaturan tampilan hp" ||
+                      text == "buka pengaturan layar" ||
+                      text == "atur tampilan hp" ||
+                      text == "pengaturan display hp"
+                  ) {
+                      openSettings(Settings.ACTION_DISPLAY_SETTINGS)
+                      return
+                  }
+
                   if (text.contains("pengaturan") || text.contains("setelan") || text.contains("settings")) {
                       openSettings(Settings.ACTION_SETTINGS)
                       return
