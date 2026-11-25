@@ -546,6 +546,7 @@ jobs:
               var adminItems by remember { mutableStateOf(listOf<Pair<String, String>>()) }
               var adminBusy by remember { mutableStateOf(false) }
               var adminMessage by remember { mutableStateOf("") }
+              var simulationMessage by remember { mutableStateOf("") }
               val context = LocalContext.current
               val accountPrefs = remember {
                   context.getSharedPreferences("m_asisten_account", android.content.Context.MODE_PRIVATE)
@@ -874,6 +875,50 @@ jobs:
                                           Column(Modifier.padding(12.dp)) {
                                               Text("PANEL ADMIN VIP+", color = Cyan, fontWeight = FontWeight.ExtraBold)
                                               Text("Cocokkan pembayaran dengan mutasi SeaBank secara manual sebelum verifikasi.", color = Muted, fontSize = 10.sp)
+                                              Card(
+                                                  Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 8.dp),
+                                                  colors = CardDefaults.cardColors(containerColor = Color(0xFF172B42)),
+                                                  border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF547087))
+                                              ) {
+                                                  Column(Modifier.padding(10.dp)) {
+                                                      Text("SIMULASI MASA AKTIF VIP+", color = Cyan, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                                                      Text("Uji hitungan 4 paket secara lokal. Tidak membuat transaksi, tidak mengubah Firestore, dan tidak mengaktifkan akun.", color = Muted, fontSize = 10.sp, lineHeight = 15.sp)
+                                                      OutlinedButton(
+                                                          onClick = {
+                                                              val nowMillis = System.currentTimeMillis()
+                                                              val formatter = java.text.SimpleDateFormat("dd MMM yyyy, HH:mm", java.util.Locale("id", "ID"))
+                                                              val packages = listOf(
+                                                                  "VIP+ Mingguan • 7 hari" to 7,
+                                                                  "VIP+ Bulanan • 30 hari" to 30,
+                                                                  "VIP+ Tahunan • 365 hari" to 365,
+                                                                  "VIP+ Lifetime" to -1
+                                                              )
+                                                              simulationMessage = buildString {
+                                                                  append("Waktu mulai simulasi: ")
+                                                                  append(formatter.format(java.util.Date(nowMillis)))
+                                                                  packages.forEach { (label, days) ->
+                                                                      append("\\n")
+                                                                      append(label)
+                                                                      append(": ")
+                                                                      if (days < 0) {
+                                                                          append("Tidak kedaluwarsa")
+                                                                      } else {
+                                                                          val expiryMillis = nowMillis + days.toLong() * 86400000L
+                                                                          append(formatter.format(java.util.Date(expiryMillis)))
+                                                                      }
+                                                                  }
+                                                                  append("\\n\\nSIMULASI SELESAI — data akun dan transaksi tidak diubah.")
+                                                              }
+                                                          },
+                                                          modifier = Modifier.fillMaxWidth()
+                                                      ) {
+                                                          Text("UJI HITUNG SEMUA PAKET", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                                      }
+                                                      if (simulationMessage.isNotBlank()) {
+                                                          Text(simulationMessage, color = Color.White, fontSize = 10.sp, lineHeight = 16.sp)
+                                                      }
+                                                  }
+                                              }
                                               OutlinedButton(onClick = {
                                                   if (!adminBusy) {
                                                       adminBusy = true
