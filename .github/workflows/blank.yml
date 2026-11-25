@@ -429,10 +429,25 @@ jobs:
                               googleAccountEmail = googleAccountEmail,
                               vipMembershipStatus = vipMembershipStatus,
                               isAdminAccount = isAdminAccount,
-                              onGoogleSignIn = { startGoogleSignIn() }
+                              onGoogleSignIn = { startGoogleSignIn() },
+                              onLogout = { signOutAccount() }
                           )
                       }
                   }
+              }
+
+              private fun signOutAccount() {
+                  // Keluar dari Firebase dan sesi Google agar pengguna bisa memilih akun kedua.
+                  FirebaseAuth.getInstance().signOut()
+                  val webClientId = resources.getIdentifier("default_web_client_id", "string", packageName)
+                  val optionsBuilder = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN).requestEmail()
+                  if (webClientId != 0) optionsBuilder.requestIdToken(getString(webClientId))
+                  GoogleSignIn.getClient(this, optionsBuilder.build()).signOut()
+                  googleAccountName = ""
+                  googleAccountEmail = ""
+                  vipMembershipStatus = "BELUM AKTIF"
+                  isAdminAccount = false
+                  message = "Akun berhasil keluar. Silakan masuk dengan akun lain."
               }
 
               private fun beginSetup() {
@@ -533,7 +548,8 @@ jobs:
               googleAccountEmail: String,
               vipMembershipStatus: String,
               isAdminAccount: Boolean,
-              onGoogleSignIn: () -> Unit
+              onGoogleSignIn: () -> Unit,
+              onLogout: () -> Unit
           ) {
               var showVipPlus by remember { mutableStateOf(false) }
               var selectedVipPlan by remember { mutableStateOf("VIP+ Bulanan (30 hari)") }
@@ -1035,6 +1051,14 @@ jobs:
                                       }
                                   } else {
                                       Text("Akun: " + googleAccountEmail, color = Muted, fontSize = 10.sp)
+                                      Spacer(Modifier.height(8.dp))
+                                      OutlinedButton(
+                                          onClick = onLogout,
+                                          modifier = Modifier.fillMaxWidth(),
+                                          colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFFF8A8A))
+                                      ) {
+                                          Text("KELUAR AKUN", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                      }
                                   }
                                   Spacer(Modifier.height(15.dp))
                                   Text("KEUNTUNGAN VIP+", color = Cyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
