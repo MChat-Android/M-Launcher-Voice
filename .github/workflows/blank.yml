@@ -1571,16 +1571,18 @@ jobs:
                   }
 
                   micButton = TextView(this).apply {
-                      text = "🎙️"
-                      textSize = 27f
-                      typeface = Typeface.DEFAULT_BOLD
+                      text = "🎤"
+                      textSize = 25f
+                      typeface = Typeface.DEFAULT
                       gravity = Gravity.CENTER
+                      textAlignment = View.TEXT_ALIGNMENT_CENTER
+                      includeFontPadding = false
                       setTextColor(Color.WHITE)
                       background = roundedBackground(
                           if (vipMode) 0xFF1769D2.toInt() else 0xFF087F9C.toInt(),
                           100
                       )
-                      setPadding(15, 10, 15, 10)
+                      setPadding(0, 0, 0, 0)
                       setOnClickListener { handleWidgetTap() }
                   }
 
