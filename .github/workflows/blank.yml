@@ -2945,6 +2945,28 @@ jobs:
                       return
                   }
 
+                  if (text.contains("refresh rate") ||
+                      text.contains("refresh layar") ||
+                      text.contains("berapa hz layar") ||
+                      text.contains("kecepatan refresh layar") ||
+                      text.contains("frekuensi layar") ||
+                      text.contains("hz layar")
+                  ) {
+                      try {
+                          val windowManager = getSystemService(WINDOW_SERVICE) as android.view.WindowManager
+                          val refreshRate = windowManager.defaultDisplay.refreshRate
+                          if (refreshRate > 0f) {
+                              val refreshText = String.format(java.util.Locale("id", "ID"), "%.1f", refreshRate)
+                              showMessage("Refresh rate layar saat ini sekitar $refreshText hertz.")
+                          } else {
+                              showMessage("Informasi refresh rate layar tidak tersedia.")
+                          }
+                      } catch (_: Exception) {
+                          showMessage("Maaf, refresh rate layar tidak dapat dibaca.")
+                      }
+                      return
+                  }
+
                   if (text.contains("status rotasi layar") ||
                       text.contains("cek rotasi layar") ||
                       text.contains("rotasi otomatis") ||
