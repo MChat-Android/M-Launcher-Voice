@@ -2942,6 +2942,23 @@ jobs:
                       return
                   }
 
+                  if (text.contains("nfc") ||
+                      text.contains("near field communication") ||
+                      text.contains("status pembayaran nirsentuh")
+                  ) {
+                      try {
+                          val nfcAdapter = android.nfc.NfcAdapter.getDefaultAdapter(this)
+                          when {
+                              nfcAdapter == null -> showMessage("Perangkat ini tidak memiliki fitur NFC.")
+                              nfcAdapter.isEnabled -> showMessage("NFC tersedia dan sedang aktif.")
+                              else -> showMessage("NFC tersedia, tetapi sedang nonaktif.")
+                          }
+                      } catch (_: Exception) {
+                          showMessage("Status NFC tidak dapat dibaca pada perangkat ini.")
+                      }
+                      return
+                  }
+
                   if (text.contains("pesawat") || text.contains("airplane") || text.contains("flight mode")) {
                       openSettings(Settings.ACTION_AIRPLANE_MODE_SETTINGS)
                       return
