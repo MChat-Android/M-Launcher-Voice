@@ -1413,6 +1413,7 @@ jobs:
               private var textToSpeech: TextToSpeech? = null
               private var textToSpeechReady = false
               private var vipGreetingPending = false
+              private var pendingSpeechResponse: String? = null
               private val handler = Handler(Looper.getMainLooper())
               private var listening = false
               private var awaitingWakeWord = true
@@ -1570,8 +1571,8 @@ jobs:
                   }
 
                   micButton = TextView(this).apply {
-                      text = if (vipMode) "🎙️" else "M"
-                      textSize = if (vipMode) 27f else 30f
+                      text = "🎙️"
+                      textSize = 27f
                       typeface = Typeface.DEFAULT_BOLD
                       gravity = Gravity.CENTER
                       setTextColor(Color.WHITE)
@@ -1758,6 +1759,10 @@ jobs:
                                   it.name.contains("man", ignoreCase = true)
                               }
                               if (maleVoice != null) engine.voice = maleVoice
+                              pendingSpeechResponse?.let { pending ->
+                                  pendingSpeechResponse = null
+                                  handler.post { speakResponse(pending) }
+                              }
                               if (vipGreetingPending && vipMode) {
                                   handler.post {
                                       if (vipGreetingPending && vipMode) {
@@ -1820,7 +1825,7 @@ jobs:
                   val engine = textToSpeech
                   if (textToSpeechReady && engine != null) {
                       try {
-                          showMessage(message)
+                          showMessage(message, speak = false)
                           val utteranceId = "m_voice_prompt_" + System.currentTimeMillis()
                           engine.setOnUtteranceProgressListener(
                               object : android.speech.tts.UtteranceProgressListener() {
@@ -1931,7 +1936,7 @@ jobs:
                                   )?.firstOrNull()
 
                                   if (!words.isNullOrBlank()) {
-                                      showMessage("Perintah: $words")
+                                      showMessage("Perintah: $words", speak = false)
                                       executeCommand(words)
                                   } else {
                                       showMessage("Perintah tidak dikenali. Ketuk widget untuk mencoba lagi.")
@@ -1943,7 +1948,7 @@ jobs:
                                       SpeechRecognizer.RESULTS_RECOGNITION
                                   )?.firstOrNull()
                                   if (!words.isNullOrBlank() && !awaitingWakeWord) {
-                                      showMessage(words)
+                                      showMessage(words, speak = false)
                                   }
                               }
 
@@ -1971,7 +1976,7 @@ jobs:
                   }
               }
 
-              private fun showMessage(message: String) {
+              private fun showMessage(message: String, speak: Boolean = true) {
                   handler.post {
                       // Simpan pesan terakhir agar tetap terlihat saat layar utama dibuka kembali.
                       getSharedPreferences("m_voice_status", MODE_PRIVATE)
@@ -1984,6 +1989,41 @@ jobs:
                               .setPackage(packageName)
                               .putExtra("message", message)
                       )
+                      if (speak && shouldSpeakResponse(message)) {
+                          speakResponse(message)
+                      }
+                  }
+              }
+
+              private fun shouldSpeakResponse(message: String): Boolean {
+                  val value = message.trim()
+                  if (value.isBlank()) return false
+                  val lower = value.lowercase(Locale("id", "ID"))
+                  return !lower.startsWith("perintah:") &&
+                      lower != "mendengarkan..." &&
+                      lower != "memproses suara..." &&
+                      lower == lower && // Pesan status sementara tidak dibacakan.
+                      !lower.startsWith("memeriksa akses vip+") &&
+                      !lower.startsWith("menyiapkan sapaan suara") &&
+                      !lower.startsWith("aplikasi vip+ sedang diperiksa")
+              }
+
+              private fun speakResponse(message: String) {
+                  val engine = textToSpeech
+                  if (!textToSpeechReady || engine == null) {
+                      pendingSpeechResponse = message
+                      return
+                  }
+                  try {
+                      val utteranceId = "m_voice_response_" + System.currentTimeMillis()
+                      engine.speak(
+                          message,
+                          TextToSpeech.QUEUE_FLUSH,
+                          null,
+                          utteranceId
+                      )
+                  } catch (_: Exception) {
+                      pendingSpeechResponse = message
                   }
               }
 
