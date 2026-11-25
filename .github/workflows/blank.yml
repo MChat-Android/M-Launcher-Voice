@@ -2606,6 +2606,20 @@ jobs:
                       return
                   }
 
+                  // Membuka halaman pengaturan keyboard Android melalui perintah suara.
+                  if (
+                      text == "buka pengaturan keyboard" ||
+                      text == "pengaturan keyboard hp" ||
+                      text == "ubah keyboard hp" ||
+                      text == "ganti keyboard hp" ||
+                      text == "atur keyboard hp" ||
+                      text == "buka pengaturan papan ketik"
+                  ) {
+                      showMessage("Membuka pengaturan keyboard perangkat...")
+                      openSettings(Settings.ACTION_INPUT_METHOD_SETTINGS)
+                      return
+                  }
+
                   // Memeriksa apakah perangkat memiliki kunci layar yang aman dan status layar terkunci.
                   if (
                       text == "status kunci layar hp" ||
