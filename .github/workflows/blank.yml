@@ -2061,6 +2061,14 @@ jobs:
                       .removePrefix("buka ").removePrefix("open ")
                       .removePrefix("launch ").removePrefix("jalankan ")
                       .removePrefix("start ").trim()
+                      // Padanan ucapan sehari-hari ke kata kerja yang dikenali mesin perintah.
+                      .replace(Regex("\\b(nyalain|hidupin|idupin)\\b"), "nyalakan")
+                      .replace(Regex("\\b(matiin|matikanlah|padamin)\\b"), "matikan")
+                      .replace(Regex("\\b(aktifin)\\b"), "aktifkan")
+                      .replace(Regex("\\b(besarin|gedein|kerasin)\\b"), "naikkan")
+                      .replace(Regex("\\b(kecilin|pelanin|kecilkan)\\b"), "turunkan")
+                      .replace(Regex("\\b(terangin|cerahkan)\\b"), "terang")
+                      .replace(Regex("\\b(gelapin|redupkan)\\b"), "redup")
 
                   if (text.contains("daftar aplikasi") ||
                       text.contains("aplikasi terpasang") ||
