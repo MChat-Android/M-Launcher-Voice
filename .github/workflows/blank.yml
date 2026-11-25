@@ -978,6 +978,8 @@ jobs:
                                                                       check(req.exists() && req.getString("status") == "PENDING_REVIEW") { "Permintaan sudah diproses." }
                                                                       val uid = req.getString("uid") ?: error("UID pelanggan tidak valid.")
                                                                       val plan = req.getString("plan") ?: error("Paket tidak valid.")
+                                                                      val transferReference = req.getString("transferReference").orEmpty().trim()
+                                                                      check(!transferReference.equals("test", ignoreCase = true)) { "Referensi TEST tidak boleh diverifikasi sebagai pembayaran asli." }
                                                                       val amount = req.getLong("amountIdr") ?: 0L
                                                                       val days = when (plan) {
                                                                           "VIP+ Mingguan (7 hari)" -> if (amount == 15000L) 7 else 0
@@ -1010,6 +1012,40 @@ jobs:
                                                                   }.addOnSuccessListener { adminBusy = false; adminItems = adminItems.filterNot { it.first == id }; adminMessage = "Permintaan ditolak." }
                                                                       .addOnFailureListener { e -> adminBusy = false; adminMessage = "Gagal menolak: ${e.localizedMessage}" }
                                                               }, enabled = !adminBusy, modifier = Modifier.weight(1f)) { Text("TOLAK", fontSize = 9.sp) }
+                                                          }
+                                                          if (info.contains("Referensi: test", ignoreCase = true)) {
+                                                              OutlinedButton(
+                                                                  onClick = {
+                                                                      val operator = FirebaseAuth.getInstance().currentUser
+                                                                      if (operator == null || adminBusy) { adminMessage = "Sesi admin tidak tersedia."; return@OutlinedButton }
+                                                                      adminBusy = true
+                                                                      val db = FirebaseFirestore.getInstance()
+                                                                      val reqRef = db.collection("vip_payment_requests").document(id)
+                                                                      db.runTransaction { tx ->
+                                                                          val req = tx.get(reqRef)
+                                                                          check(req.exists() && req.getString("status") == "PENDING_REVIEW") { "Permintaan uji sudah diproses." }
+                                                                          check(req.getString("transferReference").orEmpty().trim().equals("test", ignoreCase = true)) { "Tombol simulasi hanya untuk referensi TEST." }
+                                                                          val uid = req.getString("uid") ?: error("UID pelanggan tidak valid.")
+                                                                          val plan = req.getString("plan") ?: error("Paket tidak valid.")
+                                                                          val amount = req.getLong("amountIdr") ?: 0L
+                                                                          check(plan == "VIP+ Mingguan (7 hari)" && amount == 15000L) { "Simulasi ini khusus paket Mingguan Rp15.000." }
+                                                                          val memberRef = db.collection("vip_members").document(uid)
+                                                                          check(tx.get(memberRef).exists()) { "Profil pelanggan belum ada." }
+                                                                          val now = com.google.firebase.Timestamp.now()
+                                                                          val expires = com.google.firebase.Timestamp(java.util.Date(now.toDate().time + 7L * 86400000L))
+                                                                          tx.update(memberRef, mapOf("membershipStatus" to "ACTIVE", "membershipPlan" to "VIP+ Mingguan (7 hari)", "startedAt" to now, "expiresAt" to expires, "testMode" to true, "testPaymentRequestId" to id, "updatedAt" to com.google.firebase.firestore.FieldValue.serverTimestamp()))
+                                                                          null
+                                                                      }.addOnSuccessListener {
+                                                                          adminBusy = false
+                                                                          adminMessage = "SIMULASI BERHASIL: VIP+ akun uji aktif 7 hari. Permintaan pembayaran tetap MENUNGGU VERIFIKASI."
+                                                                      }.addOnFailureListener { e ->
+                                                                          adminBusy = false
+                                                                          adminMessage = "Simulasi gagal: ${e.localizedMessage}"
+                                                                      }
+                                                                  },
+                                                                  enabled = !adminBusy,
+                                                                  modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
+                                                              ) { Text("SIMULASI AKTIFKAN VIP+ 7 HARI (BUKAN PEMBAYARAN)", fontSize = 9.sp) }
                                                           }
                                                       }
                                                   }
