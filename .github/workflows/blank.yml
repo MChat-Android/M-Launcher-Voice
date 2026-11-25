@@ -2945,6 +2945,28 @@ jobs:
                       return
                   }
 
+                  if (text.contains("resolusi layar") ||
+                      text.contains("cek resolusi") ||
+                      text.contains("ukuran layar") ||
+                      text.contains("berapa resolusi") ||
+                      text.contains("display resolution") ||
+                      text.contains("pixel layar")
+                  ) {
+                      try {
+                          val displayMetrics = android.util.DisplayMetrics()
+                          @Suppress("DEPRECATION")
+                          (getSystemService(WINDOW_SERVICE) as android.view.WindowManager)
+                              .defaultDisplay.getRealMetrics(displayMetrics)
+                          val width = displayMetrics.widthPixels
+                          val height = displayMetrics.heightPixels
+                          val density = displayMetrics.densityDpi
+                          showMessage("Resolusi layar perangkat ini $width kali $height piksel, dengan kepadatan $density DPI.")
+                      } catch (_: Exception) {
+                          showMessage("Maaf, informasi resolusi layar tidak dapat dibaca.")
+                      }
+                      return
+                  }
+
                   if (text.contains("waktu layar mati") ||
                       text.contains("timeout layar") ||
                       text.contains("screen timeout") ||
