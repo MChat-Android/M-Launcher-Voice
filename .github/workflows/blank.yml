@@ -2156,7 +2156,10 @@ jobs:
                   }
 
                   if (text.contains("kecerahan") ||
-                      text.contains("brightness")
+                      text.contains("brightness") ||
+                      (text.contains("layar") &&
+                          (text.contains("terang") || text.contains("redup") ||
+                           text.contains("naik") || text.contains("turun")))
                   ) {
                       when {
                           text.contains("naik") || text.contains("tambah") ||
