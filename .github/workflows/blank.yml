@@ -2534,6 +2534,37 @@ jobs:
                       return
                   }
 
+                  // Membaca skala ukuran teks sistem Android.
+                  if (
+                      text == "ukuran teks hp" ||
+                      text == "ukuran teks ponsel" ||
+                      text == "ukuran teks perangkat" ||
+                      text == "besar tulisan hp" ||
+                      text == "besar huruf hp" ||
+                      text == "skala font android" ||
+                      text == "skala tulisan hp" ||
+                      text == "font scale" ||
+                      text == "ukuran huruf android"
+                  ) {
+                      try {
+                          val fontScale = Settings.System.getFloat(
+                              contentResolver,
+                              Settings.System.FONT_SCALE,
+                              1.0f
+                          )
+                          val percent = (fontScale * 100f).toInt()
+                          val description = when {
+                              fontScale > 1.05f -> "lebih besar dari ukuran standar"
+                              fontScale < 0.95f -> "lebih kecil dari ukuran standar"
+                              else -> "ukuran standar"
+                          }
+                          showMessage("Ukuran teks sistem saat ini $percent persen, $description.")
+                      } catch (_: Exception) {
+                          showMessage("Maaf, ukuran teks sistem tidak dapat dibaca pada perangkat ini.")
+                      }
+                      return
+                  }
+
                   // Informasi nomor build/fingerprint sistem Android untuk diagnosis perangkat.
                   if (
                       text.contains("nomor build android") ||
