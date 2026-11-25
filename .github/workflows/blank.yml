@@ -2888,6 +2888,30 @@ jobs:
                       return
                   }
 
+                  if (text.contains("status lokasi") ||
+                      text.contains("cek lokasi") ||
+                      text.contains("status gps") ||
+                      text.contains("cek gps") ||
+                      text.contains("gps aktif") ||
+                      text.contains("gps menyala") ||
+                      text.contains("lokasi aktif") ||
+                      text.contains("layanan lokasi")
+                  ) {
+                      try {
+                          val locationManager = getSystemService(
+                              android.content.Context.LOCATION_SERVICE
+                          ) as android.location.LocationManager
+                          if (locationManager.isLocationEnabled) {
+                              showMessage("Layanan lokasi perangkat sedang aktif.")
+                          } else {
+                              showMessage("Layanan lokasi perangkat sedang nonaktif.")
+                          }
+                      } catch (_: Exception) {
+                          showMessage("Status layanan lokasi tidak dapat dibaca pada perangkat ini.")
+                      }
+                      return
+                  }
+
                   if (text.contains("lokasi") || text.contains("location")) {
                       openSettings(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
                       return
