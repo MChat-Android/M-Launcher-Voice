@@ -11,9 +11,9 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  security-checks:
     runs-on: ubuntu-latest
-
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -36,6 +36,13 @@ jobs:
           # Tooling is ephemeral CI-only; production/admin dependencies are audited separately.
           security-tests/node_modules/.bin/firebase emulators:exec --only firestore --project demo-m-launcher-voice "node security-tests/firestore-rules.test.mjs"
 
+  build:
+    needs: security-checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
