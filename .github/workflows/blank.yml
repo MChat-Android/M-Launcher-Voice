@@ -2534,6 +2534,27 @@ jobs:
                       return
                   }
 
+                  // Membaca tanggal patch keamanan Android yang dilaporkan sistem.
+                  if (
+                      text.contains("patch keamanan android") ||
+                      text.contains("tanggal patch keamanan") ||
+                      text.contains("tingkat patch keamanan") ||
+                      text.contains("security patch android") ||
+                      text.contains("patch keamanan hp")
+                  ) {
+                      try {
+                          val patchLevel = Build.VERSION.SECURITY_PATCH.orEmpty().trim()
+                          if (patchLevel.isNotBlank()) {
+                              showMessage("Patch keamanan Android perangkat ini: $patchLevel.")
+                          } else {
+                              showMessage("Informasi patch keamanan tidak tersedia pada perangkat ini.")
+                          }
+                      } catch (_: Exception) {
+                          showMessage("Maaf, tanggal patch keamanan Android tidak dapat dibaca.")
+                      }
+                      return
+                  }
+
                   // Jumlah boot/restart yang dicatat Android sejak reset pabrik.
                   if (
                       text.contains("berapa kali hp restart") ||
