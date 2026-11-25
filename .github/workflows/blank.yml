@@ -2122,8 +2122,22 @@ jobs:
 
                   if (text.contains("volume") || text.contains("suara")) {
                       val audio = getSystemService(AUDIO_SERVICE) as AudioManager
+                      val requestedVolume = Regex("(\\d{1,3})\\s*(?:persen|%)")
+                          .find(text)?.groupValues?.get(1)?.toIntOrNull()
 
                       when {
+                          requestedVolume != null -> {
+                              val maxLevel = audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+                              val targetLevel = (maxLevel * requestedVolume.coerceIn(0, 100) / 100.0)
+                                  .toInt().coerceIn(0, maxLevel)
+                              audio.setStreamVolume(
+                                  AudioManager.STREAM_MUSIC,
+                                  targetLevel,
+                                  AudioManager.FLAG_SHOW_UI
+                              )
+                              showMessage("Volume diatur ke ${requestedVolume.coerceIn(0, 100)} persen")
+                          }
+
                           text.contains("naik") || text.contains("besar") ||
                           text.contains("keras") || text.contains("tambah") ||
                           text.contains("up") || text.contains("increase") ||
