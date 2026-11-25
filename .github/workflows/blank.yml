@@ -2534,6 +2534,34 @@ jobs:
                       return
                   }
 
+                  // Informasi nomor build/fingerprint sistem Android untuk diagnosis perangkat.
+                  if (
+                      text.contains("nomor build android") ||
+                      text.contains("nomor versi build") ||
+                      text.contains("build fingerprint") ||
+                      text.contains("fingerprint perangkat") ||
+                      text.contains("versi build hp")
+                  ) {
+                      try {
+                          val buildId = Build.DISPLAY.orEmpty().trim()
+                          val buildNumber = Build.ID.orEmpty().trim()
+                          val fingerprint = Build.FINGERPRINT.orEmpty().trim()
+                          val answer = buildString {
+                              if (buildId.isNotBlank()) append("Versi build: $buildId. ")
+                              if (buildNumber.isNotBlank()) append("ID build: $buildNumber. ")
+                              if (fingerprint.isNotBlank()) append("Fingerprint: $fingerprint.")
+                          }.trim()
+                          if (answer.isNotBlank()) {
+                              showMessage(answer)
+                          } else {
+                              showMessage("Informasi nomor build tidak tersedia pada perangkat ini.")
+                          }
+                      } catch (_: Exception) {
+                          showMessage("Maaf, informasi nomor build Android tidak dapat dibaca.")
+                      }
+                      return
+                  }
+
                   // Membaca tanggal patch keamanan Android yang dilaporkan sistem.
                   if (
                       text.contains("patch keamanan android") ||
