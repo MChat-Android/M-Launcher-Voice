@@ -2573,6 +2573,43 @@ jobs:
                       return
                   }
 
+                  // Memeriksa apakah perangkat memiliki kunci layar yang aman dan status layar terkunci.
+                  if (
+                      text == "status kunci layar hp" ||
+                      text == "keamanan kunci layar" ||
+                      text == "apakah hp pakai pin" ||
+                      text == "apakah hp dikunci" ||
+                      text == "status pengunci layar" ||
+                      text == "cek kunci layar perangkat" ||
+                      text == "screen lock status"
+                  ) {
+                      try {
+                          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                              val keyguardManager = getSystemService(
+                                  android.content.Context.KEYGUARD_SERVICE
+                              ) as android.app.KeyguardManager
+                              val secureLock = keyguardManager.isDeviceSecure
+                              val currentlyLocked = keyguardManager.isKeyguardLocked
+                              val secureText = if (secureLock) {
+                                  "kunci layar aman sudah diatur"
+                              } else {
+                                  "belum ada PIN, pola, atau kata sandi layar yang aman"
+                              }
+                              val lockedText = if (currentlyLocked) {
+                                  "layar sedang terkunci"
+                              } else {
+                                  "layar saat ini tidak terkunci"
+                              }
+                              showMessage("Status keamanan: $secureText. Status saat ini: $lockedText.")
+                          } else {
+                              showMessage("Pemeriksaan keamanan kunci layar memerlukan Android 6.0 atau lebih baru.")
+                          }
+                      } catch (_: Exception) {
+                          showMessage("Maaf, status keamanan kunci layar tidak dapat dibaca.")
+                      }
+                      return
+                  }
+
                   // Memeriksa apakah jam dan zona waktu disinkronkan otomatis oleh jaringan.
                   if (
                       text == "waktu otomatis hp" ||
