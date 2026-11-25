@@ -2274,6 +2274,53 @@ jobs:
                       return
                   }
 
+                  // Suhu dan kondisi kesehatan baterai dari siaran status baterai Android.
+                  if (text.contains("suhu baterai") ||
+                      text.contains("temperatur baterai") ||
+                      text.contains("kesehatan baterai") ||
+                      text.contains("kondisi baterai")
+                  ) {
+                      try {
+                          val batteryIntent = registerReceiver(
+                              null,
+                              android.content.IntentFilter(Intent.ACTION_BATTERY_CHANGED)
+                          )
+                          if (batteryIntent == null) {
+                              showMessage("Informasi baterai belum tersedia.")
+                          } else {
+                              val temperatureTenths = batteryIntent.getIntExtra(
+                                  android.os.BatteryManager.EXTRA_TEMPERATURE, Int.MIN_VALUE
+                              )
+                              val health = batteryIntent.getIntExtra(
+                                  android.os.BatteryManager.EXTRA_HEALTH,
+                                  android.os.BatteryManager.BATTERY_HEALTH_UNKNOWN
+                              )
+                              val healthText = when (health) {
+                                  android.os.BatteryManager.BATTERY_HEALTH_GOOD -> "kondisi terdeteksi baik"
+                                  android.os.BatteryManager.BATTERY_HEALTH_OVERHEAT -> "baterai terdeteksi terlalu panas"
+                                  android.os.BatteryManager.BATTERY_HEALTH_DEAD -> "baterai dilaporkan sudah rusak"
+                                  android.os.BatteryManager.BATTERY_HEALTH_OVER_VOLTAGE -> "terdeteksi tegangan berlebih"
+                                  android.os.BatteryManager.BATTERY_HEALTH_COLD -> "baterai terdeteksi terlalu dingin"
+                                  else -> "kondisi kesehatan tidak dilaporkan oleh perangkat"
+                              }
+                              val temperatureText = if (temperatureTenths != Int.MIN_VALUE) {
+                                  val celsius = temperatureTenths / 10.0
+                                  val format = java.text.DecimalFormat(
+                                      "0.0",
+                                      java.text.DecimalFormatSymbols(Locale("id", "ID"))
+                                  )
+                                  "Suhu baterai sekitar ${format.format(celsius)} derajat Celsius. "
+                              } else {
+                                  "Suhu baterai tidak tersedia. "
+                              }
+                              showMessage(temperatureText + "Status kesehatan: " + healthText + ".")
+                          }
+                      } catch (_: Exception) {
+                          showMessage("Informasi suhu dan kesehatan baterai tidak dapat dibaca.")
+                      }
+                      return
+                  }
+
                   // Informasi baterai perangkat, dibaca langsung dari status Android.
                   if (text.contains("baterai") || text.contains("battery")) {
                       try {
