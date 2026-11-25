@@ -856,7 +856,7 @@ jobs:
 
                       Spacer(Modifier.height(25.dp))
                       Text(
-                          "M Asisten asisten suara pintar",
+                          "M Asisten",
                           color = Cyan,
                           fontSize = 12.sp,
                           fontWeight = FontWeight.Bold
