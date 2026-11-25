@@ -2562,6 +2562,60 @@ jobs:
                       return
                   }
 
+                  // Informasi bahasa sistem dan zona waktu perangkat.
+                  if (
+                      text == "bahasa hp" ||
+                      text == "bahasa ponsel" ||
+                      text == "bahasa perangkat" ||
+                      text == "bahasa sistem" ||
+                      text == "bahasa android" ||
+                      text == "language hp" ||
+                      text == "bahasa yang digunakan hp" ||
+                      text == "zona waktu hp" ||
+                      text == "zona waktu ponsel" ||
+                      text == "zona waktu perangkat" ||
+                      text == "zona waktu android" ||
+                      text == "timezone hp" ||
+                      text == "timezone perangkat" ||
+                      text == "zona waktu"
+                  ) {
+                      try {
+                          val locale = java.util.Locale.getDefault()
+                          val timeZone = java.util.TimeZone.getDefault()
+                          val asksLanguage = text.contains("bahasa") || text == "language hp"
+                          val answer = if (asksLanguage) {
+                              val language = locale.getDisplayLanguage(java.util.Locale("id", "ID"))
+                              val country = locale.getDisplayCountry(java.util.Locale("id", "ID"))
+                              val languageTag = locale.toLanguageTag()
+                              buildString {
+                                  append("Bahasa sistem perangkat: ")
+                                  append(if (language.isNotBlank()) language else languageTag)
+                                  if (country.isNotBlank()) append(" ($country)")
+                                  append(". Kode bahasa: $languageTag.")
+                              }
+                          } else {
+                              val zoneName = timeZone.getDisplayName(
+                                  timeZone.inDaylightTime(java.util.Date()),
+                                  java.util.TimeZone.LONG,
+                                  java.util.Locale("id", "ID")
+                              )
+                              val offsetMinutes = timeZone.getOffset(System.currentTimeMillis()) / 60000
+                              val sign = if (offsetMinutes >= 0) "+" else "-"
+                              val absoluteOffset = kotlin.math.abs(offsetMinutes)
+                              val offsetHours = absoluteOffset / 60
+                              val remainingMinutes = absoluteOffset % 60
+                              val offset = "UTC$sign%02d:%02d".format(
+                                  java.util.Locale.US, offsetHours, remainingMinutes
+                              )
+                              "Zona waktu perangkat: ${timeZone.id}, $zoneName ($offset)."
+                          }
+                          showMessage(answer)
+                      } catch (_: Exception) {
+                          showMessage("Maaf, informasi bahasa atau zona waktu perangkat tidak dapat dibaca.")
+                      }
+                      return
+                  }
+
                   // Membaca tanggal patch keamanan Android yang dilaporkan sistem.
                   if (
                       text.contains("patch keamanan android") ||
