@@ -2945,6 +2945,34 @@ jobs:
                       return
                   }
 
+                  if (text.contains("waktu layar mati") ||
+                      text.contains("timeout layar") ||
+                      text.contains("screen timeout") ||
+                      text.contains("durasi layar aktif") ||
+                      text.contains("berapa lama layar mati") ||
+                      text.contains("layar mati setelah")
+                  ) {
+                      try {
+                          val timeoutMs = android.provider.Settings.System.getInt(
+                              contentResolver,
+                              android.provider.Settings.System.SCREEN_OFF_TIMEOUT,
+                              30000
+                          ).toLong().coerceAtLeast(0L)
+                          val totalSeconds = timeoutMs / 1000L
+                          val minutes = totalSeconds / 60L
+                          val seconds = totalSeconds % 60L
+                          val durationText = when {
+                              minutes > 0 && seconds > 0 -> "$minutes menit $seconds detik"
+                              minutes > 0 -> "$minutes menit"
+                              else -> "$seconds detik"
+                          }
+                          showMessage("Layar diatur mati otomatis setelah $durationText tidak digunakan.")
+                      } catch (_: Exception) {
+                          showMessage("Maaf, pengaturan waktu layar mati tidak dapat dibaca.")
+                      }
+                      return
+                  }
+
                   if (text.contains("status getaran") ||
                       text.contains("cek getaran") ||
                       text.contains("mode getar") ||
