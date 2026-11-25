@@ -2573,6 +2573,33 @@ jobs:
                       return
                   }
 
+                  // Membaca versi dan nomor build aplikasi M Launcher Voice yang sedang berjalan.
+                  if (
+                      text == "versi m launcher voice" ||
+                      text == "versi aplikasi m" ||
+                      text == "versi aplikasi launcher" ||
+                      text == "nomor versi aplikasi" ||
+                      text == "versi aplikasi ini" ||
+                      text == "app version m launcher"
+                  ) {
+                      try {
+                          val appInfo = packageManager.getPackageInfo(packageName, 0)
+                          val versionName = appInfo.versionName?.takeIf { it.isNotBlank() } ?: "tidak tersedia"
+                          val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                              appInfo.longVersionCode
+                          } else {
+                              @Suppress("DEPRECATION")
+                              appInfo.versionCode.toLong()
+                          }
+                          showMessage(
+                              "M Launcher Voice versi $versionName, nomor build aplikasi $versionCode."
+                          )
+                      } catch (_: Exception) {
+                          showMessage("Maaf, informasi versi M Launcher Voice tidak dapat dibaca.")
+                      }
+                      return
+                  }
+
                   // Membaca nama keyboard utama yang dipilih pada pengaturan Android.
                   if (
                       text == "nama keyboard hp" ||
