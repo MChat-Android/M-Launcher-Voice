@@ -553,7 +553,8 @@ jobs:
                   FirebaseFirestore.getInstance()
                       .collection("vip_members")
                       .document(user.uid)
-                      .get()
+                      // Status VIP+ harus dibaca langsung dari server, bukan cache lokal.
+                      .get(com.google.firebase.firestore.Source.SERVER)
                       .addOnSuccessListener { member ->
                           val expiresAt = member.getTimestamp("expiresAt")?.toDate()?.time
                           val vipActive = member.getString("membershipStatus") == "ACTIVE" &&
@@ -1412,6 +1413,7 @@ jobs:
 
               private var vipMode = false
               private var serviceInitialized = false
+              private var modeVerificationRequest = 0
               private var membershipListener: com.google.firebase.firestore.ListenerRegistration? = null
               private lateinit var windowManager: WindowManager
               private lateinit var container: LinearLayout
@@ -1442,7 +1444,35 @@ jobs:
                   val requestedMode = intent?.getStringExtra(EXTRA_MODE)
                       ?: preferences.getString("active_mode", MODE_STANDARD)
                       ?: MODE_STANDARD
-                  configureMode(requestedMode == MODE_VIP)
+
+                  // Jangan pulihkan mode VIP+ hanya dari preferensi lokal.
+                  // Setiap aktivasi dan pemulihan service wajib diverifikasi ke Firestore server.
+                  val verificationId = ++modeVerificationRequest
+                  if (requestedMode != MODE_VIP) {
+                      configureMode(false)
+                      return START_STICKY
+                  }
+
+                  val user = FirebaseAuth.getInstance().currentUser
+                  if (user == null) {
+                      configureMode(false)
+                      return START_STICKY
+                  }
+
+                  FirebaseFirestore.getInstance()
+                      .collection("vip_members")
+                      .document(user.uid)
+                      .get(com.google.firebase.firestore.Source.SERVER)
+                      .addOnSuccessListener { member ->
+                          if (verificationId != modeVerificationRequest) return@addOnSuccessListener
+                          val expiresAt = member.getTimestamp("expiresAt")?.toDate()?.time
+                          val vipActive = member.getString("membershipStatus") == "ACTIVE" &&
+                              (expiresAt == null || expiresAt > System.currentTimeMillis())
+                          configureMode(vipActive)
+                      }
+                      .addOnFailureListener {
+                          if (verificationId == modeVerificationRequest) configureMode(false)
+                      }
                   return START_STICKY
               }
 
@@ -1518,10 +1548,16 @@ jobs:
                           val expiresAt = snapshot?.getTimestamp("expiresAt")?.toDate()?.time
                           val vipStillActive = snapshot?.getString("membershipStatus") == "ACTIVE" &&
                               (expiresAt == null || expiresAt > System.currentTimeMillis())
-                          if (error == null && snapshot != null && !vipStillActive) {
+                          // Jika status tidak tersedia atau tidak aktif, hentikan hak VIP+.
+                          if (error != null || snapshot == null || !vipStillActive) {
                               handler.post {
                                   if (vipMode) {
-                                      showMessage("VIP+ berakhir. Kembali ke sistem Standar.")
+                                      showMessage(
+                                          if (error != null || snapshot == null)
+                                              "Status VIP+ tidak dapat diverifikasi. Kembali ke sistem Standar."
+                                          else
+                                              "VIP+ berakhir. Kembali ke sistem Standar."
+                                      )
                                       configureMode(false)
                                   }
                               }
