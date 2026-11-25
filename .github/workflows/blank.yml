@@ -2945,6 +2945,38 @@ jobs:
                       return
                   }
 
+                  if (text.contains("sensor hp") ||
+                      text.contains("sensor perangkat") ||
+                      text.contains("sensor apa saja") ||
+                      text.contains("cek sensor") ||
+                      text.contains("sensor tersedia") ||
+                      text.contains("daftar sensor")
+                  ) {
+                      try {
+                          val sensorManager = getSystemService(SENSOR_SERVICE) as android.hardware.SensorManager
+                          val sensorTypes = listOf(
+                              android.hardware.Sensor.TYPE_ACCELEROMETER to "akselerometer",
+                              android.hardware.Sensor.TYPE_GYROSCOPE to "giroskop",
+                              android.hardware.Sensor.TYPE_PROXIMITY to "proximity",
+                              android.hardware.Sensor.TYPE_LIGHT to "cahaya",
+                              android.hardware.Sensor.TYPE_MAGNETIC_FIELD to "magnetometer",
+                              android.hardware.Sensor.TYPE_PRESSURE to "tekanan udara",
+                              android.hardware.Sensor.TYPE_ROTATION_VECTOR to "rotasi"
+                          )
+                          val availableSensors = sensorTypes
+                              .filter { sensorManager.getDefaultSensor(it.first) != null }
+                              .map { it.second }
+                          if (availableSensors.isEmpty()) {
+                              showMessage("Tidak ditemukan sensor utama yang didukung pada perangkat ini.")
+                          } else {
+                              showMessage("Sensor yang tersedia: " + availableSensors.joinToString(", ") + ".")
+                          }
+                      } catch (_: Exception) {
+                          showMessage("Maaf, daftar sensor perangkat tidak dapat dibaca.")
+                      }
+                      return
+                  }
+
                   if (text.contains("resolusi layar") ||
                       text.contains("cek resolusi") ||
                       text.contains("ukuran layar") ||
