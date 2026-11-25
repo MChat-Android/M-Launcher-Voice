@@ -2227,13 +2227,50 @@ jobs:
                       return
                   }
 
+                  // Panggilan suara selalu membuka dialer dengan nomor terisi.
+                  // Pengguna tetap menekan tombol panggil sendiri; aplikasi tidak menelepon otomatis.
+                  val phoneNumberMatch = Regex("(?:\\+?\\d[\\d\\s().-]{6,}\\d)")
+                      .find(command.trim())
+                  val spokenPhoneNumber = phoneNumberMatch?.value
+                      ?.replace(Regex("[^+0-9]"), "")
+                      ?.takeIf { it.count { ch -> ch.isDigit() } in 8..15 }
+
                   if (text.contains("telepon") ||
                       text.contains("panggilan") ||
                       text.contains("dialer") ||
                       text.contains("phone") ||
-                      text.contains("call")
+                      text.contains("call") ||
+                      text.contains("panggil")
                   ) {
-                      launchIntent(Intent(Intent.ACTION_DIAL))
+                      val dialIntent = if (spokenPhoneNumber != null) {
+                          Intent(Intent.ACTION_DIAL, Uri.parse("tel:$spokenPhoneNumber"))
+                      } else {
+                          Intent(Intent.ACTION_DIAL)
+                      }
+                      launchIntent(dialIntent)
+                      return
+                  }
+
+                  // SMS disiapkan sebagai draf. Tidak dikirim otomatis tanpa pemeriksaan pengguna.
+                  val smsDraftMatch = Regex(
+                      "(?i)^(?:tolong\\s+)?(?:kirim|buat)\\s+(?:sms|pesan)\\s+(?:ke|kepada)\\s+(\\+?[0-9][0-9\\s().-]{6,}[0-9])\\s+(?:isi|dengan pesan|pesan)\\s+(.+)$"
+                  ).find(command.trim())
+                  if (smsDraftMatch != null) {
+                      val recipient = smsDraftMatch.groupValues[1].replace(Regex("[^+0-9]"), "")
+                      val messageBody = smsDraftMatch.groupValues[2].trim()
+                      val digitCount = recipient.count { it.isDigit() }
+                      if (digitCount in 8..15 && messageBody.isNotBlank()) {
+                          val smsIntent = Intent(
+                              Intent.ACTION_SENDTO,
+                              Uri.parse("smsto:$recipient")
+                          ).apply {
+                              putExtra("sms_body", messageBody)
+                          }
+                          launchIntent(smsIntent)
+                          showMessage("Draf SMS sudah disiapkan. Periksa nomor dan isi pesan sebelum mengirim.")
+                      } else {
+                          showMessage("Nomor atau isi SMS belum lengkap. Ucapkan: kirim SMS ke nomor, isi pesan.")
+                      }
                       return
                   }
 
