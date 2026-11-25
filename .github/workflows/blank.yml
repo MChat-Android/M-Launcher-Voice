@@ -3758,6 +3758,19 @@ jobs:
                       return
                   }
 
+                  // Membuka halaman pengelolaan aplikasi yang terpasang pada perangkat.
+                  if (
+                      text == "buka kelola aplikasi" ||
+                      text == "pengelolaan aplikasi hp" ||
+                      text == "manajemen aplikasi hp" ||
+                      text == "atur aplikasi terpasang" ||
+                      text == "pengaturan aplikasi terpasang" ||
+                      text == "buka daftar aplikasi terpasang"
+                  ) {
+                      openSettings(Settings.ACTION_MANAGE_APPLICATIONS_SETTINGS)
+                      return
+                  }
+
                   if (text.contains("pengaturan") || text.contains("setelan") || text.contains("settings")) {
                       openSettings(Settings.ACTION_SETTINGS)
                       return
