@@ -3812,6 +3812,19 @@ jobs:
                       return
                   }
 
+                  // Membuka pengaturan tanggal dan waktu Android.
+                  if (
+                      text == "buka pengaturan tanggal dan waktu" ||
+                      text == "pengaturan tanggal hp" ||
+                      text == "pengaturan waktu hp" ||
+                      text == "atur tanggal dan jam" ||
+                      text == "ubah jam dan tanggal hp" ||
+                      text == "buka pengaturan jam"
+                  ) {
+                      openSettings(Settings.ACTION_DATE_SETTINGS)
+                      return
+                  }
+
                   if (text.contains("pengaturan") || text.contains("setelan") || text.contains("settings")) {
                       openSettings(Settings.ACTION_SETTINGS)
                       return
