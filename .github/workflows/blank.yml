@@ -2534,6 +2534,45 @@ jobs:
                       return
                   }
 
+                  // Membaca tingkat kondisi termal perangkat melalui Android PowerManager.
+                  if (
+                      text == "status panas hp" ||
+                      text == "kondisi panas hp" ||
+                      text == "kondisi termal perangkat" ||
+                      text == "status suhu perangkat" ||
+                      text == "hp sedang panas" ||
+                      text == "thermal status" ||
+                      text == "tingkat panas hp"
+                  ) {
+                      try {
+                          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                              val powerManager = getSystemService(
+                                  android.content.Context.POWER_SERVICE
+                              ) as android.os.PowerManager
+                              val thermalStatus = powerManager.currentThermalStatus
+                              val description = when (thermalStatus) {
+                                  android.os.PowerManager.THERMAL_STATUS_NONE -> "normal, tidak ada pembatasan termal"
+                                  android.os.PowerManager.THERMAL_STATUS_LIGHT -> "hangat ringan"
+                                  android.os.PowerManager.THERMAL_STATUS_MODERATE -> "panas sedang"
+                                  android.os.PowerManager.THERMAL_STATUS_SEVERE -> "panas tinggi, kinerja dapat dibatasi"
+                                  android.os.PowerManager.THERMAL_STATUS_CRITICAL -> "sangat panas, sistem dapat membatasi kinerja secara ketat"
+                                  android.os.PowerManager.THERMAL_STATUS_EMERGENCY -> "darurat termal"
+                                  android.os.PowerManager.THERMAL_STATUS_SHUTDOWN -> "melewati ambang aman dan dapat memicu pemadaman"
+                                  else -> "status tidak dikenal"
+                              }
+                              showMessage(
+                                  "Status termal perangkat: $description. " +
+                                      "Ini adalah tingkat kondisi panas yang dilaporkan sistem, bukan pengukuran suhu dalam derajat."
+                              )
+                          } else {
+                              showMessage("Pembacaan status termal memerlukan Android 10 atau lebih baru.")
+                          }
+                      } catch (_: Exception) {
+                          showMessage("Maaf, status termal perangkat tidak dapat dibaca.")
+                      }
+                      return
+                  }
+
                   // Membaca preferensi format jam 12/24 jam dan format tanggal sistem.
                   if (
                       text == "format jam hp" ||
