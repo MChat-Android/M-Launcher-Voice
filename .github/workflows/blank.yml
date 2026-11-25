@@ -679,11 +679,26 @@ jobs:
               val Panel = Color(0xFF111F32)
               val Cyan = Color(0xFF35D6E8)
               val Muted = Color(0xFF9DB2C9)
+              val isVipPlus = vipMembershipStatus.startsWith("VIP+ AKTIF")
+              val premiumGold = Color(0xFFFFD778)
+              val premiumBorder = Color(0xFFB98A3B)
+              val premiumPanel = Color(0xFF151D30)
               BoxWithConstraints(
                   modifier = Modifier
                       .fillMaxSize()
                       .background(
-                          Brush.verticalGradient(listOf(Navy, Panel, Navy))
+                          if (isVipPlus) {
+                              Brush.verticalGradient(
+                                  listOf(
+                                      Color(0xFF050914),
+                                      Color(0xFF10182A),
+                                      Color(0xFF1B1B2B),
+                                      Color(0xFF080D18)
+                                  )
+                              )
+                          } else {
+                              Brush.verticalGradient(listOf(Navy, Panel, Navy))
+                          }
                       ),
                   contentAlignment = Alignment.TopCenter
               ) {
@@ -733,7 +748,7 @@ jobs:
                           )
 
                           // Lencana VIP+ menempel pada garis bingkai kanan-atas logo.
-                          if (vipMembershipStatus.startsWith("VIP+ AKTIF")) {
+                          if (isVipPlus) {
                               Box(
                                   modifier = Modifier
                                       .align(Alignment.TopEnd)
@@ -764,7 +779,7 @@ jobs:
                       Spacer(Modifier.height(25.dp))
                       Text(
                           "Semua jadi lebih mudah.",
-                          color = Color.White,
+                          color = if (isVipPlus) Color(0xFFFFF1D0) else Color.White,
                           fontSize = if (compactWidth) 21.sp else 25.sp,
                           fontWeight = FontWeight.ExtraBold,
                           textAlign = TextAlign.Center
@@ -772,7 +787,7 @@ jobs:
                       Spacer(Modifier.height(8.dp))
                       Text(
                           "Kendalikan ponselmu cukup dengan suara.",
-                          color = Muted,
+                          color = if (isVipPlus) Color(0xFFC7B995) else Muted,
                           fontSize = 14.sp,
                           textAlign = TextAlign.Center
                       )
@@ -781,7 +796,10 @@ jobs:
                       Card(
                           modifier = Modifier.fillMaxWidth(),
                           shape = RoundedCornerShape(24.dp),
-                          colors = CardDefaults.cardColors(containerColor = Panel)
+                          colors = CardDefaults.cardColors(
+                              containerColor = if (isVipPlus) premiumPanel else Panel
+                          ),
+                          border = if (isVipPlus) androidx.compose.foundation.BorderStroke(1.dp, premiumBorder) else null
                       ) {
                           Column(
                               modifier = Modifier.padding(20.dp),
@@ -793,7 +811,10 @@ jobs:
                                   onClick = onActivate,
                                   modifier = Modifier.fillMaxWidth().height(56.dp),
                                   shape = RoundedCornerShape(17.dp),
-                                  colors = ButtonDefaults.buttonColors(containerColor = Cyan, contentColor = Navy)
+                                  colors = ButtonDefaults.buttonColors(
+                                      containerColor = if (isVipPlus) premiumGold else Cyan,
+                                      contentColor = Navy
+                                  )
                               ) {
                                   Text("🎙   AKTIFKAN WIDGET", fontSize = 15.sp, fontWeight = FontWeight.ExtraBold)
                               }
@@ -808,24 +829,32 @@ jobs:
                               .fillMaxWidth()
                               .clickable { showVipPlus = true },
                           shape = RoundedCornerShape(20.dp),
-                          colors = CardDefaults.cardColors(containerColor = Color(0xFF123344)),
-                          border = androidx.compose.foundation.BorderStroke(1.dp, Cyan)
+                          colors = CardDefaults.cardColors(
+                              containerColor = if (isVipPlus) premiumPanel else Color(0xFF123344)
+                          ),
+                          border = androidx.compose.foundation.BorderStroke(
+                              if (isVipPlus) 1.5.dp else 1.dp,
+                              if (isVipPlus) premiumBorder else Cyan
+                          )
                       ) {
                           Column(modifier = Modifier.padding(18.dp)) {
                               Row(verticalAlignment = Alignment.CenterVertically) {
                                   Column(modifier = Modifier.weight(1f)) {
-                                      Text("TINGKATKAN KE VIP+", color = Cyan, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp)
+                                      Text("TINGKATKAN KE VIP+", color = if (isVipPlus) premiumGold else Cyan, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp)
                                       Spacer(Modifier.height(5.dp))
                                       Text("Buka semua aplikasi dengan perintah suara", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                                       Text("Mulai Rp15.000 / 7 hari", color = Muted, fontSize = 11.sp)
                                   }
-                                  Text("VIP+", color = Cyan, fontSize = 25.sp, fontWeight = FontWeight.ExtraBold)
+                                  Text("VIP+", color = if (isVipPlus) premiumGold else Cyan, fontSize = 25.sp, fontWeight = FontWeight.ExtraBold)
                               }
                               Spacer(Modifier.height(12.dp))
                               Button(
                                   onClick = { showVipPlus = true },
                                   modifier = Modifier.fillMaxWidth(),
-                                  colors = ButtonDefaults.buttonColors(containerColor = Cyan, contentColor = Navy),
+                                  colors = ButtonDefaults.buttonColors(
+                                      containerColor = if (isVipPlus) premiumGold else Cyan,
+                                      contentColor = Navy
+                                  ),
                                   shape = RoundedCornerShape(13.dp)
                               ) {
                                   Text("LIHAT PAKET VIP+", fontWeight = FontWeight.ExtraBold)
@@ -837,11 +866,14 @@ jobs:
                       Card(
                           modifier = Modifier.fillMaxWidth(),
                           shape = RoundedCornerShape(22.dp),
-                          colors = CardDefaults.cardColors(containerColor = Color(0xFF102238)),
-                          border = androidx.compose.foundation.BorderStroke(1.dp, Cyan)
+                          colors = CardDefaults.cardColors(
+                              containerColor = if (isVipPlus) premiumPanel else Color(0xFF102238)
+                          ),
+                          border = if (isVipPlus) androidx.compose.foundation.BorderStroke(1.dp, premiumBorder)
+                              else androidx.compose.foundation.BorderStroke(1.dp, Cyan)
                       ) {
                           Column(modifier = Modifier.fillMaxWidth().padding(20.dp)) {
-                              Text("APLIKASI PAKET STANDAR", color = Cyan, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold)
+                              Text("APLIKASI PAKET STANDAR", color = if (isVipPlus) premiumGold else Cyan, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold)
                               Spacer(Modifier.height(8.dp))
                               Text("Perintah suara untuk fitur dan aplikasi bawaan ponsel:", color = Color.White, fontSize = 12.sp, lineHeight = 18.sp)
                               Spacer(Modifier.height(10.dp))
@@ -858,7 +890,7 @@ jobs:
                                   "Volume, kecerahan, dan pengaturan ponsel"
                               ).forEach { app ->
                                   Row(modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp), verticalAlignment = Alignment.Top) {
-                                      Text("•", color = Cyan, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                      Text("•", color = if (isVipPlus) premiumGold else Cyan, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                                       Spacer(Modifier.width(8.dp))
                                       Text(app, color = Color.White, fontSize = 12.sp, lineHeight = 17.sp)
                                   }
@@ -872,11 +904,16 @@ jobs:
                       Card(
                           modifier = Modifier.fillMaxWidth(),
                           shape = RoundedCornerShape(22.dp),
-                          colors = CardDefaults.cardColors(containerColor = Color(0xFF123344)),
-                          border = androidx.compose.foundation.BorderStroke(1.dp, Cyan)
+                          colors = CardDefaults.cardColors(
+                              containerColor = if (isVipPlus) Color(0xFF1C2030) else Color(0xFF123344)
+                          ),
+                          border = androidx.compose.foundation.BorderStroke(
+                              if (isVipPlus) 1.5.dp else 1.dp,
+                              if (isVipPlus) premiumBorder else Cyan
+                          )
                       ) {
                           Column(modifier = Modifier.fillMaxWidth().padding(20.dp)) {
-                              Text("APLIKASI PAKET VIP+", color = Cyan, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold)
+                              Text("APLIKASI PAKET VIP+", color = if (isVipPlus) premiumGold else Cyan, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold)
                               Spacer(Modifier.height(8.dp))
                               Text("Dapat membuka semua aplikasi terpasang yang memiliki ikon aplikasi dan dapat dijalankan Android.", color = Color.White, fontSize = 12.sp, lineHeight = 18.sp)
                               Spacer(Modifier.height(10.dp))
@@ -902,10 +939,13 @@ jobs:
                       Card(
                           modifier = Modifier.fillMaxWidth(),
                           shape = RoundedCornerShape(20.dp),
-                          colors = CardDefaults.cardColors(containerColor = Color(0xFF102238))
+                          colors = CardDefaults.cardColors(
+                              containerColor = if (isVipPlus) premiumPanel else Color(0xFF102238)
+                          ),
+                          border = if (isVipPlus) androidx.compose.foundation.BorderStroke(1.dp, premiumBorder) else null
                       ) {
                           Column(modifier = Modifier.padding(17.dp)) {
-                              Text("Privasi Anda penting", color = Cyan, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                              Text("Privasi Anda penting", color = if (isVipPlus) premiumGold else Cyan, fontSize = 15.sp, fontWeight = FontWeight.Bold)
                               Spacer(Modifier.height(8.dp))
                               Text(
                                   "M Asisten menggunakan izin perangkat seperlunya untuk menjalankan perintah yang Anda pilih. Pemrosesan suara dirancang berlangsung di perangkat dan aplikasi tidak mengirim rekaman suara ke server M Asisten.",
