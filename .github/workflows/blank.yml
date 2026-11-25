@@ -2112,6 +2112,43 @@ jobs:
                       return
                   }
 
+                  // Informasi penggunaan RAM perangkat, dibaca melalui ActivityManager.
+                  if (text.contains("ram") ||
+                      text.contains("memori ram") ||
+                      text.contains("memory ram")
+                  ) {
+                      try {
+                          val activityManager = getSystemService(
+                              android.content.Context.ACTIVITY_SERVICE
+                          ) as android.app.ActivityManager
+                          val memoryInfo = android.app.ActivityManager.MemoryInfo()
+                          activityManager.getMemoryInfo(memoryInfo)
+                          val totalBytes = memoryInfo.totalMem.coerceAtLeast(0L)
+                          val freeBytes = memoryInfo.availMem.coerceIn(0L, totalBytes)
+                          val usedBytes = (totalBytes - freeBytes).coerceAtLeast(0L)
+                          val divisor = 1024.0 * 1024.0 * 1024.0
+                          val numberFormat = java.text.DecimalFormat(
+                              "0.0",
+                              java.text.DecimalFormatSymbols(Locale("id", "ID"))
+                          )
+                          val totalGb = numberFormat.format(totalBytes / divisor)
+                          val freeGb = numberFormat.format(freeBytes / divisor)
+                          val usedGb = numberFormat.format(usedBytes / divisor)
+                          val pressureText = if (memoryInfo.lowMemory) {
+                              "Sistem sedang menandai kondisi memori rendah."
+                          } else {
+                              "Kondisi memori masih normal."
+                          }
+                          showMessage(
+                              "RAM perangkat: total $totalGb GB, digunakan sekitar $usedGb GB, " +
+                                  "tersedia $freeGb GB. $pressureText"
+                          )
+                      } catch (_: Exception) {
+                          showMessage("Informasi RAM perangkat tidak dapat dibaca.")
+                      }
+                      return
+                  }
+
                   // Informasi ruang penyimpanan internal perangkat.
                   if (text.contains("penyimpanan") ||
                       text.contains("storage internal") ||
