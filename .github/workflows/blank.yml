@@ -2986,6 +2986,27 @@ jobs:
                       return
                   }
 
+                  if (text.contains("status izin pengaturan") ||
+                      text.contains("status izin ubah pengaturan") ||
+                      text.contains("cek izin pengaturan sistem") ||
+                      text.contains("izin kecerahan") ||
+                      text.contains("izin mengubah kecerahan") ||
+                      text.contains("write settings") ||
+                      text.contains("ubah pengaturan sistem")
+                  ) {
+                      try {
+                          val canWriteSettings = android.provider.Settings.System.canWrite(this)
+                          if (canWriteSettings) {
+                              showMessage("Izin mengubah pengaturan sistem untuk M Asisten sudah diberikan. Pengaturan seperti kecerahan layar dapat diubah.")
+                          } else {
+                              showMessage("Izin mengubah pengaturan sistem untuk M Asisten belum diberikan. Fitur pengaturan seperti kecerahan layar memerlukan izin ini.")
+                          }
+                      } catch (_: Exception) {
+                          showMessage("Maaf, status izin mengubah pengaturan sistem tidak dapat diperiksa.")
+                      }
+                      return
+                  }
+
                   if (text.contains("status notifikasi") ||
                       text.contains("notifikasi aplikasi") ||
                       text.contains("izin notifikasi") ||
