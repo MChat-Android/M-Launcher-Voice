@@ -226,7 +226,7 @@ jobs:
 
               <application
                   android:theme="@android:style/Theme.Material.Light.NoActionBar"
-                  android:label="M Asisten"
+                  android:label="M Launcher Voice"
                   android:icon="@mipmap/ic_launcher"
                   android:roundIcon="@mipmap/ic_launcher"
                   android:allowBackup="false">
@@ -4957,8 +4957,8 @@ jobs:
 
       - name: Prepare Download Filename
         run: |
-          cp app/build/outputs/apk/release/app-release.apk masisten.apk
-          test -s masisten.apk
+          cp app/build/outputs/apk/release/app-release.apk M-Launcher-Voice.apk
+          test -s M-Launcher-Voice.apk
 
       - name: Upload Signed APK
         uses: actions/upload-artifact@v4
