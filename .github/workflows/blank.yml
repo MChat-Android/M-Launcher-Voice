@@ -2394,6 +2394,48 @@ jobs:
                       return
                   }
 
+                  // Jenis sumber daya yang sedang terhubung ke perangkat.
+                  if (
+                      text.contains("sumber pengisian baterai") ||
+                      text.contains("sumber daya baterai") ||
+                      text.contains("jenis charger") ||
+                      text.contains("jenis pengisi daya") ||
+                      text.contains("pakai charger apa") ||
+                      text.contains("baterai diisi pakai apa") ||
+                      text.contains("pengisian lewat apa") ||
+                      text.contains("charging source")
+                  ) {
+                      try {
+                          val batteryIntent = registerReceiver(
+                              null,
+                              android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED)
+                          )
+                          if (batteryIntent == null) {
+                              showMessage("Sumber pengisian baterai belum dapat dibaca.")
+                          } else {
+                              val plugged = batteryIntent.getIntExtra(
+                                  android.os.BatteryManager.EXTRA_PLUGGED, 0
+                              )
+                              val sourceText = when {
+                                  plugged == 0 -> "Perangkat tidak sedang terhubung ke sumber pengisian daya."
+                                  (plugged and android.os.BatteryManager.BATTERY_PLUGGED_AC) != 0 ->
+                                      "Baterai terhubung ke pengisi daya listrik atau adaptor AC."
+                                  (plugged and android.os.BatteryManager.BATTERY_PLUGGED_USB) != 0 ->
+                                      "Baterai terhubung melalui USB, seperti port komputer atau adaptor USB."
+                                  (plugged and android.os.BatteryManager.BATTERY_PLUGGED_WIRELESS) != 0 ->
+                                      "Baterai sedang menggunakan pengisian daya nirkabel."
+                                  (plugged and android.os.BatteryManager.BATTERY_PLUGGED_DOCK) != 0 ->
+                                      "Baterai terhubung ke dock pengisian daya."
+                                  else -> "Baterai terhubung ke sumber daya, tetapi jenis pengisi dayanya tidak dikenali."
+                              }
+                              showMessage(sourceText)
+                          }
+                      } catch (_: Exception) {
+                          showMessage("Maaf, sumber pengisian baterai tidak dapat diperiksa.")
+                      }
+                      return
+                  }
+
                   // Informasi baterai perangkat, dibaca langsung dari status Android.
                   if (text.contains("baterai") || text.contains("battery")) {
                       try {
