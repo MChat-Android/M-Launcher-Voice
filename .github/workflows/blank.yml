@@ -1778,21 +1778,25 @@ jobs:
                   if (vipMode) {
                       val vipLabel = TextView(this).apply {
                           text = "VIP+"
-                          textSize = 10f
-                          letterSpacing = 0.08f
+                          // Lebar badge dibuat cukup agar seluruh karakter dan jarak huruf tidak terpotong.
+                          textSize = 11f
+                          letterSpacing = 0.035f
                           typeface = Typeface.create("sans-serif-black", Typeface.BOLD)
                           gravity = Gravity.CENTER
+                          textAlignment = View.TEXT_ALIGNMENT_CENTER
                           includeFontPadding = false
                           setTextColor(0xFF352006.toInt())
                           background = vipBadgeBackground()
                           elevation = 22f
-                          setPadding(7, 0, 7, 0)
+                          setPadding(3, 2, 3, 2)
+                          minWidth = 56
+                          minHeight = 26
                       }
                       container.addView(
                           vipLabel,
                           FrameLayout.LayoutParams(
-                              42,
-                              22,
+                              56,
+                              26,
                               Gravity.TOP or Gravity.END
                           )
                       )
