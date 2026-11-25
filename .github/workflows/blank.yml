@@ -2436,6 +2436,40 @@ jobs:
                       return
                   }
 
+                  // Estimasi kapasitas baterai dalam mAh jika disediakan oleh perangkat.
+                  if (
+                      text.contains("kapasitas baterai") ||
+                      text.contains("kapasitas m ah") ||
+                      text.contains("kapasitas mah") ||
+                      text.contains("kapasitas milliampere") ||
+                      text.contains("battery capacity")
+                  ) {
+                      try {
+                          val batteryManager = getSystemService(
+                              android.content.Context.BATTERY_SERVICE
+                          ) as android.os.BatteryManager
+                          val chargeCounter = batteryManager.getIntProperty(
+                              android.os.BatteryManager.BATTERY_PROPERTY_CHARGE_COUNTER
+                          )
+                          val capacityNowMah = if (chargeCounter > 0) {
+                              chargeCounter / 1000
+                          } else {
+                              -1
+                          }
+                          val capacityText = if (capacityNowMah > 0) {
+                              "Sisa muatan baterai yang terukur sekitar " +
+                                  String.format(Locale("id", "ID"), "%,d", capacityNowMah) +
+                                  " miliampere jam. Ini adalah perkiraan muatan saat ini, bukan kapasitas maksimum baterai."
+                          } else {
+                              "Perangkat tidak menyediakan data penghitung muatan baterai yang dapat dibaca."
+                          }
+                          showMessage(capacityText)
+                      } catch (_: Exception) {
+                          showMessage("Maaf, data kapasitas atau muatan baterai tidak dapat dibaca.")
+                      }
+                      return
+                  }
+
                   // Informasi baterai perangkat, dibaca langsung dari status Android.
                   if (text.contains("baterai") || text.contains("battery")) {
                       try {
