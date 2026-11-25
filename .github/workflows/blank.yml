@@ -25,6 +25,17 @@ jobs:
           npm ci --prefix admin-tools
           npm audit --prefix admin-tools --audit-level=high
 
+      - name: Setup Node.js for Firestore rules tests
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.22.1'
+
+      - name: Test Firestore Security Rules
+        run: |
+          npm install --prefix security-tests --no-audit --no-fund
+          npm audit --prefix security-tests --audit-level=high
+          security-tests/node_modules/.bin/firebase emulators:exec --only firestore --project demo-m-launcher-voice "node security-tests/firestore-rules.test.mjs"
+
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
