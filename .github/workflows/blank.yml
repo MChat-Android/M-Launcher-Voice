@@ -2037,11 +2037,86 @@ jobs:
                           putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
                       }
 
-                      listening = true
-                      speechRecognizer?.startListening(intent)
+                      val recognizer = speechRecognizer
+                          ?: throw IllegalStateException("Mesin suara offline tidak tersedia")
+
+                      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                          // Periksa paket Bahasa Indonesia lokal sebelum mulai mendengarkan.
+                          // Jika belum terpasang, minta Android menyiapkannya satu kali.
+                          listening = true
+                          val callbackExecutor = java.util.concurrent.Executor { task ->
+                              handler.post(task)
+                          }
+                          recognizer.checkRecognitionSupport(
+                              intent,
+                              callbackExecutor,
+                              object : android.speech.RecognitionSupportCallback {
+                                  override fun onSupportResult(
+                                      support: android.speech.RecognitionSupport
+                                  ) {
+                                      if (speechRecognizer !== recognizer) return
+                                      fun hasIndonesian(languages: List<String>): Boolean =
+                                          languages.any {
+                                              Locale.forLanguageTag(it).language.equals("id", ignoreCase = true)
+                                          }
+
+                                      when {
+                                          hasIndonesian(support.installedOnDeviceLanguages) -> {
+                                              try {
+                                                  recognizer.startListening(intent)
+                                                  listening = true
+                                              } catch (_: Exception) {
+                                                  listening = false
+                                                  showMessage("Tidak dapat memulai pengenalan suara offline.")
+                                              }
+                                          }
+                                          hasIndonesian(support.pendingOnDeviceLanguages) -> {
+                                              listening = false
+                                              showMessage("Paket suara Bahasa Indonesia sedang disiapkan Android. Coba lagi setelah selesai.")
+                                          }
+                                          hasIndonesian(support.supportedOnDeviceLanguages) -> {
+                                              listening = false
+                                              showMessage("Paket suara Bahasa Indonesia belum terpasang. Android akan diminta mengunduh paket ini satu kali; setelah terpasang, perintah suara dapat digunakan offline.")
+                                              try {
+                                                  recognizer.triggerModelDownload(intent)
+                                              } catch (_: Exception) {
+                                                  showMessage("Gagal meminta paket suara offline. Periksa koneksi internet dan pengaturan layanan suara Android.")
+                                              }
+                                          }
+                                          else -> {
+                                              listening = false
+                                              showMessage("Layanan suara di perangkat ini belum menyediakan paket Bahasa Indonesia offline.")
+                                          }
+                                      }
+                                  }
+
+                                  override fun onError(error: Int) {
+                                      if (speechRecognizer !== recognizer) return
+                                      // Pemeriksaan dukungan tidak tersedia pada sebagian layanan.
+                                      // Tetap coba mesin on-device yang eksplisit, bukan layanan cloud.
+                                      if (error == SpeechRecognizer.ERROR_CANNOT_CHECK_SUPPORT) {
+                                          try {
+                                              recognizer.startListening(intent)
+                                              listening = true
+                                          } catch (_: Exception) {
+                                              listening = false
+                                              showMessage("Tidak dapat memulai pengenalan suara offline.")
+                                          }
+                                      } else {
+                                          listening = false
+                                          showMessage("Tidak dapat memeriksa paket suara offline (kode $error).")
+                                      }
+                                  }
+                              }
+                          )
+                      } else {
+                          // Android 12: recognizer sudah dipaksa ke mesin on-device.
+                          listening = true
+                          recognizer.startListening(intent)
+                      }
                   } catch (_: Exception) {
                       listening = false
-                      showMessage("Mikrofon tidak dapat diaktifkan")
+                      showMessage("Mikrofon atau mesin pengenalan suara offline tidak dapat diaktifkan.")
                       if (awaitingWakeWord) scheduleWakeWordListening(1800L)
                   }
               }
