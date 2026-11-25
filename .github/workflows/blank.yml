@@ -721,12 +721,45 @@ jobs:
 
                       Spacer(Modifier.height(34.dp))
 
-                      Image(
-                          painter = painterResource(id = R.drawable.launcher_home),
-                          contentDescription = "Ikon resmi M Asisten",
-                          modifier = Modifier.size(heroImageSize).clip(RoundedCornerShape(38.dp)),
-                          contentScale = ContentScale.Fit
-                      )
+                      Box(
+                          modifier = Modifier.size(heroImageSize),
+                          contentAlignment = Alignment.Center
+                      ) {
+                          Image(
+                              painter = painterResource(id = R.drawable.launcher_home),
+                              contentDescription = "Ikon resmi M Asisten",
+                              modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(38.dp)),
+                              contentScale = ContentScale.Fit
+                          )
+
+                          // Lencana VIP+ menempel pada garis bingkai kanan-atas logo.
+                          if (vipMembershipStatus.startsWith("VIP+ AKTIF")) {
+                              Box(
+                                  modifier = Modifier
+                                      .align(Alignment.TopEnd)
+                                      .offset(x = 9.dp, y = (-8).dp)
+                                      .background(
+                                          brush = Brush.horizontalGradient(
+                                              listOf(
+                                                  Color(0xFFFFE9A6),
+                                                  Color(0xFFFFC94A),
+                                                  Color(0xFFB87916)
+                                              )
+                                          ),
+                                          shape = RoundedCornerShape(11.dp)
+                                      )
+                                      .padding(horizontal = 12.dp, vertical = 6.dp)
+                              ) {
+                                  Text(
+                                      text = "VIP+",
+                                      color = Color(0xFF382306),
+                                      fontSize = 13.sp,
+                                      fontWeight = FontWeight.Black,
+                                      letterSpacing = 1.2.sp
+                                  )
+                              }
+                          }
+                      }
 
                       Spacer(Modifier.height(25.dp))
                       Text(
