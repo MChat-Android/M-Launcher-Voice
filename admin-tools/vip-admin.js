@@ -16,7 +16,7 @@ const auth = admin.auth();
 const PLANS = {
   "VIP+ Mingguan (7 hari)": { amount: 15000, days: 7 },
   "VIP+ Bulanan (30 hari)": { amount: 50000, days: 30 },
-  "VIP+ Tahunan (365 hari)": { amount: 200000, days: 365 },
+  "VIP+ Tahunan (365 hari)": { amount: 250000, days: 365 },
   "VIP+ Lifetime": { amount: 500000, days: null }
 };
 

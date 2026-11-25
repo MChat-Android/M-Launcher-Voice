@@ -921,7 +921,7 @@ jobs:
                                                                       val days = when (plan) {
                                                                           "VIP+ Mingguan (7 hari)" -> if (amount == 15000L) 7 else 0
                                                                           "VIP+ Bulanan (30 hari)" -> if (amount == 50000L) 30 else 0
-                                                                          "VIP+ Tahunan (365 hari)" -> if (amount == 200000L) 365 else 0
+                                                                          "VIP+ Tahunan (365 hari)" -> if (amount == 250000L) 365 else 0
                                                                           "VIP+ Lifetime" -> if (amount == 500000L) -1 else 0
                                                                           else -> 0
                                                                       }
@@ -1107,7 +1107,7 @@ jobs:
                                               val amount = when (selectedVipPlan) {
                                                   "VIP+ Mingguan (7 hari)" -> 15000
                                                   "VIP+ Bulanan (30 hari)" -> 50000
-                                                  "VIP+ Tahunan (365 hari)" -> 200000
+                                                  "VIP+ Tahunan (365 hari)" -> 250000
                                                   else -> 500000
                                               }
                                               paymentSubmitting = true
