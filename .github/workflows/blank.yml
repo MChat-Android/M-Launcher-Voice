@@ -3771,6 +3771,18 @@ jobs:
                       return
                   }
 
+                  // Membuka halaman pengaturan keamanan Android.
+                  if (
+                      text == "buka pengaturan keamanan" ||
+                      text == "pengaturan keamanan hp" ||
+                      text == "atur keamanan perangkat" ||
+                      text == "buka keamanan android" ||
+                      text == "pengaturan security hp"
+                  ) {
+                      openSettings(Settings.ACTION_SECURITY_SETTINGS)
+                      return
+                  }
+
                   if (text.contains("pengaturan") || text.contains("setelan") || text.contains("settings")) {
                       openSettings(Settings.ACTION_SETTINGS)
                       return
