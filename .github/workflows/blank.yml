@@ -2274,6 +2274,28 @@ jobs:
                       return
                   }
 
+                  // Status mode hemat daya Android, dibaca secara lokal tanpa izin tambahan.
+                  if (text.contains("hemat daya") ||
+                      text.contains("penghemat baterai") ||
+                      text.contains("battery saver") ||
+                      text.contains("mode hemat baterai")
+                  ) {
+                      try {
+                          val powerManager = getSystemService(
+                              android.content.Context.POWER_SERVICE
+                          ) as android.os.PowerManager
+                          val saverActive = powerManager.isPowerSaveMode
+                          if (saverActive) {
+                              showMessage("Mode hemat daya sedang aktif.")
+                          } else {
+                              showMessage("Mode hemat daya sedang tidak aktif.")
+                          }
+                      } catch (_: Exception) {
+                          showMessage("Status mode hemat daya tidak dapat dibaca.")
+                      }
+                      return
+                  }
+
                   // Suhu dan kondisi kesehatan baterai dari siaran status baterai Android.
                   if (text.contains("suhu baterai") ||
                       text.contains("temperatur baterai") ||
