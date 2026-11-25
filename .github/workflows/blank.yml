@@ -139,6 +139,7 @@ jobs:
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
               <uses-permission android:name="android.permission.CAMERA"/>
+              <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
               <uses-permission android:name="android.permission.WRITE_SETTINGS"/>
               <uses-permission android:name="android.permission.RECORD_AUDIO"/>
               <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
@@ -2109,6 +2110,48 @@ jobs:
                           else -> "Sekarang pukul ${timeFormat.format(now)}."
                       }
                       showMessage(answer)
+                      return
+                  }
+
+                  // Status koneksi internet dan jenis jaringan aktif.
+                  if (text.contains("internet") ||
+                      text.contains("koneksi jaringan") ||
+                      text.contains("status jaringan")
+                  ) {
+                      try {
+                          val connectivityManager = getSystemService(
+                              android.content.Context.CONNECTIVITY_SERVICE
+                          ) as android.net.ConnectivityManager
+                          val activeNetwork = connectivityManager.activeNetwork
+                          val capabilities = activeNetwork?.let {
+                              connectivityManager.getNetworkCapabilities(it)
+                          }
+                          if (capabilities == null) {
+                              showMessage("Saat ini perangkat tidak terhubung ke jaringan.")
+                          } else {
+                              val networkType = when {
+                                  capabilities.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI) -> "Wi-Fi"
+                                  capabilities.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR) -> "data seluler"
+                                  capabilities.hasTransport(android.net.NetworkCapabilities.TRANSPORT_ETHERNET) -> "Ethernet"
+                                  capabilities.hasTransport(android.net.NetworkCapabilities.TRANSPORT_VPN) -> "VPN"
+                                  else -> "jaringan lain"
+                              }
+                              val hasInternet = capabilities.hasCapability(
+                                  android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET
+                              )
+                              val validated = capabilities.hasCapability(
+                                  android.net.NetworkCapabilities.NET_CAPABILITY_VALIDATED
+                              )
+                              val answer = when {
+                                  !hasInternet -> "Terhubung ke $networkType, tetapi jaringan tidak menyediakan akses internet."
+                                  validated -> "Internet terhubung melalui $networkType dan akses internet terdeteksi aktif."
+                                  else -> "Terhubung ke $networkType, tetapi akses internet belum dapat dipastikan."
+                              }
+                              showMessage(answer)
+                          }
+                      } catch (_: Exception) {
+                          showMessage("Status koneksi internet tidak dapat dibaca.")
+                      }
                       return
                   }
 
