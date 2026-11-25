@@ -2029,6 +2029,28 @@ jobs:
               }
 
               private fun executeCommand(command: String) {
+                  // Pisahkan perintah berantai hanya pada penghubung urutan yang jelas.
+                  val sequenceParts = command
+                      .split(Regex("\\s+(?:lalu|kemudian|setelah itu)\\s+", RegexOption.IGNORE_CASE))
+                      .map { it.trim() }
+                      .filter { it.isNotBlank() }
+
+                  if (sequenceParts.size > 1) {
+                      if (sequenceParts.size > 3) {
+                          showMessage("Maksimal tiga perintah dalam satu ucapan. Silakan bagi menjadi beberapa ucapan.")
+                          return
+                      }
+
+                      showMessage("Menjalankan ${sequenceParts.size} perintah secara berurutan.")
+                      sequenceParts.forEachIndexed { index, part ->
+                          handler.postDelayed({
+                              showMessage("Menjalankan perintah ${index + 1} dari ${sequenceParts.size}.", speak = false)
+                              executeCommand(part)
+                          }, index * 1800L)
+                      }
+                      return
+                  }
+
                   val text = command.lowercase()
                       .replace("tolong", "")
                       .replace("silakan", "")
