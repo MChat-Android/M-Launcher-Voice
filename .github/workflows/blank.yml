@@ -226,7 +226,7 @@ jobs:
 
               <application
                   android:theme="@android:style/Theme.Material.Light.NoActionBar"
-                  android:label="M Launcher Voice"
+                  android:label="M Asisten"
                   android:icon="@mipmap/ic_launcher"
                   android:roundIcon="@mipmap/ic_launcher"
                   android:allowBackup="false">
@@ -4937,12 +4937,12 @@ jobs:
 
       - name: Prepare Download Filename
         run: |
-          cp app/build/outputs/apk/release/app-release.apk M-Launcher-Voice.apk
-          test -s M-Launcher-Voice.apk
+          cp app/build/outputs/apk/release/app-release.apk masisten.apk
+          test -s masisten.apk
 
       - name: Upload Signed APK
         uses: actions/upload-artifact@v4
         with:
-          name: M-Launcher-Voice-APK
-          path: M-Launcher-Voice.apk
+          name: M-Asisten-APK
+          path: masisten.apk
           if-no-files-found: error
