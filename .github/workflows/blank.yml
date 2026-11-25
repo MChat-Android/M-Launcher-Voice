@@ -2678,6 +2678,32 @@ jobs:
                       return
                   }
 
+                  // Informasi arsitektur CPU dan platform perangkat yang dilaporkan Android.
+                  if (
+                      text == "arsitektur cpu hp" ||
+                      text == "arsitektur prosesor hp" ||
+                      text == "tipe cpu hp" ||
+                      text == "jenis prosesor hp" ||
+                      text == "arsitektur perangkat" ||
+                      text == "cpu architecture" ||
+                      text == "abi perangkat"
+                  ) {
+                      try {
+                          val supportedAbis = Build.SUPPORTED_ABIS
+                              .filter { it.isNotBlank() }
+                              .joinToString(", ")
+                          val hardware = Build.HARDWARE.orEmpty().ifBlank { "tidak dilaporkan" }
+                          val board = Build.BOARD.orEmpty().ifBlank { "tidak dilaporkan" }
+                          showMessage(
+                              "Arsitektur aplikasi yang didukung perangkat: ${supportedAbis.ifBlank { "tidak tersedia" }}. " +
+                                  "Platform hardware: $hardware. Board: $board."
+                          )
+                      } catch (_: Exception) {
+                          showMessage("Maaf, informasi arsitektur CPU perangkat tidak dapat dibaca.")
+                      }
+                      return
+                  }
+
                   // Informasi nomor build/fingerprint sistem Android untuk diagnosis perangkat.
                   if (
                       text.contains("nomor build android") ||
