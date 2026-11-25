@@ -2112,6 +2112,31 @@ jobs:
                       return
                   }
 
+                  // Informasi identitas dasar perangkat dan versi Android.
+                  if (text.contains("informasi hp") ||
+                      text.contains("info hp") ||
+                      text.contains("informasi perangkat") ||
+                      text.contains("info perangkat") ||
+                      text.contains("tipe hp") ||
+                      text.contains("model hp") ||
+                      text.contains("versi android")
+                  ) {
+                      try {
+                          val manufacturer = android.os.Build.MANUFACTURER
+                              .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale("id", "ID")) else it.toString() }
+                          val model = android.os.Build.MODEL
+                          val androidVersion = android.os.Build.VERSION.RELEASE
+                          val sdkVersion = android.os.Build.VERSION.SDK_INT
+                          showMessage(
+                              "Informasi perangkat: $manufacturer $model. " +
+                                  "Versi Android $androidVersion, API level $sdkVersion."
+                          )
+                      } catch (_: Exception) {
+                          showMessage("Informasi perangkat belum dapat dibaca.")
+                      }
+                      return
+                  }
+
                   // Informasi penggunaan RAM perangkat, dibaca melalui ActivityManager.
                   if (text.contains("ram") ||
                       text.contains("memori ram") ||
