@@ -3875,6 +3875,19 @@ jobs:
                       return
                   }
 
+                  // Membuka halaman Tentang Ponsel atau informasi perangkat di pengaturan Android.
+                  if (
+                      text == "buka tentang ponsel" ||
+                      text == "pengaturan tentang ponsel" ||
+                      text == "buka info perangkat" ||
+                      text == "tentang hp" ||
+                      text == "about phone" ||
+                      text == "informasi perangkat di pengaturan"
+                  ) {
+                      openSettings(Settings.ACTION_DEVICE_INFO_SETTINGS)
+                      return
+                  }
+
                   if (text.contains("pengaturan") || text.contains("setelan") || text.contains("settings")) {
                       openSettings(Settings.ACTION_SETTINGS)
                       return
