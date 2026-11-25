@@ -2322,15 +2322,35 @@ jobs:
                   }
 
                   val target = text
-                      .replace(Regex("\\b(aplikasi|app)\\b"), " ")
-                      .replace("jalankan", "")
-                      .replace("mulai", "")
+                      .replace(Regex("\\b(aplikasi|app|program)\\b"), " ")
+                      .replace(Regex("\\b(jalankan|mulai|tolong|dong|ya|please)\\b"), " ")
                       .replace(Regex("\\s+"), " ")
                       .trim()
 
                   if (target.isNotBlank()) {
-                      if (!openAppByName(target)) {
-                          showMessage("Aplikasi $target tidak ditemukan")
+                      // Alias ucapan umum dipetakan ke label aplikasi; pencarian tetap
+                      // menggunakan PackageManager dan tetap melewati pembatas VIP+.
+                      val appAliases = mapOf(
+                          "wa" to arrayOf("WhatsApp"),
+                          "w a" to arrayOf("WhatsApp"),
+                          "whatsapp" to arrayOf("WhatsApp"),
+                          "ig" to arrayOf("Instagram"),
+                          "instagram" to arrayOf("Instagram"),
+                          "fb" to arrayOf("Facebook"),
+                          "facebook" to arrayOf("Facebook"),
+                          "yt" to arrayOf("YouTube"),
+                          "youtube" to arrayOf("YouTube"),
+                          "chrome" to arrayOf("Chrome", "Google Chrome"),
+                          "maps" to arrayOf("Maps", "Google Maps"),
+                          "google maps" to arrayOf("Maps", "Google Maps"),
+                          "gmail" to arrayOf("Gmail"),
+                          "tiktok" to arrayOf("TikTok"),
+                          "telegram" to arrayOf("Telegram"),
+                          "spotify" to arrayOf("Spotify")
+                      )
+                      val aliases = appAliases[target] ?: arrayOf(target)
+                      if (!openAppByName(*aliases)) {
+                          showMessage("Aplikasi $target tidak ditemukan atau tidak tersedia pada mode ini")
                       }
                   } else {
                       showMessage("Perintah tidak dikenali")
