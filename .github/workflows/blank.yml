@@ -1808,23 +1808,22 @@ jobs:
                   textToSpeech = TextToSpeech(this) { status ->
                       if (status == TextToSpeech.SUCCESS) {
                           textToSpeech?.let { engine ->
-                              val languageResult = engine.setLanguage(Locale("id", "ID"))
-                              textToSpeechReady =
-                                  languageResult != TextToSpeech.LANG_MISSING_DATA &&
-                                  languageResult != TextToSpeech.LANG_NOT_SUPPORTED
+                              // Gunakan hanya suara Bahasa Indonesia yang tersedia secara offline.
+                              val offlineIndonesianVoice = engine.voices?.firstOrNull {
+                                  it.locale.language.equals("id", ignoreCase = true) &&
+                                      !it.isNetworkConnectionRequired
+                              }
+                              if (offlineIndonesianVoice != null) {
+                                  engine.voice = offlineIndonesianVoice
+                                  textToSpeechReady = true
+                              } else {
+                                  textToSpeechReady = false
+                              }
                               engine.setPitch(1.08f)
                               engine.setSpeechRate(1.06f)
-                              val indonesianVoices = engine.voices?.filter {
-                                  it.locale.language.equals("id", ignoreCase = true)
-                              }.orEmpty()
-                              val maleVoice = indonesianVoices.firstOrNull {
-                                  it.name.contains("male", ignoreCase = true) ||
-                                  it.name.contains("man", ignoreCase = true)
-                              }
-                              if (maleVoice != null) engine.voice = maleVoice
                               pendingSpeechResponse?.let { pending ->
                                   pendingSpeechResponse = null
-                                  handler.post { speakResponse(pending) }
+                                  if (textToSpeechReady) handler.post { speakResponse(pending) }
                               }
                               if (vipGreetingPending && vipMode) {
                                   handler.post {
@@ -1833,7 +1832,7 @@ jobs:
                                           if (textToSpeechReady) {
                                               speakTextThenListen("Hallo M, silakan ucapkan perintah.")
                                           } else {
-                                              showMessage("Sapaan suara tidak tersedia. Silakan ucapkan perintah.")
+                                              showMessage("Suara Bahasa Indonesia offline belum tersedia. Perintah suara tetap dapat digunakan jika pengenalan suara offline tersedia.")
                                               startVoiceRecognition()
                                           }
                                       }
@@ -1843,7 +1842,7 @@ jobs:
                       } else if (vipGreetingPending && vipMode) {
                           handler.post {
                               vipGreetingPending = false
-                              showMessage("Sapaan suara tidak tersedia. Silakan ucapkan perintah.")
+                              showMessage("Suara offline tidak tersedia. Silakan ucapkan perintah.")
                               startVoiceRecognition()
                           }
                       }
@@ -1948,14 +1947,21 @@ jobs:
               private fun startVoiceRecognition() {
                   if (listening) return
 
-                  if (!SpeechRecognizer.isRecognitionAvailable(this)) {
-                      showMessage("Layanan pengenalan suara Android tidak tersedia")
+                  // Jangan pernah jatuh kembali ke layanan pengenalan suara cloud.
+                  // API on-device tersedia mulai Android 12 (API 31).
+                  if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+                      showMessage("Pengenalan suara offline memerlukan Android 12 atau lebih baru pada versi aplikasi ini.")
+                      return
+                  }
+
+                  if (!SpeechRecognizer.isOnDeviceRecognitionAvailable(this)) {
+                      showMessage("Pengenalan suara offline tidak tersedia. Periksa dukungan layanan suara offline dan paket Bahasa Indonesia di perangkat.")
                       return
                   }
 
                   try {
                       speechRecognizer?.destroy()
-                      speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
+                      speechRecognizer = SpeechRecognizer.createOnDeviceSpeechRecognizer(this)
 
                       speechRecognizer?.setRecognitionListener(
                           object : RecognitionListener {
@@ -1983,7 +1989,7 @@ jobs:
                                       SpeechRecognizer.ERROR_AUDIO -> "Masalah pada input mikrofon"
                                       SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Izin mikrofon belum diberikan"
                                       SpeechRecognizer.ERROR_NETWORK,
-                                      SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "Koneksi pengenalan suara bermasalah"
+                                      SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "Pengenalan suara offline gagal. Pastikan paket Bahasa Indonesia offline tersedia di perangkat."
                                       SpeechRecognizer.ERROR_NO_MATCH,
                                       SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "Suara tidak dikenali. Ketuk widget untuk mencoba lagi."
                                       else -> "Pengenalan suara gagal (kode $error). Ketuk widget untuk mencoba lagi."
@@ -2026,6 +2032,7 @@ jobs:
                           )
                           putExtra(RecognizerIntent.EXTRA_LANGUAGE, "id-ID")
                           putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "id-ID")
+                          putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
                           putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
                           putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
                       }
