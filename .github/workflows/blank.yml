@@ -1,5 +1,5 @@
 
-name: Build M Asisten
+name: Build M Launcher Voice
 
 on:
   workflow_dispatch:
@@ -620,22 +620,6 @@ jobs:
               var adminMessage by remember { mutableStateOf("") }
               var simulationMessage by remember { mutableStateOf("") }
               val context = LocalContext.current
-              val accountPrefs = remember {
-                  context.getSharedPreferences("m_asisten_account", android.content.Context.MODE_PRIVATE)
-              }
-              var memberName by remember {
-                  mutableStateOf(accountPrefs.getString("display_name", "Pengguna M Asisten") ?: "Pengguna M Asisten")
-              }
-              val memberId = remember {
-                  accountPrefs.getString("member_id", null) ?: (
-                      "MA-" + java.util.UUID.randomUUID().toString()
-                          .replace("-", "").take(10).uppercase()
-                  ).also { generatedId ->
-                      accountPrefs.edit().putString("member_id", generatedId).apply()
-                  }
-              }
-              var showAccountEditor by remember { mutableStateOf(false) }
-              var editedMemberName by remember { mutableStateOf(memberName) }
               val Navy = Color(0xFF07111F)
               val Panel = Color(0xFF111F32)
               val Cyan = Color(0xFF35D6E8)
@@ -675,19 +659,10 @@ jobs:
                           Spacer(Modifier.width(13.dp))
                           Column {
                               Text("M ASISTEN", color = Color.White, fontSize = if (compactWidth) 15.sp else 18.sp, fontWeight = FontWeight.ExtraBold)
-                              Text("ASISTEN SUARA  •  PINTAR", color = Cyan, fontSize = if (compactWidth) 7.sp else 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp)
-                              Text("MADE IN INDONESIA", color = Muted, fontSize = 8.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.1.sp)
+                              Text("ASISTEN SUARA PINTAR", color = Cyan, fontSize = if (compactWidth) 7.sp else 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp)
+                              Text("DIBUAT DI INDONESIA", color = Muted, fontSize = 8.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.1.sp)
                           }
                           Spacer(Modifier.weight(1f))
-                          Box(
-                              modifier = Modifier
-                                  .clip(CircleShape)
-                                  .clickable { showVipPlus = true }
-                                  .background(Color(0xFF123344))
-                                  .padding(horizontal = 11.dp, vertical = 7.dp)
-                          ) {
-                              Text("VIP+", color = Cyan, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                          }
                       }
 
                       Spacer(Modifier.height(34.dp))
@@ -774,33 +749,55 @@ jobs:
                       Spacer(Modifier.height(18.dp))
                       Card(
                           modifier = Modifier.fillMaxWidth(),
-                          shape = RoundedCornerShape(20.dp),
-                          colors = CardDefaults.cardColors(containerColor = Color(0xFF102238))
+                          shape = RoundedCornerShape(22.dp),
+                          colors = CardDefaults.cardColors(containerColor = Color(0xFF102238)),
+                          border = androidx.compose.foundation.BorderStroke(1.dp, Cyan)
                       ) {
-                          Column(modifier = Modifier.padding(17.dp)) {
-                              Row(verticalAlignment = Alignment.CenterVertically) {
-                                  Column(modifier = Modifier.weight(1f)) {
-                                      Text("AKUN M ASISTEN", color = Cyan, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
-                                      Spacer(Modifier.height(5.dp))
-                                      Text(memberName, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold)
-                                      Text("ID Anggota: $memberId", color = Muted, fontSize = 11.sp)
-                                  }
-                                  Text("M", color = Cyan, fontSize = 25.sp, fontWeight = FontWeight.ExtraBold)
-                              }
+                          Column(modifier = Modifier.fillMaxWidth().padding(20.dp)) {
+                              Text("APLIKASI PAKET STANDAR", color = Cyan, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold)
+                              Spacer(Modifier.height(8.dp))
+                              Text("Perintah suara untuk fitur dan aplikasi bawaan ponsel:", color = Color.White, fontSize = 12.sp, lineHeight = 18.sp)
                               Spacer(Modifier.height(10.dp))
-                              Text("Profil tersimpan di perangkat ini. Sinkronisasi akun online belum tersedia.", color = Muted, fontSize = 10.sp, lineHeight = 15.sp)
-                              Spacer(Modifier.height(12.dp))
-                              OutlinedButton(
-                                  onClick = {
-                                      editedMemberName = memberName
-                                      showAccountEditor = true
-                                  },
-                                  modifier = Modifier.fillMaxWidth(),
-                                  colors = ButtonDefaults.outlinedButtonColors(contentColor = Cyan),
-                                  border = androidx.compose.foundation.BorderStroke(1.dp, Cyan)
-                              ) {
-                                  Text("UBAH NAMA PROFIL", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                              listOf(
+                                  "Telepon dan kontak",
+                                  "Pesan dan SMS",
+                                  "Kamera dan perekam video",
+                                  "Galeri dan foto",
+                                  "Peramban internet",
+                                  "Peta dan navigasi",
+                                  "Kalender dan alarm",
+                                  "Senter dan lampu kilat",
+                                  "Wi-Fi, Bluetooth, dan hotspot",
+                                  "Volume, kecerahan, dan pengaturan ponsel"
+                              ).forEach { app ->
+                                  Row(modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp), verticalAlignment = Alignment.Top) {
+                                      Text("•", color = Cyan, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                      Spacer(Modifier.width(8.dp))
+                                      Text(app, color = Color.White, fontSize = 12.sp, lineHeight = 17.sp)
+                                  }
                               }
+                              Spacer(Modifier.height(8.dp))
+                              Text("Paket Standar berfokus pada aplikasi bawaan dan kendali dasar ponsel.", color = Muted, fontSize = 10.sp, lineHeight = 15.sp)
+                          }
+                      }
+
+                      Spacer(Modifier.height(14.dp))
+                      Card(
+                          modifier = Modifier.fillMaxWidth(),
+                          shape = RoundedCornerShape(22.dp),
+                          colors = CardDefaults.cardColors(containerColor = Color(0xFF123344)),
+                          border = androidx.compose.foundation.BorderStroke(1.dp, Cyan)
+                      ) {
+                          Column(modifier = Modifier.fillMaxWidth().padding(20.dp)) {
+                              Text("APLIKASI PAKET VIP+", color = Cyan, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold)
+                              Spacer(Modifier.height(8.dp))
+                              Text("Dapat membuka semua aplikasi terpasang yang memiliki ikon aplikasi dan dapat dijalankan Android.", color = Color.White, fontSize = 12.sp, lineHeight = 18.sp)
+                              Spacer(Modifier.height(10.dp))
+                              Text("Contoh aplikasi:", color = Muted, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                              Spacer(Modifier.height(5.dp))
+                              Text("WhatsApp, Instagram, Facebook, YouTube, Chrome, Google Maps, Gmail, TikTok, Telegram, Spotify, dan aplikasi lain yang tersedia di ponsel.", color = Color.White, fontSize = 12.sp, lineHeight = 18.sp)
+                              Spacer(Modifier.height(8.dp))
+                              Text("Daftar sebenarnya mengikuti aplikasi yang terpasang pada masing-masing ponsel. Fitur di dalam aplikasi tetap dikendalikan oleh penggunanya.", color = Muted, fontSize = 10.sp, lineHeight = 15.sp)
                           }
                       }
 
@@ -824,19 +821,19 @@ jobs:
                               Text("Privasi Anda penting", color = Cyan, fontSize = 15.sp, fontWeight = FontWeight.Bold)
                               Spacer(Modifier.height(8.dp))
                               Text(
-                                  "M Asisten menggunakan izin hanya untuk menjalankan fitur yang Anda pilih.",
+                                  "M Asisten menggunakan izin perangkat seperlunya untuk menjalankan perintah yang Anda pilih. Pemrosesan suara dirancang berlangsung di perangkat dan aplikasi tidak mengirim rekaman suara ke server M Asisten.",
                                   color = Color.White, fontSize = 12.sp, lineHeight = 19.sp
                               )
                               Spacer(Modifier.height(12.dp))
                               Text("• Mikrofon", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                               Text(
-                                  "Digunakan saat Anda menekan widget mikrofon untuk menerima perintah suara. Pengenalan suara diproses melalui layanan pengenal suara Android yang tersedia di perangkat; ketentuan layanan tersebut dapat berlaku.",
+                                  "Mikrofon aktif ketika Anda mengetuk widget atau memulai perintah suara. Aplikasi menggunakan pengenalan suara langsung di perangkat tanpa mengirim rekaman ke server M Asisten. Dukungan suara offline Bahasa Indonesia bergantung pada versi Android, layanan suara, dan paket bahasa yang tersedia; paket bahasa mungkin perlu diunduh satu kali.",
                                   color = Muted, fontSize = 11.sp, lineHeight = 17.sp
                               )
                               Spacer(Modifier.height(10.dp))
                               Text("• Kamera", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                               Text(
-                                  "Izin kamera diperlukan untuk mengendalikan lampu flash/senter. Aplikasi tidak mengaktifkan kamera untuk mengambil foto atau video melalui fitur ini.",
+                                  "Izin kamera digunakan untuk memeriksa dan mengendalikan lampu kilat sebagai senter. Aplikasi tidak mengambil atau mengunggah foto dan video melalui fitur senter.",
                                   color = Muted, fontSize = 11.sp, lineHeight = 17.sp
                               )
                               Spacer(Modifier.height(10.dp))
@@ -846,14 +843,14 @@ jobs:
                                   color = Muted, fontSize = 11.sp, lineHeight = 17.sp
                               )
                               Spacer(Modifier.height(10.dp))
-                              Text("• Kendali pengguna", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                              Text("• Kendali dan data akun", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                               Text(
-                                  "Widget hanya mulai mendengarkan setelah Anda mengetuknya. Anda dapat mencabut izin mikrofon, kamera, notifikasi, atau overlay melalui Pengaturan perangkat.",
+                                  "Widget mulai mendengarkan setelah Anda mengetuknya. Anda dapat menghentikan penggunaan dan mencabut izin mikrofon, kamera, notifikasi, atau tampilan di atas aplikasi melalui Pengaturan perangkat.",
                                   color = Muted, fontSize = 11.sp, lineHeight = 17.sp
                               )
                               Spacer(Modifier.height(10.dp))
                               Text(
-                                  "Profil anggota saat ini disimpan hanya di perangkat. Akun online, pencadangan, dan sinkronisasi antarperangkat belum tersedia. Penggunaan layanan Android atau aplikasi lain yang dibuka melalui perintah suara mengikuti kebijakan privasi penyedia masing-masing.",
+                                  "Nama profil dan pengaturan lokal disimpan di perangkat. Jika Anda masuk dengan Google atau mengajukan keanggotaan VIP+, aplikasi mengirim data akun, alamat surel, pilihan paket, nominal, nama pengirim, nomor referensi transfer jika diisi, serta status dan waktu permintaan ke Firebase untuk pemeriksaan keanggotaan dan pembayaran oleh admin. Aplikasi saat ini belum menyediakan unggahan bukti transfer. Aplikasi lain yang dibuka memiliki kebijakan privasi masing-masing. Jangan pernah membagikan PIN, OTP, atau kata sandi.",
                                   color = Muted, fontSize = 10.sp, lineHeight = 16.sp
                               )
                           }
@@ -861,67 +858,12 @@ jobs:
 
                       Spacer(Modifier.height(25.dp))
                       Text(
-                          "M Asisten",
+                          "M Asisten asisten suara pintar",
                           color = Cyan,
                           fontSize = 12.sp,
                           fontWeight = FontWeight.Bold
                       )
-                      Spacer(Modifier.height(5.dp))
-                      Text(
-                          "Asisten Suara  •  Pintar",
-                          color = Muted,
-                          fontSize = 10.sp
-                      )
                       Spacer(Modifier.height(12.dp))
-                  }
-                  if (showAccountEditor) {
-                      AlertDialog(
-                          onDismissRequest = { showAccountEditor = false },
-                          containerColor = Panel,
-                          title = {
-                              Text("PROFIL ANGGOTA", color = Cyan, fontWeight = FontWeight.ExtraBold)
-                          },
-                          text = {
-                              Column {
-                                  Text("ID anggota perangkat", color = Muted, fontSize = 11.sp)
-                                  Spacer(Modifier.height(4.dp))
-                                  Text(memberId, color = Color.White, fontWeight = FontWeight.Bold)
-                                  Spacer(Modifier.height(14.dp))
-                                  OutlinedTextField(
-                                      value = editedMemberName,
-                                      onValueChange = { editedMemberName = it.take(32) },
-                                      label = { Text("Nama profil") },
-                                      singleLine = true,
-                                      colors = OutlinedTextFieldDefaults.colors(
-                                          focusedBorderColor = Cyan,
-                                          focusedLabelColor = Cyan,
-                                          cursorColor = Cyan
-                                      )
-                                  )
-                                  Spacer(Modifier.height(8.dp))
-                                  Text("Nama dan ID ini hanya tersimpan di perangkat ini, belum menjadi akun online.", color = Muted, fontSize = 10.sp, lineHeight = 15.sp)
-                              }
-                          },
-                          confirmButton = {
-                              TextButton(
-                                  onClick = {
-                                      val cleanName = editedMemberName.trim()
-                                      if (cleanName.isNotEmpty()) {
-                                          memberName = cleanName
-                                          accountPrefs.edit().putString("display_name", cleanName).apply()
-                                      }
-                                      showAccountEditor = false
-                                  }
-                              ) {
-                                  Text("SIMPAN", color = Cyan, fontWeight = FontWeight.Bold)
-                              }
-                          },
-                          dismissButton = {
-                              TextButton(onClick = { showAccountEditor = false }) {
-                                  Text("BATAL", color = Muted)
-                              }
-                          }
-                      )
                   }
                   if (showVipPlus) {
                       AlertDialog(
@@ -929,7 +871,7 @@ jobs:
                           containerColor = Panel,
                           title = {
                               Text(
-                                  "VIP+ MEMBERSHIP",
+                                  "KEANGGOTAAN VIP+",
                                   color = Cyan,
                                   fontWeight = FontWeight.ExtraBold
                               )
@@ -963,7 +905,7 @@ jobs:
                                                                   "VIP+ Mingguan • 7 hari" to 7,
                                                                   "VIP+ Bulanan • 30 hari" to 30,
                                                                   "VIP+ Tahunan • 365 hari" to 365,
-                                                                  "VIP+ Lifetime" to -1
+                                                                  "VIP+ Seumur Hidup" to -1
                                                               )
                                                               simulationMessage = buildString {
                                                                   append("Waktu mulai simulasi: ")
@@ -1156,11 +1098,11 @@ jobs:
                                   Text("KEUNTUNGAN VIP+", color = Cyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                   Spacer(Modifier.height(8.dp))
                                   listOf(
-                                      "Wallpaper beranda VIP+ dengan tampilan khusus",
+                                      "Latar layar beranda VIP+ dengan tampilan khusus",
                                       "Sapaan dan panduan suara khusus VIP+ saat widget digunakan",
                                       "Perintah suara untuk membuka aplikasi apa pun yang terpasang; penggunaan di dalam aplikasi tetap manual",
                                       "Widget mengambang dengan pilihan desain ikon premium",
-                                      "Layanan berbasis AI khusus VIP+"
+                                      "Layanan berbasis kecerdasan buatan khusus VIP+"
                                   ).forEach { benefit ->
                                       Row(
                                           modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
@@ -1220,6 +1162,18 @@ jobs:
                                           Spacer(Modifier.height(5.dp))
                                           Text("Nama penerima: M Asisten", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                           Text("Nama pemilik rekening terdaftar: Muhamad Soleh", color = Muted, fontSize = 10.sp)
+                                      }
+                                  }
+                                  Spacer(Modifier.height(8.dp))
+                                  Card(
+                                      modifier = Modifier.fillMaxWidth(),
+                                      colors = CardDefaults.cardColors(containerColor = Color(0xFF172B42)),
+                                      shape = RoundedCornerShape(12.dp)
+                                  ) {
+                                      Column(Modifier.fillMaxWidth().padding(12.dp)) {
+                                          Text("BUKTI PEMBAYARAN", color = Cyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                          Spacer(Modifier.height(4.dp))
+                                          Text("Siapkan bukti transfer yang jelas untuk dilampirkan saat mengirim konfirmasi kepada admin. Fitur lampiran langsung di aplikasi belum tersedia, jadi kirimkan bukti melalui saluran admin resmi.", color = Color.White, fontSize = 10.sp, lineHeight = 15.sp)
                                       }
                                   }
                                   Spacer(Modifier.height(10.dp))
@@ -1374,7 +1328,13 @@ jobs:
                               }
                           },
                           confirmButton = {
-                              TextButton(onClick = { showVipPlus = false }) {
+                              OutlinedButton(
+                                  onClick = { showVipPlus = false },
+                                  modifier = Modifier.fillMaxWidth(),
+                                  colors = ButtonDefaults.outlinedButtonColors(contentColor = Cyan),
+                                  border = androidx.compose.foundation.BorderStroke(1.dp, Cyan),
+                                  shape = RoundedCornerShape(12.dp)
+                              ) {
                                   Text("TUTUP", color = Cyan, fontWeight = FontWeight.Bold)
                               }
                           }
@@ -4963,6 +4923,6 @@ jobs:
       - name: Upload Signed APK
         uses: actions/upload-artifact@v4
         with:
-          name: M-Asisten-APK
-          path: masisten.apk
+          name: M-Launcher-Voice-APK
+          path: M-Launcher-Voice.apk
           if-no-files-found: error
