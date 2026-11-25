@@ -2221,10 +2221,29 @@ jobs:
                   }
 
                   if (text.contains("kalender") || text.contains("calendar")) {
-                      val calendarIntent = Intent(Intent.ACTION_MAIN).apply {
-                          addCategory(Intent.CATEGORY_APP_CALENDAR)
+                      val wantsNewEvent = text.contains("buat") ||
+                          text.contains("tambah") || text.contains("jadwalkan") ||
+                          text.contains("catat acara") || text.contains("buat acara")
+                      if (wantsNewEvent) {
+                          val eventTitle = text
+                              .replace(Regex("\\b(kalender|calendar|buat|tambah|jadwalkan|acara|event|catat)\\b"), " ")
+                              .replace(Regex("\\s+"), " ")
+                              .trim()
+                              .ifBlank { "Acara baru" }
+                          val createEventIntent = Intent(
+                              Intent.ACTION_INSERT,
+                              android.provider.CalendarContract.Events.CONTENT_URI
+                          ).apply {
+                              putExtra(android.provider.CalendarContract.Events.TITLE, eventTitle)
+                          }
+                          launchIntent(createEventIntent)
+                          showMessage("Membuka formulir kalender untuk acara: $eventTitle. Lengkapi tanggal dan waktu lalu simpan.")
+                      } else {
+                          val calendarIntent = Intent(Intent.ACTION_MAIN).apply {
+                              addCategory(Intent.CATEGORY_APP_CALENDAR)
+                          }
+                          launchIntent(calendarIntent)
                       }
-                      launchIntent(calendarIntent)
                       return
                   }
 
