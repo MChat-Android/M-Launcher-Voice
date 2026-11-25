@@ -3783,6 +3783,22 @@ jobs:
                       return
                   }
 
+                  // Membuka halaman pengaturan privasi Android jika didukung versi sistem.
+                  if (
+                      text == "buka pengaturan privasi" ||
+                      text == "pengaturan privasi hp" ||
+                      text == "atur privasi perangkat" ||
+                      text == "buka privasi android" ||
+                      text == "pengaturan privacy hp"
+                  ) {
+                      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                          openSettings(Settings.ACTION_PRIVACY_SETTINGS)
+                      } else {
+                          openSettings(Settings.ACTION_SETTINGS)
+                      }
+                      return
+                  }
+
                   if (text.contains("pengaturan") || text.contains("setelan") || text.contains("settings")) {
                       openSettings(Settings.ACTION_SETTINGS)
                       return
