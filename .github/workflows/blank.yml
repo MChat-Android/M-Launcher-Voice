@@ -3863,6 +3863,18 @@ jobs:
                       return
                   }
 
+                  // Membuka halaman Opsi Pengembang Android.
+                  if (
+                      text == "buka opsi pengembang" ||
+                      text == "buka pengaturan developer" ||
+                      text == "pengaturan developer hp" ||
+                      text == "developer options hp" ||
+                      text == "buka mode developer"
+                  ) {
+                      openSettings(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS)
+                      return
+                  }
+
                   if (text.contains("pengaturan") || text.contains("setelan") || text.contains("settings")) {
                       openSettings(Settings.ACTION_SETTINGS)
                       return
