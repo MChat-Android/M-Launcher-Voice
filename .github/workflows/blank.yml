@@ -2383,6 +2383,63 @@ jobs:
                       return
                   }
 
+                  if (text.contains("status senter") ||
+                      text.contains("cek senter") ||
+                      text.contains("senter menyala") ||
+                      text.contains("senter mati") ||
+                      text.contains("status flashlight")
+                  ) {
+                      if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.M) {
+                          showMessage("Pemeriksaan status senter memerlukan Android 6 atau lebih baru.")
+                          return
+                      }
+                      if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                          showMessage("Izin kamera diperlukan Android untuk memeriksa status senter.")
+                          return
+                      }
+                      try {
+                          val cameraManager = getSystemService(CAMERA_SERVICE) as CameraManager
+                          val cameraId = cameraManager.cameraIdList.firstOrNull {
+                              cameraManager.getCameraCharacteristics(it).get(
+                                  CameraCharacteristics.FLASH_INFO_AVAILABLE
+                              ) == true
+                          }
+                          if (cameraId == null) {
+                              showMessage("Senter tidak tersedia pada perangkat ini.")
+                              return
+                          }
+                          val completed = java.util.concurrent.atomic.AtomicBoolean(false)
+                          val callback = object : CameraManager.TorchCallback() {
+                              override fun onTorchModeChanged(id: String, enabled: Boolean) {
+                                  if (id == cameraId && completed.compareAndSet(false, true)) {
+                                      cameraManager.unregisterTorchCallback(this)
+                                      showMessage(if (enabled) "Senter sedang menyala." else "Senter sedang mati.")
+                                  }
+                              }
+
+                              override fun onTorchModeUnavailable(id: String) {
+                                  if (id == cameraId && completed.compareAndSet(false, true)) {
+                                      cameraManager.unregisterTorchCallback(this)
+                                      showMessage("Status senter sedang tidak tersedia, mungkin sedang digunakan kamera.")
+                                  }
+                              }
+                          }
+                          cameraManager.registerTorchCallback(callback, handler)
+                          handler.postDelayed({
+                              if (completed.compareAndSet(false, true)) {
+                                  try {
+                                      cameraManager.unregisterTorchCallback(callback)
+                                  } catch (_: Exception) {
+                                  }
+                                  showMessage("Status senter tidak berhasil dibaca.")
+                              }
+                          }, 1500L)
+                      } catch (_: Exception) {
+                          showMessage("Status senter tidak dapat dibaca pada perangkat ini.")
+                      }
+                      return
+                  }
+
                   if (text.contains("senter") ||
                       text.contains("flashlight") ||
                       text.contains("flash")
