@@ -2470,6 +2470,39 @@ jobs:
                       return
                   }
 
+                  // Energi baterai tersisa jika perangkat menyediakan penghitung energi.
+                  // Android melaporkan nilai dalam nanowatt-jam (nWh).
+                  if (
+                      text.contains("energi baterai") ||
+                      text.contains("sisa energi baterai") ||
+                      text.contains("battery energy") ||
+                      text.contains("energy counter") ||
+                      text.contains("berapa energi baterai")
+                  ) {
+                      try {
+                          val batteryManager = getSystemService(
+                              android.content.Context.BATTERY_SERVICE
+                          ) as android.os.BatteryManager
+                          val energyNowNwh = batteryManager.getLongProperty(
+                              android.os.BatteryManager.BATTERY_PROPERTY_ENERGY_COUNTER
+                          )
+                          if (energyNowNwh > 0L && energyNowNwh != Long.MAX_VALUE) {
+                              val energyNowMwh = energyNowNwh / 1_000_000.0
+                              val formattedEnergy = String.format(
+                                  Locale("id", "ID"), "%,.1f", energyNowMwh
+                              )
+                              showMessage(
+                                  "Energi baterai yang terukur saat ini sekitar $formattedEnergy miliwatt-jam. Nilai ini adalah perkiraan energi tersisa, bukan kapasitas maksimum baterai."
+                              )
+                          } else {
+                              showMessage("Perangkat tidak menyediakan penghitung energi baterai yang dapat dibaca.")
+                          }
+                      } catch (_: Exception) {
+                          showMessage("Maaf, informasi energi baterai tidak dapat dibaca.")
+                      }
+                      return
+                  }
+
                   // Membaca teknologi/kimia baterai yang dilaporkan Android.
                   if (
                       text.contains("jenis baterai") ||
