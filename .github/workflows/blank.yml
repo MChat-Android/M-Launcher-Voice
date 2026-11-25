@@ -2267,7 +2267,7 @@ jobs:
                               putExtra("sms_body", messageBody)
                           }
                           launchIntent(smsIntent)
-                          showMessage("Draf SMS sudah disiapkan. Periksa nomor dan isi pesan sebelum mengirim.")
+                          showMessage("Membuka aplikasi pesan dengan draf SMS. Periksa nomor dan isi pesan sebelum mengirim.")
                       } else {
                           showMessage("Nomor atau isi SMS belum lengkap. Ucapkan: kirim SMS ke nomor, isi pesan.")
                       }
