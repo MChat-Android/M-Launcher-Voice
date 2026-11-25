@@ -1980,6 +1980,16 @@ jobs:
                       .replace("start", "")
                       .trim()
 
+                  if (text.contains("daftar aplikasi") ||
+                      text.contains("aplikasi terpasang") ||
+                      text.contains("lihat aplikasi") ||
+                      text.contains("aplikasi apa saja") ||
+                      text.contains("tampilkan aplikasi")
+                  ) {
+                      showAvailableApps()
+                      return
+                  }
+
                   if (text.contains("senter") ||
                       text.contains("flashlight") ||
                       text.contains("flash")
@@ -2205,6 +2215,55 @@ jobs:
                       }
                   } else {
                       showMessage("Perintah tidak dikenali")
+                  }
+              }
+
+              // Menemukan aplikasi yang benar-benar dapat dibuka pada perangkat.
+              // Mode Standar hanya menampilkan aplikasi sistem; VIP+ menampilkan seluruh
+              // aplikasi launcher yang terlihat oleh Android Package Visibility.
+              private fun showAvailableApps() {
+                  try {
+                      val launcherIntent = Intent(Intent.ACTION_MAIN).apply {
+                          addCategory(Intent.CATEGORY_LAUNCHER)
+                      }
+                      val activities = if (Build.VERSION.SDK_INT >= 33) {
+                          packageManager.queryIntentActivities(
+                              launcherIntent,
+                              PackageManager.ResolveInfoFlags.of(0L)
+                          )
+                      } else {
+                          @Suppress("DEPRECATION")
+                          packageManager.queryIntentActivities(launcherIntent, 0)
+                      }
+
+                      val available = activities.mapNotNull { info ->
+                          val targetPackage = info.activityInfo.packageName
+                          if (targetPackage == packageName ||
+                              (!vipMode && !isBuiltInSystemApp(targetPackage))
+                          ) {
+                              null
+                          } else {
+                              info.loadLabel(packageManager).toString().trim()
+                          }
+                      }.filter { it.isNotBlank() }
+                          .distinctBy { it.lowercase(Locale("id", "ID")) }
+                          .sortedBy { it.lowercase(Locale("id", "ID")) }
+
+                      if (available.isEmpty()) {
+                          showMessage("Belum ada aplikasi yang dapat ditampilkan")
+                          return
+                      }
+
+                      val visible = available.take(8)
+                      val remaining = available.size - visible.size
+                      val modeLabel = if (vipMode) "VIP+" else "Standar"
+                      val suffix = if (remaining > 0) " dan $remaining aplikasi lainnya" else ""
+                      showMessage(
+                          "Aplikasi $modeLabel (${available.size}): " +
+                              visible.joinToString(", ") + suffix
+                      )
+                  } catch (_: Exception) {
+                      showMessage("Daftar aplikasi tidak dapat dibaca oleh Android")
                   }
               }
 
