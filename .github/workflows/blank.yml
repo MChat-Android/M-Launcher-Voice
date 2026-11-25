@@ -3783,6 +3783,19 @@ jobs:
                       return
                   }
 
+                  // Membuka pengaturan akses penggunaan aplikasi Android.
+                  if (
+                      text == "buka akses penggunaan aplikasi" ||
+                      text == "pengaturan akses penggunaan" ||
+                      text == "izin akses penggunaan aplikasi" ||
+                      text == "atur akses penggunaan hp" ||
+                      text == "buka usage access" ||
+                      text == "pengaturan usage access"
+                  ) {
+                      openSettings(Settings.ACTION_USAGE_ACCESS_SETTINGS)
+                      return
+                  }
+
                   // Membuka halaman pengaturan privasi Android jika didukung versi sistem.
                   if (
                       text == "buka pengaturan privasi" ||
