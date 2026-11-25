@@ -2175,7 +2175,12 @@ jobs:
                           (text.contains("terang") || text.contains("redup") ||
                            text.contains("naik") || text.contains("turun")))
                   ) {
+                      val requestedBrightness = Regex("(\\d{1,3})\\s*(?:persen|%)")
+                          .find(text)?.groupValues?.get(1)?.toIntOrNull()
+
                       when {
+                          requestedBrightness != null -> setScreenBrightnessPercent(requestedBrightness)
+
                           text.contains("naik") || text.contains("tambah") ||
                           text.contains("terang") || text.contains("increase") ||
                           text.contains("up") -> adjustScreenBrightness(30)
@@ -2504,6 +2509,46 @@ jobs:
                       }
                   }
                   showMessage("Pengaturan hotspot tidak dapat dibuka")
+              }
+
+              private fun setScreenBrightnessPercent(percent: Int) {
+                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+                      !Settings.System.canWrite(this)
+                  ) {
+                      showMessage("Izinkan M Asisten mengubah kecerahan layar")
+                      val permissionIntent = Intent(
+                          Settings.ACTION_MANAGE_WRITE_SETTINGS,
+                          Uri.parse("package:$packageName")
+                      ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                      try {
+                          startActivity(permissionIntent)
+                      } catch (_: Exception) {
+                          showMessage("Izin perubahan kecerahan tidak dapat dibuka")
+                      }
+                      return
+                  }
+
+                  try {
+                      val safePercent = percent.coerceIn(0, 100)
+                      val target = (safePercent * 255 / 100.0).toInt().coerceIn(10, 255)
+                      Settings.System.putInt(
+                          contentResolver,
+                          Settings.System.SCREEN_BRIGHTNESS_MODE,
+                          Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL
+                      )
+                      val saved = Settings.System.putInt(
+                          contentResolver,
+                          Settings.System.SCREEN_BRIGHTNESS,
+                          target
+                      )
+                      if (saved) {
+                          showMessage("Kecerahan layar diatur ke $safePercent persen")
+                      } else {
+                          showMessage("Kecerahan tidak berhasil diubah")
+                      }
+                  } catch (_: Exception) {
+                      showMessage("Kecerahan tidak dapat diubah. Periksa izin aplikasi.")
+                  }
               }
 
               private fun adjustScreenBrightness(change: Int) {
