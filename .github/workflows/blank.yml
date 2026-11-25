@@ -619,7 +619,6 @@ jobs:
               var adminBusy by remember { mutableStateOf(false) }
               var adminMessage by remember { mutableStateOf("") }
               var simulationMessage by remember { mutableStateOf("") }
-              val context = LocalContext.current
               val Navy = Color(0xFF07111F)
               val Panel = Color(0xFF111F32)
               val Cyan = Color(0xFF35D6E8)
@@ -827,7 +826,7 @@ jobs:
                               Spacer(Modifier.height(12.dp))
                               Text("• Mikrofon", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                               Text(
-                                  "Mikrofon aktif ketika Anda mengetuk widget atau memulai perintah suara. Aplikasi menggunakan pengenalan suara langsung di perangkat tanpa mengirim rekaman ke server M Asisten. Dukungan suara offline Bahasa Indonesia bergantung pada versi Android, layanan suara, dan paket bahasa yang tersedia; paket bahasa mungkin perlu diunduh satu kali.",
+                                  "Mikrofon aktif ketika Anda mengetuk widget atau memulai perintah suara. Aplikasi menggunakan pengenalan suara langsung di perangkat tanpa mengirim rekaman ke peladen M Asisten. Dukungan suara luring Bahasa Indonesia bergantung pada versi Android, layanan suara, dan paket bahasa yang tersedia; paket bahasa mungkin perlu diunduh satu kali.",
                                   color = Muted, fontSize = 11.sp, lineHeight = 17.sp
                               )
                               Spacer(Modifier.height(10.dp))
@@ -983,7 +982,7 @@ jobs:
                                                                           "VIP+ Mingguan (7 hari)" -> if (amount == 15000L) 7 else 0
                                                                           "VIP+ Bulanan (30 hari)" -> if (amount == 50000L) 30 else 0
                                                                           "VIP+ Tahunan (365 hari)" -> if (amount == 250000L) 365 else 0
-                                                                          "VIP+ Lifetime" -> if (amount == 500000L) -1 else 0
+                                                                          "VIP+ Seumur Hidup" -> if (amount == 500000L) -1 else 0
                                                                           else -> 0
                                                                       }
                                                                       check(days != 0) { "Paket dan nominal tidak cocok." }
@@ -1120,7 +1119,7 @@ jobs:
                                       "VIP+ Mingguan (7 hari)" to "Rp15.000",
                                       "VIP+ Bulanan (30 hari)" to "Rp50.000",
                                       "VIP+ Tahunan (365 hari)" to "Rp250.000",
-                                      "VIP+ Lifetime" to "Rp500.000"
+                                      "VIP+ Seumur Hidup" to "Rp500.000"
                                   ).forEach { (plan, price) ->
                                       Card(
                                           modifier = Modifier
@@ -1254,7 +1253,7 @@ jobs:
                                                   }
                                                   .addOnFailureListener { error ->
                                                       paymentSubmitting = false
-                                                      paymentSubmitMessage = "Gagal mengirim konfirmasi: " + (error.localizedMessage ?: "Periksa koneksi dan aturan keamanan server.")
+                                                      paymentSubmitMessage = "Gagal mengirim konfirmasi: " + (error.localizedMessage ?: "Periksa koneksi dan aturan keamanan peladen.")
                                                   }
                                           }
                                       },
