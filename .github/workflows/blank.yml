@@ -3699,6 +3699,27 @@ jobs:
                       return
                   }
 
+                  // Membuka halaman info aplikasi M Launcher Voice untuk mengelola izin dan penyimpanan.
+                  if (
+                      text == "buka info aplikasi m" ||
+                      text == "info aplikasi m launcher voice" ||
+                      text == "pengaturan aplikasi m" ||
+                      text == "izin aplikasi m launcher voice" ||
+                      text == "kelola izin aplikasi ini" ||
+                      text == "buka detail aplikasi ini"
+                  ) {
+                      try {
+                          val appDetailsIntent = Intent(
+                              Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                              android.net.Uri.parse("package:$packageName")
+                          ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                          startActivity(appDetailsIntent)
+                      } catch (_: Exception) {
+                          showMessage("Halaman informasi aplikasi tidak dapat dibuka.")
+                      }
+                      return
+                  }
+
                   if (text.contains("pengaturan") || text.contains("setelan") || text.contains("settings")) {
                       openSettings(Settings.ACTION_SETTINGS)
                       return
