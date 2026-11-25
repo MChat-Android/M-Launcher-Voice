@@ -393,12 +393,42 @@ jobs:
               }
 
               private fun refreshAdminClaim(user: com.google.firebase.auth.FirebaseUser) {
-                  user.getIdToken(true).addOnSuccessListener { token -> isAdminAccount = token.claims["admin"] == true }
+                  user.getIdToken(true)
+                      .addOnSuccessListener { token ->
+                          isAdminAccount = token.claims["admin"] == true
+                          if (isAdminAccount) vipMembershipStatus = "VIP+ AKTIF • ADMIN"
+                      }
                       .addOnFailureListener { isAdminAccount = false }
               }
 
               private fun loadVipMembership(uid: String) {
-                  FirebaseFirestore.getInstance().collection("vip_members").document(uid).get()
+                  val user = FirebaseAuth.getInstance().currentUser
+                  if (user == null || user.uid != uid) {
+                      vipMembershipStatus = "BELUM AKTIF"
+                      isAdminAccount = false
+                      return
+                  }
+
+                  user.getIdToken(true)
+                      .addOnSuccessListener { token ->
+                          val admin = token.claims["admin"] == true
+                          isAdminAccount = admin
+                          if (admin) {
+                              // Hak VIP+ admin berasal dari Custom Claims, tidak dari dokumen pembayaran.
+                              vipMembershipStatus = "VIP+ AKTIF • ADMIN"
+                          } else {
+                              loadRegularVipMembership(uid)
+                          }
+                      }
+                      .addOnFailureListener {
+                          isAdminAccount = false
+                          loadRegularVipMembership(uid)
+                      }
+              }
+
+              private fun loadRegularVipMembership(uid: String) {
+                  FirebaseFirestore.getInstance().collection("vip_members").document(uid)
+                      .get(com.google.firebase.firestore.Source.SERVER)
                       .addOnSuccessListener { snap ->
                           val status = snap.getString("membershipStatus") ?: "FREE"
                           val expiresAt = snap.getTimestamp("expiresAt")?.toDate()?.time
@@ -568,30 +598,56 @@ jobs:
                       return
                   }
 
-                  FirebaseFirestore.getInstance()
-                      .collection("vip_members")
-                      .document(user.uid)
-                      // Status VIP+ harus dibaca langsung dari server, bukan cache lokal.
-                      .get(com.google.firebase.firestore.Source.SERVER)
-                      .addOnSuccessListener { member ->
-                          val expiresAt = member.getTimestamp("expiresAt")?.toDate()?.time
-                          val vipActive = member.getString("membershipStatus") == "ACTIVE" &&
-                              (expiresAt == null || expiresAt > System.currentTimeMillis())
-                          if (vipActive &&
-                              checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED
-                          ) {
-                              message = "VIP aktif. Izinkan mikrofon untuk memakai asisten suara."
-                              permissionLauncher.launch(arrayOf(Manifest.permission.RECORD_AUDIO))
-                              return@addOnSuccessListener
+                  fun activateVerifiedVip(isVip: Boolean) {
+                      if (isVip &&
+                          checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED
+                      ) {
+                          message = "VIP aktif. Izinkan mikrofon untuk memakai asisten suara."
+                          permissionLauncher.launch(arrayOf(Manifest.permission.RECORD_AUDIO))
+                          return
+                      }
+                      launchWidget(
+                          if (isVip) FloatingVoiceService.MODE_VIP
+                          else FloatingVoiceService.MODE_STANDARD
+                      )
+                  }
+
+                  // Periksa Custom Claims terbaru agar akun admin otomatis mendapat VIP+.
+                  user.getIdToken(true)
+                      .addOnSuccessListener { token ->
+                          val admin = token.claims["admin"] == true
+                          isAdminAccount = admin
+                          if (admin) {
+                              vipMembershipStatus = "VIP+ AKTIF • ADMIN"
+                              activateVerifiedVip(true)
+                          } else {
+                              FirebaseFirestore.getInstance()
+                                  .collection("vip_members")
+                                  .document(user.uid)
+                                  .get(com.google.firebase.firestore.Source.SERVER)
+                                  .addOnSuccessListener { member ->
+                                      val expiresAt = member.getTimestamp("expiresAt")?.toDate()?.time
+                                      val vipActive = member.getString("membershipStatus") == "ACTIVE" &&
+                                          (expiresAt == null || expiresAt > System.currentTimeMillis())
+                                      activateVerifiedVip(vipActive)
+                                  }
+                                  .addOnFailureListener { activateVerifiedVip(false) }
                           }
-                          launchWidget(
-                              if (vipActive) FloatingVoiceService.MODE_VIP
-                              else FloatingVoiceService.MODE_STANDARD
-                          )
                       }
                       .addOnFailureListener {
-                          // Jika status VIP tidak dapat diverifikasi, selalu gunakan mode Standar.
-                          launchWidget(FloatingVoiceService.MODE_STANDARD)
+                          isAdminAccount = false
+                          // Klaim admin yang gagal diverifikasi tidak pernah dianggap aktif.
+                          FirebaseFirestore.getInstance()
+                              .collection("vip_members")
+                              .document(user.uid)
+                              .get(com.google.firebase.firestore.Source.SERVER)
+                              .addOnSuccessListener { member ->
+                                  val expiresAt = member.getTimestamp("expiresAt")?.toDate()?.time
+                                  val vipActive = member.getString("membershipStatus") == "ACTIVE" &&
+                                      (expiresAt == null || expiresAt > System.currentTimeMillis())
+                                  activateVerifiedVip(vipActive)
+                              }
+                              .addOnFailureListener { activateVerifiedVip(false) }
                       }
               }
           }
@@ -1436,9 +1492,26 @@ jobs:
                       return START_STICKY
                   }
 
+                  // Service memverifikasi klaim admin langsung ke Firebase sebelum mengaktifkan mode VIP+.
+                  user.getIdToken(true)
+                      .addOnSuccessListener { token ->
+                          if (verificationId != modeVerificationRequest) return@addOnSuccessListener
+                          if (token.claims["admin"] == true) {
+                              configureMode(true)
+                          } else {
+                              verifyRegularVip(user.uid, verificationId)
+                          }
+                      }
+                      .addOnFailureListener {
+                          if (verificationId == modeVerificationRequest) verifyRegularVip(user.uid, verificationId)
+                      }
+                  return START_STICKY
+              }
+
+              private fun verifyRegularVip(uid: String, verificationId: Int) {
                   FirebaseFirestore.getInstance()
                       .collection("vip_members")
-                      .document(user.uid)
+                      .document(uid)
                       .get(com.google.firebase.firestore.Source.SERVER)
                       .addOnSuccessListener { member ->
                           if (verificationId != modeVerificationRequest) return@addOnSuccessListener
@@ -1450,7 +1523,6 @@ jobs:
                       .addOnFailureListener {
                           if (verificationId == modeVerificationRequest) configureMode(false)
                       }
-                  return START_STICKY
               }
 
               // Mode Standar dan VIP+ memakai siklus hidup terpisah.
@@ -1518,14 +1590,30 @@ jobs:
                   }
 
                   membershipListener?.remove()
+                  membershipListener = null
+
+                  // Admin tidak memerlukan dokumen VIP atau tanggal kedaluwarsa.
+                  user.getIdToken(true)
+                      .addOnSuccessListener { token ->
+                          if (token.claims["admin"] == true) return@addOnSuccessListener
+                          watchRegularVipMembership(user.uid)
+                      }
+                      .addOnFailureListener {
+                          // Jika klaim admin tidak dapat diverifikasi, hak admin tidak diasumsikan.
+                          watchRegularVipMembership(user.uid)
+                      }
+              }
+
+              private fun watchRegularVipMembership(uid: String) {
+                  membershipListener?.remove()
                   membershipListener = FirebaseFirestore.getInstance()
                       .collection("vip_members")
-                      .document(user.uid)
+                      .document(uid)
                       .addSnapshotListener { snapshot, error ->
                           val expiresAt = snapshot?.getTimestamp("expiresAt")?.toDate()?.time
                           val vipStillActive = snapshot?.getString("membershipStatus") == "ACTIVE" &&
                               (expiresAt == null || expiresAt > System.currentTimeMillis())
-                          // Jika status tidak tersedia atau tidak aktif, hentikan hak VIP+.
+                          // Pengguna biasa tetap mengikuti status dan masa aktif VIP+ di Firestore.
                           if (error != null || snapshot == null || !vipStillActive) {
                               handler.post {
                                   if (vipMode) {
@@ -4728,29 +4816,39 @@ jobs:
                       return
                   }
 
-                  showMessage("Memeriksa akses VIP+...")
-                  FirebaseFirestore.getInstance()
-                      .collection("vip_members")
-                      .document(user.uid)
-                      .get()
-                      .addOnSuccessListener { member ->
-                          val expiresAt = member.getTimestamp("expiresAt")?.toDate()?.time
-                          val vipActive = member.getString("membershipStatus") == "ACTIVE" &&
-                              (expiresAt == null || expiresAt > System.currentTimeMillis())
-                          if (vipActive) {
-                              try {
-                                  intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                  startActivity(intent)
-                              } catch (_: Exception) {
-                                  showMessage("Aplikasi tidak dapat dibuka")
-                              }
-                          } else {
-                              showMessage("Aplikasi ini khusus VIP+. Aktifkan VIP+ untuk membukanya.")
+                  fun openVipTarget() {
+                      try {
+                          intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                          startActivity(intent)
+                      } catch (_: Exception) {
+                          showMessage("Aplikasi tidak dapat dibuka")
+                      }
+                  }
+
+                  fun checkRegularVip() {
+                      FirebaseFirestore.getInstance()
+                          .collection("vip_members")
+                          .document(user.uid)
+                          .get(com.google.firebase.firestore.Source.SERVER)
+                          .addOnSuccessListener { member ->
+                              val expiresAt = member.getTimestamp("expiresAt")?.toDate()?.time
+                              val vipActive = member.getString("membershipStatus") == "ACTIVE" &&
+                                  (expiresAt == null || expiresAt > System.currentTimeMillis())
+                              if (vipActive) openVipTarget()
+                              else showMessage("Aplikasi ini khusus VIP+. Aktifkan VIP+ untuk membukanya.")
                           }
+                          .addOnFailureListener {
+                              showMessage("Akses VIP+ belum dapat diverifikasi. Periksa koneksi internet.")
+                          }
+                  }
+
+                  showMessage("Memeriksa akses VIP+...")
+                  user.getIdToken(true)
+                      .addOnSuccessListener { token ->
+                          if (token.claims["admin"] == true) openVipTarget()
+                          else checkRegularVip()
                       }
-                      .addOnFailureListener {
-                          showMessage("Akses VIP+ belum dapat diverifikasi. Periksa koneksi internet.")
-                      }
+                      .addOnFailureListener { checkRegularVip() }
               }
 
               private fun launchIntent(intent: Intent) {
