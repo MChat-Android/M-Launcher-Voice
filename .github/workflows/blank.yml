@@ -145,6 +145,7 @@ jobs:
               <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
               <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE"/>
               <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+              <uses-permission android:name="com.android.alarm.permission.SET_ALARM"/>
 
               <uses-feature
                   android:name="android.hardware.camera.flash"
@@ -2195,7 +2196,27 @@ jobs:
                   }
 
                   if (text.contains("alarm") || text.contains("jam weker")) {
-                      launchIntent(Intent(android.provider.AlarmClock.ACTION_SHOW_ALARMS))
+                      val alarmTime = Regex(
+                          "(?:jam|pukul)\\s*(\\d{1,2})[:.](\\d{2})"
+                      ).find(text)
+                      if (alarmTime != null) {
+                          val hour = alarmTime.groupValues[1].toIntOrNull()
+                          val minute = alarmTime.groupValues[2].toIntOrNull()
+                          if (hour != null && minute != null && hour in 0..23 && minute in 0..59) {
+                              val alarmIntent = Intent(android.provider.AlarmClock.ACTION_SET_ALARM).apply {
+                                  putExtra(android.provider.AlarmClock.EXTRA_HOUR, hour)
+                                  putExtra(android.provider.AlarmClock.EXTRA_MINUTES, minute)
+                                  putExtra(android.provider.AlarmClock.EXTRA_MESSAGE, "Alarm dari M Asisten")
+                                  putExtra(android.provider.AlarmClock.EXTRA_SKIP_UI, false)
+                              }
+                              launchIntent(alarmIntent)
+                              showMessage("Membuka pengaturan alarm pukul %02d:%02d. Simpan alarm pada aplikasi Jam.".format(hour, minute))
+                          } else {
+                              showMessage("Waktu alarm tidak valid. Gunakan format jam 06:30.")
+                          }
+                      } else {
+                          launchIntent(Intent(android.provider.AlarmClock.ACTION_SHOW_ALARMS))
+                      }
                       return
                   }
 
