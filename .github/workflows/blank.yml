@@ -2081,6 +2081,46 @@ jobs:
                       return
                   }
 
+                  // Informasi baterai perangkat, dibaca langsung dari status Android.
+                  if (text.contains("baterai") || text.contains("battery")) {
+                      try {
+                          val batteryIntent = registerReceiver(
+                              null,
+                              android.content.IntentFilter(Intent.ACTION_BATTERY_CHANGED)
+                          )
+                          if (batteryIntent == null) {
+                              showMessage("Informasi baterai belum tersedia.")
+                          } else {
+                              val level = batteryIntent.getIntExtra(
+                                  android.os.BatteryManager.EXTRA_LEVEL, -1
+                              )
+                              val scale = batteryIntent.getIntExtra(
+                                  android.os.BatteryManager.EXTRA_SCALE, -1
+                              )
+                              val status = batteryIntent.getIntExtra(
+                                  android.os.BatteryManager.EXTRA_STATUS,
+                                  android.os.BatteryManager.BATTERY_STATUS_UNKNOWN
+                              )
+                              if (level < 0 || scale <= 0) {
+                                  showMessage("Persentase baterai belum dapat dibaca.")
+                              } else {
+                                  val percent = (level * 100f / scale).toInt()
+                                  val chargingText = when (status) {
+                                      android.os.BatteryManager.BATTERY_STATUS_CHARGING -> "sedang mengisi daya"
+                                      android.os.BatteryManager.BATTERY_STATUS_FULL -> "sudah terisi penuh"
+                                      android.os.BatteryManager.BATTERY_STATUS_NOT_CHARGING -> "terhubung ke pengisi daya tetapi tidak sedang mengisi"
+                                      android.os.BatteryManager.BATTERY_STATUS_DISCHARGING -> "sedang menggunakan daya baterai"
+                                      else -> "status pengisian tidak diketahui"
+                                  }
+                                  showMessage("Baterai tersisa $percent persen, $chargingText.")
+                              }
+                          }
+                      } catch (_: Exception) {
+                          showMessage("Maaf, informasi baterai tidak dapat dibaca.")
+                      }
+                      return
+                  }
+
                   if (text.contains("senter") ||
                       text.contains("flashlight") ||
                       text.contains("flash")
