@@ -2403,8 +2403,41 @@ jobs:
                       return
                   }
 
-                  if (text.contains("kalkulator") || text.contains("calculator") || text.contains("hitung")) {
-                      if (!openAppByName("kalkulator", "calculator")) {
+                  if (text.contains("kalkulator") || text.contains("calculator") ||
+                      text.contains("hitung") || text.startsWith("berapa ") ||
+                      text.startsWith("hasil ")
+                  ) {
+                      val calculation = Regex(
+                          "(\\d+)\\s*(tambah|plus|\\+|dikurangi|kurang|minus|kali|dikali|x|bagi|dibagi)\\s*(\\d+)"
+                      ).find(text)
+
+                      if (calculation != null) {
+                          val first = calculation.groupValues[1].toDoubleOrNull()
+                          val operation = calculation.groupValues[2]
+                          val second = calculation.groupValues[3].toDoubleOrNull()
+
+                          if (first == null || second == null) {
+                              showMessage("Angka perhitungan tidak terbaca.")
+                          } else if ((operation == "bagi" || operation == "dibagi") && second == 0.0) {
+                              showMessage("Tidak bisa membagi dengan nol.")
+                          } else {
+                              val result = when (operation) {
+                                  "tambah", "plus", "+" -> first + second
+                                  "dikurangi", "kurang", "minus" -> first - second
+                                  "kali", "dikali", "x" -> first * second
+                                  else -> first / second
+                              }
+                              if (!result.isFinite()) {
+                                  showMessage("Hasil perhitungan terlalu besar.")
+                              } else {
+                                  val formatted = java.text.DecimalFormat(
+                                      "#,##0.########",
+                                      java.text.DecimalFormatSymbols(Locale("id", "ID"))
+                                  ).format(result)
+                                  showMessage("Hasilnya $formatted")
+                              }
+                          }
+                      } else if (!openAppByName("kalkulator", "calculator")) {
                           showMessage("Aplikasi kalkulator tidak ditemukan")
                       }
                       return
