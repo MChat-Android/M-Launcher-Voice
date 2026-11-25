@@ -1016,7 +1016,7 @@ jobs:
                                   listOf(
                                       "VIP+ Mingguan (7 hari)" to "Rp15.000",
                                       "VIP+ Bulanan (30 hari)" to "Rp50.000",
-                                      "VIP+ Tahunan (365 hari)" to "Rp200.000",
+                                      "VIP+ Tahunan (365 hari)" to "Rp250.000",
                                       "VIP+ Lifetime" to "Rp500.000"
                                   ).forEach { (plan, price) ->
                                       Card(
