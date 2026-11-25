@@ -2917,6 +2917,31 @@ jobs:
                       return
                   }
 
+                  if (text.contains("status mode pesawat") ||
+                      text.contains("cek mode pesawat") ||
+                      text.contains("mode pesawat aktif") ||
+                      text.contains("mode pesawat menyala") ||
+                      text.contains("mode pesawat mati") ||
+                      text.contains("status airplane") ||
+                      text.contains("flight mode aktif")
+                  ) {
+                      try {
+                          val airplaneMode = android.provider.Settings.Global.getInt(
+                              contentResolver,
+                              android.provider.Settings.Global.AIRPLANE_MODE_ON,
+                              0
+                          )
+                          if (airplaneMode == 1) {
+                              showMessage("Mode pesawat sedang aktif.")
+                          } else {
+                              showMessage("Mode pesawat sedang nonaktif.")
+                          }
+                      } catch (_: Exception) {
+                          showMessage("Status mode pesawat tidak dapat dibaca pada perangkat ini.")
+                      }
+                      return
+                  }
+
                   if (text.contains("pesawat") || text.contains("airplane") || text.contains("flight mode")) {
                       openSettings(Settings.ACTION_AIRPLANE_MODE_SETTINGS)
                       return
