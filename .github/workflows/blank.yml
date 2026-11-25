@@ -2573,6 +2573,36 @@ jobs:
                       return
                   }
 
+                  // Memeriksa apakah jam dan zona waktu disinkronkan otomatis oleh jaringan.
+                  if (
+                      text == "waktu otomatis hp" ||
+                      text == "jam otomatis hp" ||
+                      text == "tanggal otomatis hp" ||
+                      text == "zona waktu otomatis hp" ||
+                      text == "sinkronisasi waktu hp" ||
+                      text == "sinkronisasi jam perangkat" ||
+                      text == "status waktu otomatis" ||
+                      text == "apakah jam hp otomatis"
+                  ) {
+                      try {
+                          val automaticTime = Settings.Global.getInt(
+                              contentResolver, Settings.Global.AUTO_TIME, 0
+                          ) == 1
+                          val automaticTimeZone = Settings.Global.getInt(
+                              contentResolver, Settings.Global.AUTO_TIME_ZONE, 0
+                          ) == 1
+                          val timeText = if (automaticTime) "aktif" else "nonaktif"
+                          val zoneText = if (automaticTimeZone) "aktif" else "nonaktif"
+                          showMessage(
+                              "Pengaturan tanggal dan jam otomatis: $timeText. " +
+                                  "Zona waktu otomatis: $zoneText."
+                          )
+                      } catch (_: Exception) {
+                          showMessage("Maaf, status sinkronisasi waktu otomatis tidak dapat dibaca.")
+                      }
+                      return
+                  }
+
                   // Membaca preferensi format jam 12/24 jam dan format tanggal sistem.
                   if (
                       text == "format jam hp" ||
