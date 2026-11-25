@@ -1767,16 +1767,18 @@ jobs:
                   textToSpeech = TextToSpeech(this) { status ->
                       if (status == TextToSpeech.SUCCESS) {
                           textToSpeech?.let { engine ->
-                              // Gunakan hanya suara Bahasa Indonesia yang tersedia secara offline.
-                              val offlineIndonesianVoice = engine.voices?.firstOrNull {
-                                  it.locale.language.equals("id", ignoreCase = true) &&
-                                      !it.isNetworkConnectionRequired
-                              }
-                              if (offlineIndonesianVoice != null) {
-                                  engine.voice = offlineIndonesianVoice
-                                  textToSpeechReady = true
+                              // Ikuti bahasa utama perangkat; gunakan English (US) bila bahasa itu tidak didukung.
+                              val preferredLocale = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                                  resources.configuration.locales[0] ?: Locale.getDefault()
                               } else {
-                                  textToSpeechReady = false
+                                  @Suppress("DEPRECATION")
+                                  resources.configuration.locale ?: Locale.getDefault()
+                              }
+                              val preferredResult = engine.setLanguage(preferredLocale)
+                              textToSpeechReady = preferredResult >= TextToSpeech.LANG_AVAILABLE
+                              if (!textToSpeechReady) {
+                                  val fallbackResult = engine.setLanguage(Locale.US)
+                                  textToSpeechReady = fallbackResult >= TextToSpeech.LANG_AVAILABLE
                               }
                               engine.setPitch(1.08f)
                               engine.setSpeechRate(1.06f)
@@ -1789,9 +1791,9 @@ jobs:
                                       if (vipGreetingPending && vipMode) {
                                           vipGreetingPending = false
                                           if (textToSpeechReady) {
-                                              speakTextThenListen("Hallo M, silakan ucapkan perintah.")
+                                              speakTextThenListen("Hello M, please say a command.")
                                           } else {
-                                              showMessage("Suara Bahasa Indonesia offline belum tersedia. Perintah suara tetap dapat digunakan jika pengenalan suara offline tersedia.")
+                                              showMessage("Text-to-speech is unavailable. Please install a voice for your device language in Android settings.")
                                               startVoiceRecognition()
                                           }
                                       }
@@ -1801,7 +1803,7 @@ jobs:
                       } else if (vipGreetingPending && vipMode) {
                           handler.post {
                               vipGreetingPending = false
-                              showMessage("Suara offline tidak tersedia. Silakan ucapkan perintah.")
+                              showMessage("Text-to-speech is unavailable. Please say a command.")
                               startVoiceRecognition()
                           }
                       }
@@ -1984,13 +1986,21 @@ jobs:
                           }
                       )
 
+                      val deviceLocale = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                          resources.configuration.locales[0] ?: Locale.getDefault()
+                      } else {
+                          @Suppress("DEPRECATION")
+                          resources.configuration.locale ?: Locale.getDefault()
+                      }
+                      val deviceLanguageTag = deviceLocale.toLanguageTag().takeIf { it.isNotBlank() } ?: "en-US"
                       val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
                           putExtra(
                               RecognizerIntent.EXTRA_LANGUAGE_MODEL,
                               RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
                           )
-                          putExtra(RecognizerIntent.EXTRA_LANGUAGE, "id-ID")
-                          putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "id-ID")
+                          // Pengenalan suara mengikuti bahasa utama perangkat.
+                          putExtra(RecognizerIntent.EXTRA_LANGUAGE, deviceLanguageTag)
+                          putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, deviceLanguageTag)
                           putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
                           putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
                           putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
@@ -2000,8 +2010,7 @@ jobs:
                           ?: throw IllegalStateException("Mesin suara offline tidak tersedia")
 
                       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                          // Periksa paket Bahasa Indonesia lokal sebelum mulai mendengarkan.
-                          // Jika belum terpasang, minta Android menyiapkannya satu kali.
+                          // Pilih bahasa perangkat jika tersedia; jika tidak, gunakan English (US).
                           listening = true
                           val callbackExecutor = java.util.concurrent.Executor { task ->
                               handler.post(task)
@@ -2014,62 +2023,75 @@ jobs:
                                       support: android.speech.RecognitionSupport
                                   ) {
                                       if (speechRecognizer !== recognizer) return
-                                      fun hasIndonesian(languages: List<String>): Boolean =
+                                      fun hasLanguage(languages: List<String>, language: String): Boolean =
                                           languages.any {
-                                              Locale.forLanguageTag(it).language.equals("id", ignoreCase = true)
+                                              Locale.forLanguageTag(it).language.equals(language, ignoreCase = true)
                                           }
 
+                                      val preferredLanguage = deviceLocale.language.ifBlank { "en" }
+                                      val targetLanguage = when {
+                                          hasLanguage(support.installedOnDeviceLanguages, preferredLanguage) ||
+                                              hasLanguage(support.pendingOnDeviceLanguages, preferredLanguage) ||
+                                              hasLanguage(support.supportedOnDeviceLanguages, preferredLanguage) -> deviceLanguageTag
+                                          hasLanguage(support.installedOnDeviceLanguages, "en") ||
+                                              hasLanguage(support.pendingOnDeviceLanguages, "en") ||
+                                              hasLanguage(support.supportedOnDeviceLanguages, "en") -> "en-US"
+                                          else -> null
+                                      }
+
+                                      if (targetLanguage == null) {
+                                          listening = false
+                                          showMessage("Offline speech is not available for your device language or English. Check your Android speech-language settings.")
+                                          return
+                                      }
+
+                                      intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, targetLanguage)
+                                      intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, targetLanguage)
                                       when {
-                                          hasIndonesian(support.installedOnDeviceLanguages) -> {
+                                          hasLanguage(support.installedOnDeviceLanguages, Locale.forLanguageTag(targetLanguage).language) -> {
                                               try {
                                                   recognizer.startListening(intent)
                                                   listening = true
                                               } catch (_: Exception) {
                                                   listening = false
-                                                  showMessage("Tidak dapat memulai pengenalan suara offline.")
+                                                  showMessage("Could not start offline speech recognition.")
                                               }
                                           }
-                                          hasIndonesian(support.pendingOnDeviceLanguages) -> {
+                                          hasLanguage(support.pendingOnDeviceLanguages, Locale.forLanguageTag(targetLanguage).language) -> {
                                               listening = false
-                                              showMessage("Paket suara Bahasa Indonesia sedang disiapkan Android. Coba lagi setelah selesai.")
-                                          }
-                                          hasIndonesian(support.supportedOnDeviceLanguages) -> {
-                                              listening = false
-                                              showMessage("Paket suara Bahasa Indonesia belum terpasang. Android akan diminta mengunduh paket ini satu kali; setelah terpasang, perintah suara dapat digunakan offline.")
-                                              try {
-                                                  recognizer.triggerModelDownload(intent)
-                                              } catch (_: Exception) {
-                                                  showMessage("Gagal meminta paket suara offline. Periksa koneksi internet dan pengaturan layanan suara Android.")
-                                              }
+                                              showMessage("The speech language pack is being prepared by Android. Try again when it is ready.")
                                           }
                                           else -> {
                                               listening = false
-                                              showMessage("Layanan suara di perangkat ini belum menyediakan paket Bahasa Indonesia offline.")
+                                              showMessage("Downloading the speech language pack. Connect to the internet, then try again.")
+                                              try {
+                                                  recognizer.triggerModelDownload(intent)
+                                              } catch (_: Exception) {
+                                                  showMessage("Could not download the speech language pack. Check Android speech settings.")
+                                              }
                                           }
                                       }
                                   }
 
                                   override fun onError(error: Int) {
                                       if (speechRecognizer !== recognizer) return
-                                      // Pemeriksaan dukungan tidak tersedia pada sebagian layanan.
-                                      // Tetap coba mesin on-device yang eksplisit, bukan layanan cloud.
                                       if (error == SpeechRecognizer.ERROR_CANNOT_CHECK_SUPPORT) {
                                           try {
                                               recognizer.startListening(intent)
                                               listening = true
                                           } catch (_: Exception) {
                                               listening = false
-                                              showMessage("Tidak dapat memulai pengenalan suara offline.")
+                                              showMessage("Could not start offline speech recognition.")
                                           }
                                       } else {
                                           listening = false
-                                          showMessage("Tidak dapat memeriksa paket suara offline (kode $error).")
+                                          showMessage("Could not check offline speech-language support (code $error).")
                                       }
                                   }
                               }
                           )
                       } else {
-                          // Android 12: recognizer sudah dipaksa ke mesin on-device.
+                          // Android 6–12: gunakan bahasa perangkat yang dipilih pada intent.
                           listening = true
                           recognizer.startListening(intent)
                       }
