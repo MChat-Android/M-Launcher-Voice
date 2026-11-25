@@ -2534,6 +2534,46 @@ jobs:
                       return
                   }
 
+                  // Membaca skala animasi jendela, transisi, dan animator Android.
+                  if (
+                      text == "skala animasi hp" ||
+                      text == "skala animasi android" ||
+                      text == "kecepatan animasi hp" ||
+                      text == "kecepatan animasi sistem" ||
+                      text == "pengaturan animasi hp" ||
+                      text == "animasi jendela hp" ||
+                      text == "status animasi sistem"
+                  ) {
+                      try {
+                          val windowScale = Settings.Global.getFloat(
+                              contentResolver, Settings.Global.WINDOW_ANIMATION_SCALE, 1.0f
+                          )
+                          val transitionScale = Settings.Global.getFloat(
+                              contentResolver, Settings.Global.TRANSITION_ANIMATION_SCALE, 1.0f
+                          )
+                          val animatorScale = Settings.Global.getFloat(
+                              contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1.0f
+                          )
+                          fun describeScale(value: Float): String {
+                              val number = "%.1f".format(java.util.Locale.US, value)
+                              return when {
+                                  value == 0f -> "mati"
+                                  value < 1f -> "$number kali, lebih cepat dari standar"
+                                  value > 1f -> "$number kali, lebih lambat dari standar"
+                                  else -> "1 kali, standar"
+                              }
+                          }
+                          showMessage(
+                              "Skala animasi Android: jendela ${describeScale(windowScale)}; " +
+                                  "transisi ${describeScale(transitionScale)}; " +
+                                  "durasi animator ${describeScale(animatorScale)}."
+                          )
+                      } catch (_: Exception) {
+                          showMessage("Maaf, pengaturan skala animasi tidak dapat dibaca pada perangkat ini.")
+                      }
+                      return
+                  }
+
                   // Membaca skala ukuran teks sistem Android.
                   if (
                       text == "ukuran teks hp" ||
