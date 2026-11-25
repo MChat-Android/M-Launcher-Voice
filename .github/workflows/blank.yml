@@ -3796,6 +3796,20 @@ jobs:
                       return
                   }
 
+                  // Membuka halaman penggunaan data seluler dan Wi-Fi Android.
+                  if (
+                      text == "buka penggunaan data" ||
+                      text == "pengaturan penggunaan data" ||
+                      text == "cek pemakaian data internet" ||
+                      text == "pengaturan data seluler" ||
+                      text == "buka penggunaan data seluler" ||
+                      text == "atur pemakaian kuota internet" ||
+                      text == "cek penggunaan kuota"
+                  ) {
+                      openSettings(Settings.ACTION_DATA_USAGE_SETTINGS)
+                      return
+                  }
+
                   // Membuka halaman pengaturan privasi Android jika didukung versi sistem.
                   if (
                       text == "buka pengaturan privasi" ||
