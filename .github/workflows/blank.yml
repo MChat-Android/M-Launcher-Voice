@@ -2534,6 +2534,40 @@ jobs:
                       return
                   }
 
+                  // Membaca preferensi format jam 12/24 jam dan format tanggal sistem.
+                  if (
+                      text == "format jam hp" ||
+                      text == "format jam ponsel" ||
+                      text == "format waktu perangkat" ||
+                      text == "jam 12 atau 24" ||
+                      text == "jam 12 atau 24 jam" ||
+                      text == "hp menggunakan jam berapa" ||
+                      text == "format tanggal hp" ||
+                      text == "format tanggal perangkat" ||
+                      text == "pengaturan format tanggal"
+                  ) {
+                      try {
+                          val is24Hour = android.text.format.DateFormat.is24HourFormat(this)
+                          val datePattern = Settings.System.getString(
+                              contentResolver, Settings.System.DATE_FORMAT
+                          )
+                          val timeDescription = if (is24Hour) {
+                              "24 jam (contoh 18:30)"
+                          } else {
+                              "12 jam (contoh 6:30 PM)"
+                          }
+                          val dateDescription = if (datePattern.isNullOrBlank()) {
+                              "mengikuti format tanggal bawaan wilayah perangkat"
+                          } else {
+                              datePattern
+                          }
+                          showMessage("Format jam perangkat: $timeDescription. Format tanggal: $dateDescription.")
+                      } catch (_: Exception) {
+                          showMessage("Maaf, preferensi format jam dan tanggal tidak dapat dibaca.")
+                      }
+                      return
+                  }
+
                   // Membaca skala animasi jendela, transisi, dan animator Android.
                   if (
                       text == "skala animasi hp" ||
