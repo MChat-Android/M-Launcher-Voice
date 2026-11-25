@@ -3007,6 +3007,28 @@ jobs:
                       return
                   }
 
+                  if (text.contains("status optimasi baterai") ||
+                      text.contains("optimasi baterai") ||
+                      text.contains("pengoptimalan baterai") ||
+                      text.contains("hemat baterai untuk aplikasi") ||
+                      text.contains("pembatasan baterai") ||
+                      text.contains("battery optimization") ||
+                      text.contains("battery optimizations")
+                  ) {
+                      try {
+                          val powerManager = getSystemService(POWER_SERVICE) as android.os.PowerManager
+                          val ignoringOptimizations = powerManager.isIgnoringBatteryOptimizations(packageName)
+                          if (ignoringOptimizations) {
+                              showMessage("M Asisten dikecualikan dari optimasi baterai. Sistem tidak menerapkan pembatasan optimasi baterai pada aplikasi ini.")
+                          } else {
+                              showMessage("M Asisten masih mengikuti optimasi baterai Android. Sistem dapat membatasi aktivitas latar belakang aplikasi.")
+                          }
+                      } catch (_: Exception) {
+                          showMessage("Maaf, status optimasi baterai tidak dapat diperiksa.")
+                      }
+                      return
+                  }
+
                   if (text.contains("status notifikasi") ||
                       text.contains("notifikasi aplikasi") ||
                       text.contains("izin notifikasi") ||
