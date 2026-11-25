@@ -2217,15 +2217,18 @@ jobs:
                       }
 
                       val reminderLabel = text
-                          .replace(Regex("\\b(ingatkan saya|ingatkan|pengingat|reminder|tolong|nanti|lagi|untuk|supaya|agar)\\b"), " ")
+                          .replace(Regex("\\b(ingatkan saya|ingatkan|pengingat|reminder|tolong|nanti|lagi|untuk|supaya|agar|besok|lusa|hari ini)\\b"), " ")
                           .replace(reminderDurationPattern, " ")
                           .replace(Regex("(?:jam|pukul)\\s*\\d{1,2}[:.]\\d{2}"), " ")
                           .replace(Regex("\\s+"), " ")
                           .trim()
                           .ifBlank { "Pengingat dari M Asisten" }
 
+                      val hasCalendarDay = text.contains("besok") ||
+                          text.contains("lusa") || text.contains("hari ini")
+
                       when {
-                          reminderSeconds in 1L..604800L -> {
+                          reminderSeconds in 1L..604800L && !hasCalendarDay -> {
                               val reminderIntent = Intent(android.provider.AlarmClock.ACTION_SET_TIMER).apply {
                                   putExtra(android.provider.AlarmClock.EXTRA_LENGTH, reminderSeconds.toInt())
                                   putExtra(android.provider.AlarmClock.EXTRA_MESSAGE, reminderLabel)
@@ -2247,14 +2250,41 @@ jobs:
                                   val hour = reminderTime.groupValues[1].toIntOrNull()
                                   val minute = reminderTime.groupValues[2].toIntOrNull()
                                   if (hour != null && minute != null && hour in 0..23 && minute in 0..59) {
-                                      val reminderIntent = Intent(android.provider.AlarmClock.ACTION_SET_ALARM).apply {
-                                          putExtra(android.provider.AlarmClock.EXTRA_HOUR, hour)
-                                          putExtra(android.provider.AlarmClock.EXTRA_MINUTES, minute)
-                                          putExtra(android.provider.AlarmClock.EXTRA_MESSAGE, reminderLabel)
-                                          putExtra(android.provider.AlarmClock.EXTRA_SKIP_UI, false)
+                                      if (hasCalendarDay) {
+                                          val eventStart = java.util.Calendar.getInstance().apply {
+                                              when {
+                                                  text.contains("lusa") -> add(java.util.Calendar.DAY_OF_YEAR, 2)
+                                                  text.contains("besok") -> add(java.util.Calendar.DAY_OF_YEAR, 1)
+                                              }
+                                              set(java.util.Calendar.HOUR_OF_DAY, hour)
+                                              set(java.util.Calendar.MINUTE, minute)
+                                              set(java.util.Calendar.SECOND, 0)
+                                              set(java.util.Calendar.MILLISECOND, 0)
+                                          }.timeInMillis
+                                          val eventIntent = Intent(
+                                              Intent.ACTION_INSERT,
+                                              android.provider.CalendarContract.Events.CONTENT_URI
+                                          ).apply {
+                                              putExtra(android.provider.CalendarContract.Events.TITLE, reminderLabel)
+                                              putExtra(android.provider.CalendarContract.EXTRA_EVENT_BEGIN_TIME, eventStart)
+                                          }
+                                          launchIntent(eventIntent)
+                                          val dayLabel = when {
+                                              text.contains("lusa") -> "lusa"
+                                              text.contains("besok") -> "besok"
+                                              else -> "hari ini"
+                                          }
+                                          showMessage("Membuka acara kalender untuk $dayLabel pukul %02d:%02d: %s. Atur notifikasi pengingat lalu simpan acara.".format(hour, minute, reminderLabel))
+                                      } else {
+                                          val reminderIntent = Intent(android.provider.AlarmClock.ACTION_SET_ALARM).apply {
+                                              putExtra(android.provider.AlarmClock.EXTRA_HOUR, hour)
+                                              putExtra(android.provider.AlarmClock.EXTRA_MINUTES, minute)
+                                              putExtra(android.provider.AlarmClock.EXTRA_MESSAGE, reminderLabel)
+                                              putExtra(android.provider.AlarmClock.EXTRA_SKIP_UI, false)
+                                          }
+                                          launchIntent(reminderIntent)
+                                          showMessage("Membuka alarm pengingat pukul %02d:%02d: %s. Simpan alarm pada aplikasi Jam.".format(hour, minute, reminderLabel))
                                       }
-                                      launchIntent(reminderIntent)
-                                      showMessage("Membuka alarm pengingat pukul %02d:%02d: %s. Simpan alarm pada aplikasi Jam.".format(hour, minute, reminderLabel))
                                   } else {
                                       showMessage("Waktu pengingat tidak valid. Gunakan format jam 07:30.")
                                   }
