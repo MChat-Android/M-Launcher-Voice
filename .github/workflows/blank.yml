@@ -2659,6 +2659,20 @@ jobs:
                       return
                   }
 
+                  // Membuka pengaturan aksesibilitas Android melalui perintah suara.
+                  if (
+                      text == "buka pengaturan aksesibilitas" ||
+                      text == "pengaturan aksesibilitas hp" ||
+                      text == "atur aksesibilitas hp" ||
+                      text == "fitur aksesibilitas" ||
+                      text == "buka menu aksesibilitas" ||
+                      text == "pengaturan kemudahan akses"
+                  ) {
+                      showMessage("Membuka pengaturan aksesibilitas perangkat...")
+                      openSettings(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                      return
+                  }
+
                   // Memeriksa apakah perangkat memiliki kunci layar yang aman dan status layar terkunci.
                   if (
                       text == "status kunci layar hp" ||
