@@ -2343,6 +2343,57 @@ jobs:
                       return
                   }
 
+                  // Tegangan dan arus baterai, dibaca lokal melalui Android BatteryManager.
+                  if (text.contains("tegangan baterai") ||
+                      text.contains("voltase baterai") ||
+                      text.contains("arus baterai") ||
+                      text.contains("arus pengisian baterai")
+                  ) {
+                      try {
+                          val batteryIntent = registerReceiver(
+                              null,
+                              android.content.IntentFilter(Intent.ACTION_BATTERY_CHANGED)
+                          )
+                          if (batteryIntent == null) {
+                              showMessage("Informasi kelistrikan baterai belum tersedia.")
+                          } else {
+                              val voltageMv = batteryIntent.getIntExtra(
+                                  android.os.BatteryManager.EXTRA_VOLTAGE, -1
+                              )
+                              val batteryManager = getSystemService(
+                                  android.content.Context.BATTERY_SERVICE
+                              ) as android.os.BatteryManager
+                              val currentMicroAmps = batteryManager.getIntProperty(
+                                  android.os.BatteryManager.BATTERY_PROPERTY_CURRENT_NOW
+                              )
+                              val voltageText = if (voltageMv > 0) {
+                                  "Tegangan baterai sekitar " +
+                                      String.format(Locale.US, "%.2f", voltageMv / 1000.0) +
+                                      " volt. "
+                              } else {
+                                  "Tegangan baterai tidak tersedia. "
+                              }
+                              val currentText = if (currentMicroAmps != Int.MIN_VALUE) {
+                                  val currentMa = currentMicroAmps / 1000
+                                  val direction = when {
+                                      currentMa > 0 -> "arus masuk atau pengisian"
+                                      currentMa < 0 -> "arus keluar atau pemakaian"
+                                      else -> "arus saat ini mendekati nol"
+                                  }
+                                  "Arus baterai sekitar " +
+                                      String.format(Locale("id", "ID"), "%,d", kotlin.math.abs(currentMa)) +
+                                      " miliampere, $direction."
+                              } else {
+                                  "Data arus baterai tidak didukung oleh perangkat."
+                              }
+                              showMessage(voltageText + currentText)
+                          }
+                      } catch (_: Exception) {
+                          showMessage("Tegangan dan arus baterai tidak dapat dibaca.")
+                      }
+                      return
+                  }
+
                   // Informasi baterai perangkat, dibaca langsung dari status Android.
                   if (text.contains("baterai") || text.contains("battery")) {
                       try {
