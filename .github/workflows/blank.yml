@@ -291,6 +291,12 @@ jobs:
               private var vipMembershipStatus by mutableStateOf("BELUM AKTIF")
               private var isAdminAccount by mutableStateOf(false)
 
+              private val voiceMessageReceiver = object : android.content.BroadcastReceiver() {
+                  override fun onReceive(context: android.content.Context?, intent: Intent?) {
+                      message = intent?.getStringExtra("message").orEmpty().ifBlank { message }
+                  }
+              }
+
               private val googleSignInLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
                   if (result.resultCode == RESULT_OK) {
                       try {
@@ -400,6 +406,30 @@ jobs:
                           message = "Izin tampil di atas aplikasi belum diberikan"
                       }
                   }
+
+              override fun onStart() {
+                  super.onStart()
+                  val filter = android.content.IntentFilter("com.m.launchervoice.VOICE_MESSAGE")
+                  if (Build.VERSION.SDK_INT >= 33) {
+                      registerReceiver(
+                          voiceMessageReceiver,
+                          filter,
+                          android.content.Context.RECEIVER_NOT_EXPORTED
+                      )
+                  } else {
+                      @Suppress("DEPRECATION")
+                      registerReceiver(voiceMessageReceiver, filter)
+                  }
+                  message = getSharedPreferences("m_voice_status", MODE_PRIVATE)
+                      .getString("latest_message", message) ?: message
+              }
+
+              override fun onStop() {
+                  try {
+                      unregisterReceiver(voiceMessageReceiver)
+                  } catch (_: Exception) {}
+                  super.onStop()
+              }
 
               override fun onCreate(savedInstanceState: Bundle?) {
                   super.onCreate(savedInstanceState)
@@ -1379,7 +1409,6 @@ jobs:
               private lateinit var windowManager: WindowManager
               private lateinit var container: LinearLayout
               private lateinit var micButton: TextView
-              private lateinit var prompt: TextView
               private var speechRecognizer: SpeechRecognizer? = null
               private var textToSpeech: TextToSpeech? = null
               private var textToSpeechReady = false
@@ -1425,8 +1454,9 @@ jobs:
 
                   // Standar dan VIP+ sama-sama memerlukan foreground service mikrofon.
                   createNotification()
+                  // Mesin suara dan respons TTS tersedia pada kedua mode.
+                  initializeVoiceAssistant()
                   if (vipMode) {
-                      initializeVoiceAssistant()
                       watchVipMembership()
                   } else {
                       membershipListener?.remove()
@@ -1531,21 +1561,12 @@ jobs:
 
                   windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
 
+                  // Widget mengambang hanya berisi satu tombol kontrol.
                   container = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
                       gravity = Gravity.CENTER
-                      setPadding(12, 8, 12, 8)
-                      background = roundedBackground(0xEE102B50.toInt(), 24)
-                  }
-
-                  prompt = TextView(this).apply {
-                      text = "Silakan ucapkan perintah"
-                      setTextColor(Color.WHITE)
-                      textSize = 13f
-                      typeface = Typeface.DEFAULT_BOLD
-                      gravity = Gravity.CENTER
-                      visibility = View.GONE
-                      setPadding(8, 4, 8, 10)
+                      setPadding(0, 0, 0, 0)
+                      background = null
                   }
 
                   micButton = TextView(this).apply {
@@ -1562,7 +1583,6 @@ jobs:
                       setOnClickListener { handleWidgetTap() }
                   }
 
-                  container.addView(prompt)
                   container.addView(
                       micButton,
                       LinearLayout.LayoutParams(62, 62)
@@ -1953,19 +1973,18 @@ jobs:
 
               private fun showMessage(message: String) {
                   handler.post {
-                      if (::prompt.isInitialized) {
-                          prompt.text = message
-                          prompt.visibility = View.VISIBLE
-                      }
+                      // Simpan pesan terakhir agar tetap terlihat saat layar utama dibuka kembali.
+                      getSharedPreferences("m_voice_status", MODE_PRIVATE)
+                          .edit()
+                          .putString("latest_message", message)
+                          .apply()
+                      // Widget tidak menampilkan teks; pesan dikirim ke layar utama aplikasi.
+                      sendBroadcast(
+                          Intent("com.m.launchervoice.VOICE_MESSAGE")
+                              .setPackage(packageName)
+                              .putExtra("message", message)
+                      )
                   }
-              }
-
-              private fun resetAfterDelay() {
-                  handler.postDelayed({
-                      if (!listening && ::prompt.isInitialized) {
-                          prompt.visibility = View.GONE
-                      }
-                  }, 3500)
               }
 
               private fun executeCommand(command: String) {
