@@ -3837,6 +3837,18 @@ jobs:
                       return
                   }
 
+                  // Membuka halaman pengaturan NFC Android.
+                  if (
+                      text == "buka pengaturan nfc" ||
+                      text == "pengaturan nfc hp" ||
+                      text == "atur nfc perangkat" ||
+                      text == "buka pengaturan pembayaran nfc" ||
+                      text == "pengaturan near field communication"
+                  ) {
+                      openSettings(Settings.ACTION_NFC_SETTINGS)
+                      return
+                  }
+
                   if (text.contains("pengaturan") || text.contains("setelan") || text.contains("settings")) {
                       openSettings(Settings.ACTION_SETTINGS)
                       return
