@@ -2503,6 +2503,37 @@ jobs:
                       return
                   }
 
+                  // Membaca jumlah siklus pengisian baterai jika Android dan perangkat menyediakannya.
+                  if (
+                      text.contains("siklus baterai") ||
+                      text.contains("jumlah siklus baterai") ||
+                      text.contains("battery cycle") ||
+                      text.contains("battery cycles") ||
+                      text.contains("berapa kali baterai diisi")
+                  ) {
+                      try {
+                          if (Build.VERSION.SDK_INT >= 34) {
+                              val batteryIntent = registerReceiver(
+                                  null,
+                                  android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED)
+                              )
+                              val cycleCount = batteryIntent?.getIntExtra(
+                                  android.os.BatteryManager.EXTRA_CYCLE_COUNT, -1
+                              ) ?: -1
+                              if (cycleCount >= 0) {
+                                  showMessage("Jumlah siklus pengisian baterai yang dilaporkan perangkat adalah $cycleCount kali.")
+                              } else {
+                                  showMessage("Perangkat tidak menyediakan data jumlah siklus baterai.")
+                              }
+                          } else {
+                              showMessage("Pembacaan siklus baterai memerlukan Android 14 atau lebih baru, dan dukungan perangkat.")
+                          }
+                      } catch (_: Exception) {
+                          showMessage("Maaf, jumlah siklus baterai tidak dapat dibaca pada perangkat ini.")
+                      }
+                      return
+                  }
+
                   // Membaca teknologi/kimia baterai yang dilaporkan Android.
                   if (
                       text.contains("jenis baterai") ||
