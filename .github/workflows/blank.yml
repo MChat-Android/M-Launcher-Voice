@@ -658,7 +658,6 @@ jobs:
                           Spacer(Modifier.width(13.dp))
                           Column {
                               Text("M ASISTEN", color = Color.White, fontSize = if (compactWidth) 15.sp else 18.sp, fontWeight = FontWeight.ExtraBold)
-                              Text("ASISTEN SUARA PINTAR", color = Cyan, fontSize = if (compactWidth) 7.sp else 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp)
                               Text("DIBUAT DI INDONESIA", color = Muted, fontSize = 8.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.1.sp)
                           }
                           Spacer(Modifier.weight(1f))
