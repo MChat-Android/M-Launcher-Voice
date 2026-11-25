@@ -2945,6 +2945,39 @@ jobs:
                       return
                   }
 
+                  if (text.contains("kartu sd") ||
+                      text.contains("memori eksternal") ||
+                      text.contains("penyimpanan eksternal") ||
+                      text.contains("cek sd card") ||
+                      text.contains("sd card")
+                  ) {
+                      try {
+                          val removableStorage = getExternalFilesDirs(null)
+                              .filterNotNull()
+                              .firstOrNull { android.os.Environment.isExternalStorageRemovable(it) }
+                          if (removableStorage == null) {
+                              showMessage("Kartu SD eksternal tidak terdeteksi pada perangkat ini.")
+                          } else {
+                              val state = android.os.Environment.getExternalStorageState(removableStorage)
+                              if (state == android.os.Environment.MEDIA_MOUNTED ||
+                                  state == android.os.Environment.MEDIA_MOUNTED_READ_ONLY
+                              ) {
+                                  val stat = android.os.StatFs(removableStorage.path)
+                                  val totalGb = stat.totalBytes / (1024.0 * 1024.0 * 1024.0)
+                                  val freeGb = stat.availableBytes / (1024.0 * 1024.0 * 1024.0)
+                                  val totalText = String.format(java.util.Locale("id", "ID"), "%.1f", totalGb)
+                                  val freeText = String.format(java.util.Locale("id", "ID"), "%.1f", freeGb)
+                                  showMessage("Kartu SD terdeteksi dan dapat dibaca. Kapasitas sekitar $totalText gigabita, ruang tersedia $freeText gigabita.")
+                              } else {
+                                  showMessage("Slot penyimpanan eksternal terdeteksi, tetapi kartu SD tidak siap digunakan. Status: $state.")
+                              }
+                          }
+                      } catch (_: Exception) {
+                          showMessage("Maaf, status kartu SD tidak dapat diperiksa.")
+                      }
+                      return
+                  }
+
                   if (text.contains("sensor hp") ||
                       text.contains("sensor perangkat") ||
                       text.contains("sensor apa saja") ||
