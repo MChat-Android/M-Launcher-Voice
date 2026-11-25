@@ -2573,6 +2573,39 @@ jobs:
                       return
                   }
 
+                  // Membaca nama keyboard utama yang dipilih pada pengaturan Android.
+                  if (
+                      text == "nama keyboard hp" ||
+                      text == "keyboard utama hp" ||
+                      text == "keyboard default hp" ||
+                      text == "papan ketik hp" ||
+                      text == "keyboard yang digunakan hp" ||
+                      text == "cek keyboard perangkat" ||
+                      text == "default keyboard"
+                  ) {
+                      try {
+                          val defaultImeId = Settings.Secure.getString(
+                              contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD
+                          )
+                          if (defaultImeId.isNullOrBlank()) {
+                              showMessage("Android tidak melaporkan keyboard utama yang sedang dipilih.")
+                          } else {
+                              val inputMethodManager = getSystemService(
+                                  android.content.Context.INPUT_METHOD_SERVICE
+                              ) as android.view.inputmethod.InputMethodManager
+                              val inputMethodInfo = inputMethodManager.inputMethodList
+                                  .firstOrNull { it.id == defaultImeId }
+                              val keyboardName = inputMethodInfo?.loadLabel(packageManager)?.toString()
+                                  ?.takeIf { it.isNotBlank() }
+                                  ?: defaultImeId.substringBefore("/")
+                              showMessage("Keyboard utama perangkat saat ini adalah $keyboardName.")
+                          }
+                      } catch (_: Exception) {
+                          showMessage("Maaf, nama keyboard utama tidak dapat dibaca pada perangkat ini.")
+                      }
+                      return
+                  }
+
                   // Memeriksa apakah perangkat memiliki kunci layar yang aman dan status layar terkunci.
                   if (
                       text == "status kunci layar hp" ||
