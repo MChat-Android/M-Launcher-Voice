@@ -2112,6 +2112,33 @@ jobs:
                       return
                   }
 
+                  // Lama waktu perangkat aktif sejak terakhir dinyalakan.
+                  if (text.contains("uptime") ||
+                      text.contains("waktu aktif hp") ||
+                      text.contains("lama hp menyala") ||
+                      text.contains("sudah menyala berapa lama") ||
+                      text.contains("hp menyala berapa lama") ||
+                      text.contains("sejak kapan hp menyala")
+                  ) {
+                      try {
+                          var remainingMillis = android.os.SystemClock.elapsedRealtime()
+                              .coerceAtLeast(0L)
+                          val days = remainingMillis / 86_400_000L
+                          remainingMillis %= 86_400_000L
+                          val hours = remainingMillis / 3_600_000L
+                          remainingMillis %= 3_600_000L
+                          val minutes = remainingMillis / 60_000L
+                          val parts = mutableListOf<String>()
+                          if (days > 0) parts.add("$days hari")
+                          if (hours > 0) parts.add("$hours jam")
+                          if (minutes > 0 || parts.isEmpty()) parts.add("$minutes menit")
+                          showMessage("Perangkat sudah aktif selama " + parts.joinToString(" ") + ".")
+                      } catch (_: Exception) {
+                          showMessage("Lama waktu perangkat aktif tidak dapat dibaca.")
+                      }
+                      return
+                  }
+
                   // Informasi identitas dasar perangkat dan versi Android.
                   if (text.contains("informasi hp") ||
                       text.contains("info hp") ||
