@@ -2470,6 +2470,34 @@ jobs:
                       return
                   }
 
+                  // Membaca teknologi/kimia baterai yang dilaporkan Android.
+                  if (
+                      text.contains("jenis baterai") ||
+                      text.contains("teknologi baterai") ||
+                      text.contains("tipe baterai") ||
+                      text.contains("bahan baterai") ||
+                      text.contains("battery technology") ||
+                      text.contains("battery type")
+                  ) {
+                      try {
+                          val batteryIntent = registerReceiver(
+                              null,
+                              android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED)
+                          )
+                          val technology = batteryIntent?.getStringExtra(
+                              android.os.BatteryManager.EXTRA_TECHNOLOGY
+                          )?.trim().orEmpty()
+                          if (technology.isNotBlank()) {
+                              showMessage("Teknologi baterai yang dilaporkan perangkat adalah $technology.")
+                          } else {
+                              showMessage("Informasi teknologi atau jenis baterai tidak disediakan oleh perangkat.")
+                          }
+                      } catch (_: Exception) {
+                          showMessage("Maaf, informasi jenis baterai tidak dapat dibaca.")
+                      }
+                      return
+                  }
+
                   // Informasi baterai perangkat, dibaca langsung dari status Android.
                   if (text.contains("baterai") || text.contains("battery")) {
                       try {
