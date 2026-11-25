@@ -2202,7 +2202,7 @@ jobs:
                       text.contains("penghitung waktu")
                   ) {
                       val durationPattern = Regex(
-                          "(\d+)\s*(detik|det|seconds?|secs?|menit|mnt|minutes?|jam|hours?|hr)",
+                          "(\\d+)\\s*(detik|det|seconds?|secs?|menit|mnt|minutes?|jam|hours?|hr)",
                           RegexOption.IGNORE_CASE
                       )
                       var totalSeconds = 0L
