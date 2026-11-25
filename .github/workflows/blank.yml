@@ -2534,6 +2534,34 @@ jobs:
                       return
                   }
 
+                  // Lama perangkat menyala sejak boot/restart terakhir.
+                  if (
+                      text.contains("lama hp menyala") ||
+                      text.contains("lama ponsel menyala") ||
+                      text.contains("waktu sejak restart") ||
+                      text.contains("waktu sejak dinyalakan") ||
+                      text.contains("uptime perangkat") ||
+                      text.contains("berapa lama hp hidup") ||
+                      text.contains("sudah berapa lama hp")
+                  ) {
+                      try {
+                          val elapsed = android.os.SystemClock.elapsedRealtime()
+                          val totalMinutes = elapsed / 60000L
+                          val days = totalMinutes / 1440L
+                          val hours = (totalMinutes % 1440L) / 60L
+                          val minutes = totalMinutes % 60L
+                          val durationText = buildString {
+                              if (days > 0L) append("$days hari ")
+                              if (hours > 0L) append("$hours jam ")
+                              append("$minutes menit")
+                          }.trim()
+                          showMessage("Perangkat sudah menyala selama $durationText sejak terakhir dinyalakan atau dimulai ulang.")
+                      } catch (_: Exception) {
+                          showMessage("Maaf, lama waktu perangkat menyala tidak dapat dibaca.")
+                      }
+                      return
+                  }
+
                   // Membaca teknologi/kimia baterai yang dilaporkan Android.
                   if (
                       text.contains("jenis baterai") ||
