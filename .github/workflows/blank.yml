@@ -3660,6 +3660,19 @@ jobs:
                       return
                   }
 
+                  // Membuka halaman pengaturan suara dan audio Android.
+                  if (
+                      text == "buka pengaturan suara" ||
+                      text == "pengaturan suara hp" ||
+                      text == "atur pengaturan suara" ||
+                      text == "buka pengaturan audio" ||
+                      text == "pengaturan audio hp" ||
+                      text == "atur nada dering hp"
+                  ) {
+                      openSettings(Settings.ACTION_SOUND_SETTINGS)
+                      return
+                  }
+
                   if (text.contains("pengaturan") || text.contains("setelan") || text.contains("settings")) {
                       openSettings(Settings.ACTION_SETTINGS)
                       return
