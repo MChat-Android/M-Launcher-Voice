@@ -1705,8 +1705,14 @@ jobs:
 
                   // Widget mengambang tetap menjadi tombol mikrofon; mode VIP mendapat identitas visual premium.
                   container = FrameLayout(this).apply {
-                      setPadding(0, 0, 0, 0)
-                      background = null
+                      if (vipMode) {
+                          // Bingkai VIP+ berlapis emas dengan dasar navy premium.
+                          setPadding(6, 6, 6, 6)
+                          background = vipWidgetFrameBackground()
+                      } else {
+                          setPadding(0, 0, 0, 0)
+                          background = null
+                      }
                   }
 
                   micButton = TextView(this).apply {
@@ -1730,19 +1736,25 @@ jobs:
                   )
 
                   if (vipMode) {
-                      val vipCrown = TextView(this).apply {
-                          text = "♛"
-                          textSize = 13f
-                          typeface = Typeface.DEFAULT_BOLD
+                      val vipLabel = TextView(this).apply {
+                          text = "VIP+"
+                          textSize = 10f
+                          letterSpacing = 0.08f
+                          typeface = Typeface.create("sans-serif-black", Typeface.BOLD)
                           gravity = Gravity.CENTER
                           includeFontPadding = false
-                          setTextColor(0xFF182235.toInt())
-                          background = roundedBackground(0xFFFFD76A.toInt(), 100)
-                          elevation = 18f
+                          setTextColor(0xFF352006.toInt())
+                          background = vipBadgeBackground()
+                          elevation = 22f
+                          setPadding(7, 0, 7, 0)
                       }
                       container.addView(
-                          vipCrown,
-                          FrameLayout.LayoutParams(24, 24, Gravity.TOP or Gravity.END)
+                          vipLabel,
+                          FrameLayout.LayoutParams(
+                              42,
+                              22,
+                              Gravity.TOP or Gravity.END
+                          )
                       )
                   }
 
@@ -1776,13 +1788,33 @@ jobs:
                   }
               }
 
+              private fun vipWidgetFrameBackground(): GradientDrawable {
+                  return GradientDrawable(
+                      GradientDrawable.Orientation.TL_BR,
+                      intArrayOf(0xFFFFE9A6.toInt(), 0xFFB87916.toInt(), 0xFFFFD76A.toInt())
+                  ).apply {
+                      shape = GradientDrawable.OVAL
+                      setStroke(2, 0xFFFFF4CF.toInt())
+                  }
+              }
+
+              private fun vipBadgeBackground(): GradientDrawable {
+                  return GradientDrawable(
+                      GradientDrawable.Orientation.LEFT_RIGHT,
+                      intArrayOf(0xFFFFF1B8.toInt(), 0xFFFFC94A.toInt(), 0xFFB87916.toInt())
+                  ).apply {
+                      cornerRadius = 22f
+                      setStroke(1, 0xFFFFF8DE.toInt())
+                  }
+              }
+
               private fun vipWidgetBackground(): GradientDrawable {
                   return GradientDrawable(
                       GradientDrawable.Orientation.TL_BR,
                       intArrayOf(0xFF07111F.toInt(), 0xFF123B5A.toInt())
                   ).apply {
                       shape = GradientDrawable.OVAL
-                      setStroke(3, 0xFF35D6E8.toInt())
+                      setStroke(2, 0xFF35D6E8.toInt())
                   }
               }
 
