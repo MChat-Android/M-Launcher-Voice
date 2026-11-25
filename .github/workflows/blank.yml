@@ -2051,16 +2051,16 @@ jobs:
                       return
                   }
 
-                  val text = command.lowercase()
-                      .replace("tolong", "")
-                      .replace("silakan", "")
-                      .replace("please", "")
-                      .replace("buka", "")
-                      .replace("open", "")
-                      .replace("launch", "")
-                      .replace("jalankan", "")
-                      .replace("start", "")
+                  val text = command.lowercase(Locale("id", "ID"))
+                      .replace(Regex("[^\\p{L}\\p{N}+ ]"), " ")
+                      .replace(Regex("\\s+"), " ")
                       .trim()
+                      .removePrefix("tolong ").removePrefix("silakan ")
+                      .removePrefix("please ").removePrefix("coba ")
+                      .removePrefix("bisa ").removePrefix("mohon ")
+                      .removePrefix("buka ").removePrefix("open ")
+                      .removePrefix("launch ").removePrefix("jalankan ")
+                      .removePrefix("start ").trim()
 
                   if (text.contains("daftar aplikasi") ||
                       text.contains("aplikasi terpasang") ||
