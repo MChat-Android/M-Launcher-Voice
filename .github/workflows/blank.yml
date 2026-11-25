@@ -2678,6 +2678,34 @@ jobs:
                       return
                   }
 
+                  // Memeriksa status opsi pengembang dan USB debugging Android.
+                  if (
+                      text == "status mode developer" ||
+                      text == "mode developer hp" ||
+                      text == "opsi pengembang hp" ||
+                      text == "usb debugging hp" ||
+                      text == "debugging usb hp" ||
+                      text == "status usb debugging" ||
+                      text == "apakah usb debugging aktif"
+                  ) {
+                      try {
+                          val developerEnabled = Settings.Global.getInt(
+                              contentResolver, Settings.Global.DEVELOPMENT_SETTINGS_ENABLED, 0
+                          ) == 1
+                          val adbEnabled = Settings.Global.getInt(
+                              contentResolver, Settings.Global.ADB_ENABLED, 0
+                          ) == 1
+                          val developerText = if (developerEnabled) "aktif" else "nonaktif"
+                          val adbText = if (adbEnabled) "aktif" else "nonaktif"
+                          showMessage(
+                              "Opsi pengembang: $developerText. USB debugging: $adbText."
+                          )
+                      } catch (_: Exception) {
+                          showMessage("Maaf, status opsi pengembang dan USB debugging tidak dapat dibaca.")
+                      }
+                      return
+                  }
+
                   // Informasi arsitektur CPU dan platform perangkat yang dilaporkan Android.
                   if (
                       text == "arsitektur cpu hp" ||
