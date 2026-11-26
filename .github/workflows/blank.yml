@@ -753,22 +753,27 @@ jobs:
               val Cyan = Color(0xFF35D6E8)
               val Muted = Color(0xFF9DB2C9)
               val isVipPlus = vipMembershipStatus.startsWith("VIP+ AKTIF")
-              val premiumGold = Color(0xFFFFD778)
-              val premiumBorder = Color(0xFFB98A3B)
-              val premiumPanel = Color(0xFF151D30)
+              // Fondasi visual VIP: hitam obsidian, emas hangat, dan panel berlapis.
+              // Warna premium hanya diterapkan ketika keanggotaan VIP terverifikasi.
+              val premiumGold = Color(0xFFFFD36A)
+              val premiumBorder = Color(0xFFC69A45)
+              val premiumPanel = Color(0xFF17130D)
+              val premiumPanelRaised = Color(0xFF211A10)
+              val premiumText = Color(0xFFFFF2D2)
+              val premiumMuted = Color(0xFFC7B58E)
               BoxWithConstraints(
                   modifier = Modifier
                       .fillMaxSize()
                       .background(
                           if (isVipPlus) {
                               Brush.verticalGradient(
-                                  listOf(
-                                      Color(0xFF050914),
-                                      Color(0xFF10182A),
-                                      Color(0xFF1B1B2B),
-                                      Color(0xFF080D18)
-                                  )
-                              )
+                                   listOf(
+                                       Color(0xFF050403),
+                                       Color(0xFF100D08),
+                                       Color(0xFF1B150B),
+                                       Color(0xFF080705)
+                                   )
+                               )
                           } else {
                               Brush.verticalGradient(listOf(Navy, Panel, Navy))
                           }
@@ -852,7 +857,7 @@ jobs:
                       Spacer(Modifier.height(25.dp))
                       Text(
                           "Semua jadi lebih mudah.",
-                          color = if (isVipPlus) Color(0xFFFFF1D0) else Color.White,
+                          color = if (isVipPlus) premiumText else Color.White,
                           fontSize = if (compactWidth) 21.sp else 25.sp,
                           fontWeight = FontWeight.ExtraBold,
                           textAlign = TextAlign.Center
@@ -860,7 +865,7 @@ jobs:
                       Spacer(Modifier.height(8.dp))
                       Text(
                           "Kendalikan ponselmu cukup dengan suara.",
-                          color = if (isVipPlus) Color(0xFFC7B995) else Muted,
+                          color = if (isVipPlus) premiumMuted else Muted,
                           fontSize = 14.sp,
                           textAlign = TextAlign.Center
                       )
@@ -903,7 +908,7 @@ jobs:
                               .clickable { showVipPlus = true },
                           shape = RoundedCornerShape(20.dp),
                           colors = CardDefaults.cardColors(
-                              containerColor = if (isVipPlus) premiumPanel else Color(0xFF123344)
+                              containerColor = if (isVipPlus) premiumPanelRaised else Color(0xFF123344)
                           ),
                           border = androidx.compose.foundation.BorderStroke(
                               if (isVipPlus) 1.5.dp else 1.dp,
@@ -978,7 +983,7 @@ jobs:
                           modifier = Modifier.fillMaxWidth(),
                           shape = RoundedCornerShape(22.dp),
                           colors = CardDefaults.cardColors(
-                              containerColor = if (isVipPlus) Color(0xFF1C2030) else Color(0xFF123344)
+                              containerColor = if (isVipPlus) premiumPanelRaised else Color(0xFF123344)
                           ),
                           border = androidx.compose.foundation.BorderStroke(
                               if (isVipPlus) 1.5.dp else 1.dp,
