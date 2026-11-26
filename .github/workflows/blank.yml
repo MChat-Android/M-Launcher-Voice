@@ -886,6 +886,11 @@ jobs:
                       Card(
                           modifier = Modifier.fillMaxWidth(),
                           shape = RoundedCornerShape(24.dp),
+                          // Elevasi berlapis memberi kesan panel 3D tanpa mengganti warna asli.
+                          elevation = CardDefaults.cardElevation(
+                              defaultElevation = if (isVipPlus) 10.dp else 0.dp,
+                              pressedElevation = if (isVipPlus) 14.dp else 0.dp
+                          ),
                           colors = CardDefaults.cardColors(
                               containerColor = if (isVipPlus) premiumPanel else Panel
                           ),
@@ -919,6 +924,11 @@ jobs:
                               .fillMaxWidth()
                               .clickable { showVipPlus = true },
                           shape = RoundedCornerShape(20.dp),
+                          // Elevasi berlapis memberi kesan panel 3D tanpa mengganti warna asli.
+                          elevation = CardDefaults.cardElevation(
+                              defaultElevation = if (isVipPlus) 10.dp else 0.dp,
+                              pressedElevation = if (isVipPlus) 14.dp else 0.dp
+                          ),
                           colors = CardDefaults.cardColors(
                               containerColor = if (isVipPlus) premiumPanelRaised else Color(0xFF123344)
                           ),
@@ -956,6 +966,11 @@ jobs:
                       Card(
                           modifier = Modifier.fillMaxWidth(),
                           shape = RoundedCornerShape(22.dp),
+                          // Elevasi berlapis memberi kesan panel 3D tanpa mengganti warna asli.
+                          elevation = CardDefaults.cardElevation(
+                              defaultElevation = if (isVipPlus) 10.dp else 0.dp,
+                              pressedElevation = if (isVipPlus) 14.dp else 0.dp
+                          ),
                           colors = CardDefaults.cardColors(
                               containerColor = if (isVipPlus) premiumPanel else Color(0xFF102238)
                           ),
@@ -994,6 +1009,11 @@ jobs:
                       Card(
                           modifier = Modifier.fillMaxWidth(),
                           shape = RoundedCornerShape(22.dp),
+                          // Elevasi berlapis memberi kesan panel 3D tanpa mengganti warna asli.
+                          elevation = CardDefaults.cardElevation(
+                              defaultElevation = if (isVipPlus) 10.dp else 0.dp,
+                              pressedElevation = if (isVipPlus) 14.dp else 0.dp
+                          ),
                           colors = CardDefaults.cardColors(
                               containerColor = if (isVipPlus) premiumPanelRaised else Color(0xFF123344)
                           ),
@@ -1029,6 +1049,11 @@ jobs:
                       Card(
                           modifier = Modifier.fillMaxWidth(),
                           shape = RoundedCornerShape(20.dp),
+                          // Elevasi berlapis memberi kesan panel 3D tanpa mengganti warna asli.
+                          elevation = CardDefaults.cardElevation(
+                              defaultElevation = if (isVipPlus) 10.dp else 0.dp,
+                              pressedElevation = if (isVipPlus) 14.dp else 0.dp
+                          ),
                           colors = CardDefaults.cardColors(
                               containerColor = if (isVipPlus) premiumPanel else Color(0xFF102238)
                           ),
@@ -1101,14 +1126,24 @@ jobs:
                               ) {
                                   if (isAdminAccount) {
                                       Card(Modifier.fillMaxWidth().padding(bottom = 12.dp),
-                                          colors = CardDefaults.cardColors(containerColor = Color(0xFF0D2932)),
+                                          // Elevasi berlapis memberi kesan panel 3D tanpa mengganti warna asli.
+                          elevation = CardDefaults.cardElevation(
+                              defaultElevation = if (isVipPlus) 10.dp else 0.dp,
+                              pressedElevation = if (isVipPlus) 14.dp else 0.dp
+                          ),
+                          colors = CardDefaults.cardColors(containerColor = Color(0xFF0D2932)),
                                           border = androidx.compose.foundation.BorderStroke(1.dp, Cyan)) {
                                           Column(Modifier.padding(12.dp)) {
                                               Text("PANEL ADMIN VIP", color = Cyan, fontWeight = FontWeight.ExtraBold)
                                               Text("Cocokkan pembayaran dengan mutasi SeaBank secara manual sebelum verifikasi.", color = Muted, fontSize = 10.sp)
                                               Card(
                                                   Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 8.dp),
-                                                  colors = CardDefaults.cardColors(containerColor = Color(0xFF172B42)),
+                                                  // Elevasi berlapis memberi kesan panel 3D tanpa mengganti warna asli.
+                          elevation = CardDefaults.cardElevation(
+                              defaultElevation = if (isVipPlus) 10.dp else 0.dp,
+                              pressedElevation = if (isVipPlus) 14.dp else 0.dp
+                          ),
+                          colors = CardDefaults.cardColors(containerColor = Color(0xFF172B42)),
                                                   border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF547087))
                                               ) {
                                                   Column(Modifier.padding(10.dp)) {
@@ -1177,7 +1212,12 @@ jobs:
                                               Text(adminMessage, color = Muted, fontSize = 10.sp)
                                               adminItems.forEach { (id, info) ->
                                                   Card(Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                                                      colors = CardDefaults.cardColors(containerColor = Panel)) {
+                                                      // Elevasi berlapis memberi kesan panel 3D tanpa mengganti warna asli.
+                          elevation = CardDefaults.cardElevation(
+                              defaultElevation = if (isVipPlus) 10.dp else 0.dp,
+                              pressedElevation = if (isVipPlus) 14.dp else 0.dp
+                          ),
+                          colors = CardDefaults.cardColors(containerColor = Panel)) {
                                                       Column(Modifier.padding(8.dp)) {
                                                           Text(info.replace("VIP+", "VIP"), color = Color.White, fontSize = 10.sp)
                                                           Text("ID: $id", color = Muted, fontSize = 8.sp)
@@ -1278,7 +1318,12 @@ jobs:
                                   Spacer(Modifier.height(14.dp))
                                   Card(
                                       modifier = Modifier.fillMaxWidth(),
-                                      colors = CardDefaults.cardColors(containerColor = Color(0xFF0D2932)),
+                                      // Elevasi berlapis memberi kesan panel 3D tanpa mengganti warna asli.
+                          elevation = CardDefaults.cardElevation(
+                              defaultElevation = if (isVipPlus) 10.dp else 0.dp,
+                              pressedElevation = if (isVipPlus) 14.dp else 0.dp
+                          ),
+                          colors = CardDefaults.cardColors(containerColor = Color(0xFF0D2932)),
                                       shape = RoundedCornerShape(12.dp)
                                   ) {
                                       Row(
@@ -1344,7 +1389,12 @@ jobs:
                                               .fillMaxWidth()
                                               .padding(vertical = 4.dp)
                                               .clickable { selectedVipPlan = plan },
-                                          colors = CardDefaults.cardColors(
+                                          // Elevasi berlapis memberi kesan panel 3D tanpa mengganti warna asli.
+                          elevation = CardDefaults.cardElevation(
+                              defaultElevation = if (isVipPlus) 10.dp else 0.dp,
+                              pressedElevation = if (isVipPlus) 14.dp else 0.dp
+                          ),
+                          colors = CardDefaults.cardColors(
                                               containerColor = if (selectedVipPlan == plan) Color(0xFF164354) else Color(0xFF172B42)
                                           ),
                                           border = if (selectedVipPlan == plan) androidx.compose.foundation.BorderStroke(1.dp, Cyan) else null,
@@ -1368,7 +1418,12 @@ jobs:
                                   Spacer(Modifier.height(7.dp))
                                   Card(
                                       modifier = Modifier.fillMaxWidth(),
-                                      colors = CardDefaults.cardColors(containerColor = Color(0xFF172B42)),
+                                      // Elevasi berlapis memberi kesan panel 3D tanpa mengganti warna asli.
+                          elevation = CardDefaults.cardElevation(
+                              defaultElevation = if (isVipPlus) 10.dp else 0.dp,
+                              pressedElevation = if (isVipPlus) 14.dp else 0.dp
+                          ),
+                          colors = CardDefaults.cardColors(containerColor = Color(0xFF172B42)),
                                       shape = RoundedCornerShape(12.dp)
                                   ) {
                                       Column(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
@@ -1384,7 +1439,12 @@ jobs:
                                   Spacer(Modifier.height(8.dp))
                                   Card(
                                       modifier = Modifier.fillMaxWidth(),
-                                      colors = CardDefaults.cardColors(containerColor = Color(0xFF172B42)),
+                                      // Elevasi berlapis memberi kesan panel 3D tanpa mengganti warna asli.
+                          elevation = CardDefaults.cardElevation(
+                              defaultElevation = if (isVipPlus) 10.dp else 0.dp,
+                              pressedElevation = if (isVipPlus) 14.dp else 0.dp
+                          ),
+                          colors = CardDefaults.cardColors(containerColor = Color(0xFF172B42)),
                                       shape = RoundedCornerShape(12.dp)
                                   ) {
                                       Column(Modifier.fillMaxWidth().padding(12.dp)) {
