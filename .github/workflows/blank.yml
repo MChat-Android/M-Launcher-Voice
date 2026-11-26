@@ -820,7 +820,7 @@ jobs:
                               contentScale = ContentScale.Fit
                           )
 
-                          // Lencana VIP+ menempel pada garis bingkai kanan-atas logo.
+                          // Lencana VIP menempel pada garis bingkai kanan-atas logo.
                           if (isVipPlus) {
                               Box(
                                   modifier = Modifier
@@ -839,7 +839,7 @@ jobs:
                                       .padding(horizontal = 12.dp, vertical = 6.dp)
                               ) {
                                   Text(
-                                      text = "VIP+",
+                                      text = "VIP",
                                       color = Color(0xFF382306),
                                       fontSize = 13.sp,
                                       fontWeight = FontWeight.Black,
@@ -913,7 +913,7 @@ jobs:
                           Column(modifier = Modifier.padding(18.dp)) {
                               Row(verticalAlignment = Alignment.CenterVertically) {
                                   Column(modifier = Modifier.weight(1f)) {
-                                      Text("TINGKATKAN KE VIP+", color = if (isVipPlus) premiumGold else Cyan, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp)
+                                      Text("TINGKATKAN KE VIP", color = if (isVipPlus) premiumGold else Cyan, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp)
                                       Spacer(Modifier.height(5.dp))
                                       Text("Buka semua aplikasi dengan perintah suara", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                                       Text("Mulai Rp15.000 / 7 hari", color = Muted, fontSize = 11.sp)
@@ -930,7 +930,7 @@ jobs:
                                   ),
                                   shape = RoundedCornerShape(13.dp)
                               ) {
-                                  Text("LIHAT PAKET VIP+", fontWeight = FontWeight.ExtraBold)
+                                  Text("LIHAT PAKET VIP", fontWeight = FontWeight.ExtraBold)
                               }
                           }
                       }
@@ -986,7 +986,7 @@ jobs:
                           )
                       ) {
                           Column(modifier = Modifier.fillMaxWidth().padding(20.dp)) {
-                              Text("APLIKASI PAKET VIP+", color = if (isVipPlus) premiumGold else Cyan, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold)
+                              Text("APLIKASI PAKET VIP", color = if (isVipPlus) premiumGold else Cyan, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold)
                               Spacer(Modifier.height(8.dp))
                               Text("Dapat membuka semua aplikasi terpasang yang memiliki ikon aplikasi dan dapat dijalankan Android.", color = Color.White, fontSize = 12.sp, lineHeight = 18.sp)
                               Spacer(Modifier.height(10.dp))
@@ -1295,14 +1295,14 @@ jobs:
                                       }
                                   }
                                   Spacer(Modifier.height(15.dp))
-                                  Text("KEUNTUNGAN VIP+", color = Cyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                  Text("KEUNTUNGAN VIP", color = Cyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                   Spacer(Modifier.height(8.dp))
                                   listOf(
-                                      "Latar layar beranda VIP+ dengan tampilan khusus",
-                                      "Sapaan dan panduan suara khusus VIP+ saat widget digunakan",
+                                      "Latar layar beranda VIP dengan tampilan khusus",
+                                      "Sapaan dan panduan suara khusus VIP saat widget digunakan",
                                       "Perintah suara untuk membuka aplikasi apa pun yang terpasang; penggunaan di dalam aplikasi tetap manual",
                                       "Widget mengambang dengan pilihan desain ikon premium",
-                                      "Layanan berbasis kecerdasan buatan khusus VIP+"
+                                      "Layanan berbasis kecerdasan buatan khusus VIP"
                                   ).forEach { benefit ->
                                       Row(
                                           modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
@@ -1846,7 +1846,7 @@ jobs:
 
                   windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
 
-                  // Widget VIP+ memakai logo VIP bulat; widget Standar tetap memakai ikon mikrofon seperti semula.
+                  // Widget VIP memakai logo bulat; widget Standar tetap memakai ikon mikrofon seperti semula.
                   container = FrameLayout(this).apply {
                       setPadding(0, 0, 0, 0)
                       background = null
@@ -1883,7 +1883,7 @@ jobs:
 
                   if (vipMode) {
                       val vipLabel = TextView(this).apply {
-                          text = "VIP+"
+                          text = "VIP"
                           // Lebar badge dibuat cukup agar seluruh karakter dan jarak huruf tidak terpotong.
                           textSize = 11f
                           letterSpacing = 0.035f
@@ -4878,7 +4878,7 @@ jobs:
 
                       val visible = available.take(8)
                       val remaining = available.size - visible.size
-                      val modeLabel = if (vipMode) "VIP+" else "Standar"
+                      val modeLabel = if (vipMode) "VIP" else "Standar"
                       val suffix = if (remaining > 0) " dan $remaining aplikasi lainnya" else ""
                       showMessage(
                           "Aplikasi $modeLabel (${available.size}): " +
