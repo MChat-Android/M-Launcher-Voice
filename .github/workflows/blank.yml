@@ -636,6 +636,21 @@ jobs:
               }
 
               private fun startFloatingService() {
+                  val user = FirebaseAuth.getInstance().currentUser
+                  if (user == null) {
+                      try {
+                          val intent = Intent(this, FloatingVoiceService::class.java)
+                              .putExtra(FloatingVoiceService.EXTRA_MODE, FloatingVoiceService.MODE_STANDARD)
+                          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(intent)
+                          else startService(intent)
+                          message = "Widget Standar aktif. Ketuk lalu ucapkan perintah untuk aplikasi bawaan."
+                      } catch (e: Exception) {
+                          message = "Tidak dapat mengaktifkan widget: ${e.message}"
+                      }
+                      return
+                  }
+                  val userUid = user.uid
+
                   fun launchWidget(mode: String) {
                       try {
                           val intent = Intent(this, FloatingVoiceService::class.java)
@@ -670,13 +685,6 @@ jobs:
                       }
                       launchWidget(if (isVip) FloatingVoiceService.MODE_VIP else FloatingVoiceService.MODE_STANDARD)
                   }
-
-                  val user = FirebaseAuth.getInstance().currentUser
-                  if (user == null) {
-                      launchWidget(FloatingVoiceService.MODE_STANDARD)
-                      return
-                  }
-                  val userUid = user.uid
 
                   fun useOfflineEntitlement() {
                       val cached = VipEntitlementCache.isActive(this, userUid)
