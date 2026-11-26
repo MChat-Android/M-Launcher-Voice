@@ -5052,6 +5052,18 @@ jobs:
                   }
               }
 
+              // Setelah aplikasi tujuan dibuka, VIP+ kembali menunggu kata pemicu secara otomatis.
+              // Service foreground tetap menjadi pemilik siklus pengenalan suara.
+              private fun resumeVipWakeWordListening(delayMs: Long = 1500L) {
+                  if (!vipMode || !serviceInitialized) return
+                  handler.postDelayed({
+                      if (vipMode && serviceInitialized && !listening) {
+                          awaitingWakeWord = true
+                          startVoiceRecognition()
+                      }
+                  }, delayMs)
+              }
+
               private fun launchVipApp(intent: Intent) {
                   val user = FirebaseAuth.getInstance().currentUser
                   if (user == null) {
@@ -5063,6 +5075,7 @@ jobs:
                       try {
                           intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                           startActivity(intent)
+                          resumeVipWakeWordListening()
                       } catch (_: Exception) {
                           showMessage("Aplikasi tidak dapat dibuka")
                       }
@@ -5118,6 +5131,7 @@ jobs:
 
                       if (targetPackage == packageName || isBuiltInSystemApp(targetPackage)) {
                           startActivity(intent)
+                          resumeVipWakeWordListening()
                       } else {
                           launchVipApp(intent)
                       }
