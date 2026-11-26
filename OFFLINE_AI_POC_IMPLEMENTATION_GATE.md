@@ -88,3 +88,20 @@ Build #240 succeeded on 2026-11-26:
 - Production artifact: `M-Asisten-APK`, artifact ID `15079424480`, 11,592,624 bytes, expires 2027-02-24.
 
 This proves compilation only. Import on a physical device, successful model load, Indonesian inference, airplane-mode inference, and performance are still NOT VERIFIED. POC artifact is a debug APK; model weights are not bundled. Production branch and production source are unchanged by this POC feature.
+
+
+## Checkpoint — model unload/reload controls (Build #242)
+
+Commit: `64fe89b38ff21267a4d92879bea57e2a771281e0`
+
+The isolated POC now adds a **LEPAS MODEL DARI MEMORI** action. It closes the active Conversation before the Engine on the serial worker, clears both references before closing to prevent double-close, and keeps the verified model file in app-private storage so it can be loaded again. Model import and deletion now check runtime state on the worker, reducing UI/worker state races. The Engine/Conversation references are volatile for safe visibility to UI guards; the serial worker remains the lifecycle owner.
+
+Build #242 succeeded on 2026-11-26:
+- Workflow: https://github.com/MChat-Android/M-Launcher-Voice/actions/runs/45738884480
+- Security checks: success.
+- Isolated LiteRT-LM POC build: success.
+- Production APK build and signature checks: success.
+- POC artifact: `M-Asisten-Offline-AI-POC`, artifact ID `15080690868`, 24,379,014 bytes, SHA-256 `b02c6e0917b43227a0301d5b290926097d125e921edd71691e15e493da31d841`, expires 2026-12-10.
+- Production artifact: `M-Asisten-APK`, artifact ID `15080621163`, 11,592,616 bytes, SHA-256 `0be5be65ab03a0d5174fb3cc568b8291ba5a8826ddc2fffb0be48bc2d66a8acb`, expires 2027-02-24.
+
+This remains a compile/build result only. The unload/reload lifecycle, actual model load, Indonesian inference, airplane-mode inference, and memory behavior still require physical-device testing. No change was made to production source or `main`.
