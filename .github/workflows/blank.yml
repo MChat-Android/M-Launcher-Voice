@@ -1923,23 +1923,28 @@ jobs:
 
                   windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
 
-                  // Widget mengambang selalu memakai mikrofon; tidak ada logo atau lencana VIP.
+                  // Widget Standar tetap memakai mikrofon biru.
+                  // Widget VIP memakai tulisan VIP+ dengan bingkai emas khusus.
                   container = FrameLayout(this).apply {
                       setPadding(0, 0, 0, 0)
                       background = null
                   }
 
                   micButton = TextView(this).apply {
-                      text = "🎤"
-                      textSize = 25f
-                      typeface = Typeface.DEFAULT
+                      text = if (vipMode) "VIP+" else "🎤"
+                      textSize = if (vipMode) 13f else 25f
+                      typeface = if (vipMode) Typeface.create("sans-serif-black", Typeface.BOLD)
+                          else Typeface.DEFAULT
                       gravity = Gravity.CENTER
                       textAlignment = View.TEXT_ALIGNMENT_CENTER
                       includeFontPadding = false
-                      setTextColor(Color.WHITE)
+                      setTextColor(if (vipMode) 0xFFFFE6A0.toInt() else Color.WHITE)
+                      if (vipMode) {
+                          setShadowLayer(3.5f, 1.5f, 2.5f, 0xFF6B3900.toInt())
+                      }
                       background = if (vipMode) vipWidgetBackground()
                           else roundedBackground(0xFF087F9C.toInt(), 100)
-                      elevation = if (vipMode) 14f else 8f
+                      elevation = if (vipMode) 16f else 8f
                       setPadding(0, 0, 0, 0)
                       setOnClickListener { handleWidgetTap() }
                   }
@@ -2002,10 +2007,10 @@ jobs:
               private fun vipWidgetBackground(): GradientDrawable {
                   return GradientDrawable(
                       GradientDrawable.Orientation.TL_BR,
-                      intArrayOf(0xFF07111F.toInt(), 0xFF123B5A.toInt())
+                      intArrayOf(0xFFFFF1BC.toInt(), 0xFFD39A32.toInt(), 0xFF8A5410.toInt())
                   ).apply {
                       shape = GradientDrawable.OVAL
-                      setStroke(2, 0xFF35D6E8.toInt())
+                      setStroke(3, 0xFFFFE8A1.toInt())
                   }
               }
 
