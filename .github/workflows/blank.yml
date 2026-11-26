@@ -5299,7 +5299,7 @@ jobs:
         run: |
           set -euo pipefail
           base64 --decode launcher_icon.jpg.b64 > launcher_icon.webp
-          test -s launcher_icon.jpg
+          test -s launcher_icon.webp
           file launcher_icon.webp
 
       - name: Generate Launcher Icons
