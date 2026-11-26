@@ -455,7 +455,10 @@ jobs:
                   user.getIdToken(true)
                       .addOnSuccessListener { token ->
                           isAdminAccount = token.claims["admin"] == true
-                          if (isAdminAccount) vipMembershipStatus = "VIP+ AKTIF • ADMIN"
+                          if (isAdminAccount) {
+                              VipEntitlementCache.save(this, user.uid, true, 0L, true)
+                              vipMembershipStatus = "VIP+ AKTIF • ADMIN"
+                          }
                       }
                       .addOnFailureListener { isAdminAccount = false }
               }
@@ -474,6 +477,7 @@ jobs:
                           isAdminAccount = admin
                           if (admin) {
                               // Hak VIP+ admin berasal dari Custom Claims, tidak dari dokumen pembayaran.
+                              VipEntitlementCache.save(this, uid, true, 0L, true)
                               vipMembershipStatus = "VIP+ AKTIF • ADMIN"
                           } else {
                               loadRegularVipMembership(uid)
