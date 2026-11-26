@@ -103,7 +103,13 @@ class MainActivity : Activity() {
                 // Do not close an Engine when initialize() itself fails.
                 candidate.initialize()
                 engine = candidate
-                conversation = candidate.createConversation(ConversationConfig())
+                try {
+                    conversation = candidate.createConversation(ConversationConfig())
+                } catch (error: Exception) {
+                    engine = null
+                    candidate.close()
+                    throw error
+                }
                 mainHandler.post {
                     status.text = "Model siap • inferensi lokal CPU"
                     sendButton.isEnabled = true
@@ -153,6 +159,7 @@ class MainActivity : Activity() {
         worker.execute {
             try {
                 conversation?.close()
+                conversation = null
                 conversation = engine?.createConversation(ConversationConfig())
                 mainHandler.post {
                     transcript.text = ""
