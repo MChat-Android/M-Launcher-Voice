@@ -1,6 +1,6 @@
 # Offline AI POC — LiteRT-LM isolation plan
 
-Status: research-backed implementation gate; no production dependency or model has been added.
+Status: isolated POC compiles successfully in GitHub Actions Build #238. No production dependency or model has been added. Device inference, offline behavior, and performance remain unverified.
 
 ## Candidate selected for the first isolated proof of concept
 
@@ -15,9 +15,9 @@ Reasons:
 
 ## POC model candidate
 
-Start with `litert-community/Qwen3-0.6B` in `.litertlm` format, documented as approximately 0.6 GB. Do not bundle it in the APK. Do not download the model during CI or into the development agent environment. The POC should accept a model already placed on the test device, then validate file size/hash before loading.
+Pin the initial compatibility test to `litert-community/Qwen3-0.6B/Qwen3-0.6B.litertlm` (dynamic INT8, context 4096), size 613,722,264 bytes (about 586 MiB). The model repository identifies the artifact under Apache-2.0 and provides SHA-256 `c5f39b419192678c3e6668b62af4d6eb15248dfc7a5348252a9b406f33f2108`. This is the conservative first candidate because its model card says it requires LiteRT-LM 0.18.0 or newer, matching the POC's pinned runtime. Do not silently substitute the newer 328 MiB dynamic INT4 export: its GPU composite-ops path requires LiteRT-LM 0.19.0 or newer, and its CPU memory footprint is reported higher than the earlier artifact.
 
-Before any public release, review the exact model card and license for the exact artifact revision, including redistribution and commercial-use terms. A repository-level license is not a substitute for the model's own terms.
+Do not bundle the model in the APK. Do not download the model during CI or into the development agent environment. The POC should accept a model already placed on the test device, then validate exact byte size and SHA-256 before loading. Recheck the pinned model revision, license file, and artifact hash immediately before release; repository license metadata alone is not sufficient.
 
 ## POC implementation requirements
 
@@ -32,9 +32,16 @@ Before any public release, review the exact model card and license for the exact
 9. No network calls during inference. Model transfer is a separate explicit setup step; airplane-mode inference must work after model installation.
 10. POC must not connect Firebase, user accounts, VIP claims, payments, microphone, or production floating widget.
 
+## Current build checkpoint
+
+- GitHub Actions Build #238 succeeded on 2026-11-26: https://github.com/MChat-Android/M-Launcher-Voice/actions/runs/45737208893
+- Isolated POC APK artifact: `M-Asisten-Offline-AI-POC` (debug APK; no model bundled).
+- Production `M-Asisten-APK` also built and its signature verification passed in the same run.
+- Fix commit: `c12a7d12e0c745fd22906056d13f6ea500892209`.
+
 ## Test gates
 
-- Build: standalone POC compiles with pinned dependencies.
+- Build: standalone POC compiles with pinned dependencies. **Passed in Build #238.**
 - Functional: load model, run at least 20 Indonesian prompts, stream responses, reset conversation, unload/reload.
 - Offline: install model first, enable airplane mode, cold-start POC, infer successfully with network disabled.
 - Reliability: repeat load/unload cycles; verify no double-close, crash, or OOM.
@@ -55,4 +62,5 @@ Do not merge the POC runtime into M Asisten production until:
 - Android LiteRT-LM integration guide: https://developer.android.com/agents/skills/device-ai/litert/litert-lm/skill
 - LiteRT-LM Kotlin getting started: https://github.com/google-ai-edge/LiteRT-LM/blob/main/docs/api/kotlin/getting_started.md
 - LiteRT-LM repository and Apache-2.0 license: https://github.com/google-ai-edge/LiteRT-LM
+- Pinned Qwen3-0.6B model card/artifacts/license/hash: https://huggingface.co/litert-community/Qwen3-0.6B
 - Google AI Edge sample repository and Apache-2.0 license: https://github.com/google-ai-edge/litert-samples
