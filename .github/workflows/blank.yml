@@ -796,7 +796,7 @@ jobs:
                           Image(
                               painter = painterResource(id = R.mipmap.ic_launcher),
                               contentDescription = "Ikon M Asisten",
-                              modifier = Modifier.size(if (compactWidth) 44.dp else 52.dp).clip(RoundedCornerShape(14.dp)),
+                              modifier = Modifier.size(if (compactWidth) 44.dp else 52.dp).clip(CircleShape),
                               contentScale = ContentScale.Crop
                           )
                           Spacer(Modifier.width(13.dp))
@@ -816,7 +816,7 @@ jobs:
                           Image(
                               painter = painterResource(id = R.drawable.launcher_home),
                               contentDescription = "Ikon resmi M Asisten",
-                              modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(38.dp)),
+                              modifier = Modifier.fillMaxSize().clip(CircleShape),
                               contentScale = ContentScale.Fit
                           )
 
@@ -5305,7 +5305,7 @@ jobs:
         run: |
           python3 -m pip install --quiet Pillow
           python3 - <<'PY'
-          from PIL import Image
+          from PIL import Image, ImageDraw
           from pathlib import Path
 
           source = Path("launcher_icon.png")
@@ -5315,7 +5315,20 @@ jobs:
 
           image = Image.open(source).convert("RGBA")
 
-          # Simpan sumber resolusi tinggi untuk logo besar di halaman beranda.
+          # Buat seluruh logo aplikasi benar-benar bulat dengan sudut luar transparan.
+          # Mask resolusi tinggi menjaga tepi lingkaran tetap halus saat diperkecil.
+          side = min(image.size)
+          left = (image.width - side) // 2
+          top = (image.height - side) // 2
+          image = image.crop((left, top, left + side, top + side))
+          scale = 4
+          mask = Image.new("L", (side * scale, side * scale), 0)
+          draw = ImageDraw.Draw(mask)
+          draw.ellipse((0, 0, side * scale - 1, side * scale - 1), fill=255)
+          mask = mask.resize((side, side), Image.Resampling.LANCZOS)
+          image.putalpha(mask)
+
+          # Sumber resolusi tinggi untuk logo halaman beranda juga berbentuk lingkaran.
           home_icon_dir = Path("app/src/main/res/drawable-nodpi")
           home_icon_dir.mkdir(parents=True, exist_ok=True)
           image.save(home_icon_dir / "launcher_home.png", optimize=True)
