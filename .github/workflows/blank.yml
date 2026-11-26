@@ -310,7 +310,7 @@ jobs:
 
           // Hak VIP+ yang sudah diverifikasi disimpan agar tetap tersedia tanpa internet.
           // Cache terikat ke UID dan tidak boleh melewati masa berlaku membership.
-          private object VipEntitlementCache {
+          object VipEntitlementCache {
               private const val PREFS = "vip_entitlement_cache"
               private const val KEY_UID = "uid"
               private const val KEY_ACTIVE = "active"
