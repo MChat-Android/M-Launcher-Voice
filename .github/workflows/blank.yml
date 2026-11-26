@@ -825,30 +825,42 @@ jobs:
                               contentScale = ContentScale.Fit
                           )
 
-                          // Lencana VIP menumpuk pada garis bingkai bagian bawah logo.
+                          // Tulisan VIP transparan dengan efek emas berlapis di bagian bawah logo.
+                          // Tidak memakai bidang/latar agar gambar utama tetap terlihat utuh.
                           if (isVipPlus) {
                               Box(
                                   modifier = Modifier
                                       .align(Alignment.BottomCenter)
-                                      .offset(y = 8.dp)
-                                      .background(
-                                          brush = Brush.horizontalGradient(
-                                              listOf(
-                                                  Color(0xFFFFE9A6),
-                                                  Color(0xFFFFC94A),
-                                                  Color(0xFFB87916)
-                                              )
-                                          ),
-                                          shape = RoundedCornerShape(11.dp)
-                                      )
-                                      .padding(horizontal = 12.dp, vertical = 6.dp)
+                                      .offset(y = 12.dp),
+                                  contentAlignment = Alignment.Center
                               ) {
                                   Text(
                                       text = "VIP",
-                                      color = Color(0xFF382306),
-                                      fontSize = 13.sp,
+                                      color = Color(0xFF6F470D),
+                                      fontSize = if (compactWidth) 27.sp else 32.sp,
                                       fontWeight = FontWeight.Black,
-                                      letterSpacing = 1.2.sp
+                                      letterSpacing = 3.5.sp,
+                                      style = androidx.compose.ui.text.TextStyle(
+                                          shadow = androidx.compose.ui.graphics.Shadow(
+                                              color = Color(0xFF000000),
+                                              blurRadius = 9f,
+                                              offset = androidx.compose.ui.geometry.Offset(3f, 5f)
+                                          )
+                                      )
+                                  )
+                                  Text(
+                                      text = "VIP",
+                                      color = Color(0xFFFFD36A),
+                                      fontSize = if (compactWidth) 27.sp else 32.sp,
+                                      fontWeight = FontWeight.Black,
+                                      letterSpacing = 3.5.sp,
+                                      style = androidx.compose.ui.text.TextStyle(
+                                          shadow = androidx.compose.ui.graphics.Shadow(
+                                              color = Color(0xFFFFE7A3),
+                                              blurRadius = 2f,
+                                              offset = androidx.compose.ui.geometry.Offset(-1f, -1f)
+                                          )
+                                      )
                                   )
                               }
                           }
