@@ -5295,12 +5295,11 @@ jobs:
             echo "Secret Firebase belum dipasang; build tetap berjalan tanpa konfigurasi Firebase."
           fi
 
-      - name: Decode M Asisten Launcher Artwork
+      - name: Validate M Asisten Launcher Artwork
         run: |
           set -euo pipefail
-          base64 --decode launcher_icon.jpg.b64 > launcher_icon.webp
-          test -s launcher_icon.webp
-          file launcher_icon.webp
+          test -s launcher_icon.png
+          file launcher_icon.png
 
       - name: Generate Launcher Icons
         run: |
@@ -5309,7 +5308,7 @@ jobs:
           from PIL import Image
           from pathlib import Path
 
-          source = Path("launcher_icon.webp")
+          source = Path("launcher_icon.png")
 
           if not source.exists():
               raise SystemExit("launcher_icon.png tidak ditemukan!")
