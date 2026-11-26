@@ -79,3 +79,48 @@ Jalankan perintah perangkat yang deterministik tanpa LLM: buka aplikasi, alarm/p
 ## Batasan audit
 
 Audit ini membaca workflow, aturan Firestore, dan dokumen rencana yang ada di branch main. Karena source Android dibuat secara dinamis di workflow, semua perubahan implementasi berikutnya harus dilakukan dengan hati-hati pada heredoc terkait atau setelah source dipisahkan ke struktur proyek normal. Audit statis belum menggantikan uji APK pada perangkat fisik.
+
+
+## Persyaratan tambahan: dukungan HP RAM 4 GB
+
+Keputusan produk: M Asisten tetap harus dapat digunakan pada HP Android dengan RAM fisik 4 GB. RAM 4 GB tidak boleh otomatis membuat aplikasi menolak berjalan atau menutup seluruh fungsi asisten.
+
+### Mode kompatibilitas berdasarkan kemampuan perangkat
+
+1. **Mode 4 GB (kompatibilitas utama)**
+   - Fungsi perintah Android lokal, antarmuka, pengaturan, dan TTS/ASR lokal yang tersedia harus tetap dapat digunakan.
+   - AI generatif menggunakan model sangat kecil dan terkuantisasi (mulai uji kelas sekitar 0,5B–1B parameter, 4-bit; ukuran final ditentukan benchmark, bukan asumsi).
+   - Batasi panjang konteks dan jumlah token keluaran; gunakan streaming; jangan memuat model besar di latar belakang.
+   - Model AI boleh menjadi unduhan opsional. Jika tidak kompatibel atau memori sedang rendah, aplikasi otomatis beralih ke mode perintah lokal dan menjelaskan bahwa jawaban AI lanjutan tidak tersedia pada kondisi tersebut.
+   - Jangan mengklaim semua perangkat RAM 4 GB pasti mampu menjalankan LLM dengan lancar. Android, chipset, versi OS, memori tersedia, dan thermal throttling sangat memengaruhi hasil.
+
+2. **Mode 6–8 GB**
+   - Uji model lokal kelas kecil-menengah yang lebih mampu, dengan batas memori dan konteks berdasarkan hasil pengukuran.
+
+3. **Mode 8 GB ke atas**
+   - Uji model yang lebih besar jika kualitas, lisensi, konsumsi baterai, suhu, dan stabilitas memenuhi target.
+
+### Kebijakan pemilihan model dan memori
+
+- Deteksi RAM total dan memori yang tersedia saat runtime; jangan memakai RAM total sebagai satu-satunya indikator.
+- Gunakan Android memory callbacks/trim handling; hentikan atau lepaskan model saat aplikasi masuk background atau sistem meminta memori.
+- Model 4 GB harus diuji dengan kondisi realistis: perangkat baru boot, aplikasi lain berjalan, panggilan masuk, pergantian aplikasi, dan sesi penggunaan berulang.
+- Ukur peak RSS/PSS, waktu token pertama, token/detik, crash/OOM, suhu, baterai, dan ruang penyimpanan.
+- Sediakan fallback deterministik tanpa LLM untuk perintah inti. Hindari memuat dua model berat sekaligus (ASR dan LLM); gunakan pipeline bergantian atau komponen ringan.
+- Jika pengenalan suara offline sistem tidak tersedia, jangan diam-diam mengirim audio ke cloud. Beri pilihan mengetik atau instruksi pemasangan paket bahasa; evaluasi ASR lokal ringan terpisah.
+
+### Kriteria penerimaan minimum RAM 4 GB
+
+- Instalasi dan pembukaan aplikasi berhasil pada perangkat uji RAM 4 GB yang ditetapkan.
+- Perintah inti lokal berjalan dalam mode pesawat.
+- Tidak ada permintaan jaringan untuk prompt, transkrip, atau inferensi AI.
+- Jika model kecil tidak muat, aplikasi tetap dapat menjalankan fungsi asisten non-generatif tanpa crash.
+- Tidak ada klaim “AI generatif lancar di semua HP 4 GB” sebelum pengujian pada beberapa perangkat nyata.
+- Tetapkan daftar perangkat/chipset yang lulus; tampilkan mode kompatibilitas dan rekomendasi model berdasarkan hasil uji.
+
+### Dampak bisnis RAM 4 GB
+
+- Mendukung RAM 4 GB memperluas pasar dan jumlah calon pengguna, tetapi kualitas AI generatif di kelas ini harus diposisikan sebagai versi ringan.
+- Jangan membebankan biaya inference cloud sebagai fallback otomatis; itu akan melanggar keputusan offline-only dan mengubah struktur biaya.
+- Model yang lebih besar untuk perangkat kuat dapat menjadi peningkatan opsional, bukan syarat menggunakan fungsi utama.
+- Anggaran bisnis tetap perlu memasukkan pengujian perangkat kelas bawah/menengah, optimasi memori, dan dukungan kompatibilitas.
