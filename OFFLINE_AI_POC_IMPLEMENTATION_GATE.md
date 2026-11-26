@@ -64,3 +64,27 @@ Do not merge the POC runtime into M Asisten production until:
 - LiteRT-LM repository and Apache-2.0 license: https://github.com/google-ai-edge/LiteRT-LM
 - Pinned Qwen3-0.6B model card/artifacts/license/hash: https://huggingface.co/litert-community/Qwen3-0.6B
 - Google AI Edge sample repository and Apache-2.0 license: https://github.com/google-ai-edge/litert-samples
+
+
+## Checkpoint — verified model import UI (Build #240)
+
+Commit: `d20d6f2e1fe18614ec82686e59e23a6cf410388e`
+
+The standalone POC now includes:
+- Android document picker to select a local `.litertlm` file.
+- Streaming copy into app-private storage using a 1 MiB buffer; model bytes are not loaded into RAM as a whole.
+- Free-space precheck before copy.
+- Exact expected byte-count and SHA-256 verification before atomically promoting the temporary file to `model.litertlm`.
+- Rejects oversized, truncated, or checksum-mismatched files.
+- Delete-model action; model replacement is refused while an Engine is active.
+- No INTERNET permission or cloud inference path added.
+
+Build #240 succeeded on 2026-11-26:
+- Workflow: https://github.com/MChat-Android/M-Launcher-Voice/actions/runs/45738002644
+- Security checks: success.
+- Production APK build: success.
+- Isolated LiteRT-LM POC build: success.
+- POC artifact: `M-Asisten-Offline-AI-POC`, artifact ID `15079577293`, 24,378,174 bytes, expires 2026-12-10.
+- Production artifact: `M-Asisten-APK`, artifact ID `15079424480`, 11,592,624 bytes, expires 2027-02-24.
+
+This proves compilation only. Import on a physical device, successful model load, Indonesian inference, airplane-mode inference, and performance are still NOT VERIFIED. POC artifact is a debug APK; model weights are not bundled. Production branch and production source are unchanged by this POC feature.
