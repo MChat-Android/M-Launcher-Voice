@@ -37,6 +37,43 @@ jobs:
           # Tooling is ephemeral CI-only; production/admin dependencies are audited separately.
           security-tests/node_modules/.bin/firebase emulators:exec --only firestore --project demo-m-launcher-voice "node security-tests/firestore-rules.test.mjs"
 
+  offline-ai-poc-build:
+    name: Build isolated LiteRT-LM POC
+    needs: security-checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Verify Android SDK
+        run: |
+          test -d "$ANDROID_HOME/platforms"
+          echo "Android SDK: $ANDROID_HOME"
+          ls "$ANDROID_HOME/platforms"
+
+      - name: Build isolated POC debug APK
+        run: gradle -p offline-ai-poc :app:assembleDebug --stacktrace
+
+      - name: Upload POC APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: M-Asisten-Offline-AI-POC
+          path: offline-ai-poc/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+
   build:
     needs: security-checks
     runs-on: ubuntu-latest
