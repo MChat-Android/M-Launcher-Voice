@@ -5298,9 +5298,9 @@ jobs:
       - name: Decode M Asisten Launcher Artwork
         run: |
           set -euo pipefail
-          base64 --decode launcher_icon.jpg.b64 > launcher_icon.jpg
+          base64 --decode launcher_icon.jpg.b64 > launcher_icon.webp
           test -s launcher_icon.jpg
-          file launcher_icon.jpg
+          file launcher_icon.webp
 
       - name: Generate Launcher Icons
         run: |
@@ -5309,7 +5309,7 @@ jobs:
           from PIL import Image
           from pathlib import Path
 
-          source = Path("launcher_icon.jpg")
+          source = Path("launcher_icon.webp")
 
           if not source.exists():
               raise SystemExit("launcher_icon.png tidak ditemukan!")
