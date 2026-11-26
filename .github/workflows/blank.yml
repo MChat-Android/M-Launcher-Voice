@@ -2033,8 +2033,11 @@ jobs:
 
               private fun handleWidgetTap() {
                   if (vipMode) {
-                      // VIP+: sapa pengguna, lalu dengarkan satu perintah.
-                      speakAndListen()
+                      // VIP+: ketukan mengaktifkan pendengaran kata pemicu, bukan sapaan.
+                      if (listening) return
+                      awaitingWakeWord = true
+                      textToSpeech?.stop()
+                      startVoiceRecognition()
                   } else {
                       // Standar: langsung dengarkan satu perintah tanpa sapaan suara.
                       beginManualListening()
@@ -2062,7 +2065,8 @@ jobs:
                       return
                   }
                   vipGreetingPending = false
-                  speakTextThenListen("Hallo M, silakan ucapkan perintah.")
+                  // Kata pemicu "Hallo M" berasal dari pengguna, bukan suara sapaan aplikasi.
+                  speakTextThenListen("Silahkan ucapkan perintah.")
               }
 
               private fun speakTextThenListen(message: String) {
@@ -2101,7 +2105,7 @@ jobs:
 
               private fun speakWakeWordResponse() {
                   awaitingWakeWord = false
-                  speakTextThenListen("Hallo, silahkan ucapkan perintah.")
+                  speakTextThenListen("Silahkan ucapkan perintah.")
               }
 
               private fun isWakeWord(text: String): Boolean {
@@ -2148,9 +2152,11 @@ jobs:
                       speechRecognizer?.setRecognitionListener(
                           object : RecognitionListener {
                               override fun onReadyForSpeech(params: android.os.Bundle?) {
+                                  // Status layar tidak dibacakan agar instruksi suara tidak berulang.
                                   showMessage(
                                       if (awaitingWakeWord) "Menunggu panggilan Hallo M..."
-                                      else "Silahkan ucapkan perintah..."
+                                      else "Mendengarkan perintah...",
+                                      speak = false
                                   )
                               }
 
@@ -2181,11 +2187,25 @@ jobs:
 
                               override fun onResults(results: android.os.Bundle?) {
                                   listening = false
-                                  awaitingWakeWord = false
+                                  val wasAwaitingWakeWord = awaitingWakeWord
                                   val words = results?.getStringArrayList(
                                       SpeechRecognizer.RESULTS_RECOGNITION
                                   )?.firstOrNull()
 
+                                  if (wasAwaitingWakeWord) {
+                                      if (!words.isNullOrBlank() && isWakeWord(words)) {
+                                          awaitingWakeWord = false
+                                          showMessage("Hallo M terdeteksi. Mode perintah suara aktif.", speak = false)
+                                          speakWakeWordResponse()
+                                      } else {
+                                          awaitingWakeWord = true
+                                          showMessage("Menunggu panggilan Hallo M...", speak = false)
+                                          scheduleWakeWordListening(600L)
+                                      }
+                                      return
+                                  }
+
+                                  awaitingWakeWord = false
                                   if (!words.isNullOrBlank()) {
                                       showMessage("Perintah: $words", speak = false)
                                       executeCommand(words)
