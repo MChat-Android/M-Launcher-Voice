@@ -3,6 +3,9 @@ package com.masisten.offlineaipoc
 import android.app.Activity
 import android.os.Bundle
 import android.os.Handler
+import android.content.Intent
+import android.net.Uri
+import android.os.StatFs
 import android.os.Looper
 import android.view.ViewGroup
 import android.widget.Button
@@ -18,6 +21,7 @@ import com.google.ai.edge.litertlm.EngineConfig
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.flow.collect
 import java.io.File
+import java.security.MessageDigest
 import java.util.concurrent.Executors
 
 /** Standalone POC; the serial worker exclusively owns Engine and Conversation. */
@@ -29,6 +33,8 @@ class MainActivity : Activity() {
     private lateinit var status: TextView
     private lateinit var transcript: TextView
     private lateinit var prompt: EditText
+    private lateinit var chooseButton: Button
+    private lateinit var deleteButton: Button
     private lateinit var loadButton: Button
     private lateinit var sendButton: Button
     private lateinit var resetButton: Button
@@ -53,6 +59,20 @@ class MainActivity : Activity() {
             minLines = 2
             setSingleLine(false)
         }
+        chooseButton = Button(this).apply {
+            text = "PILIH FILE MODEL (.litertlm)"
+            setOnClickListener {
+                val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                    type = "*/*"
+                }
+                startActivityForResult(intent, REQUEST_MODEL_FILE)
+            }
+        }
+        deleteButton = Button(this).apply {
+            text = "HAPUS MODEL"
+            setOnClickListener { deleteModel() }
+        }
         loadButton = Button(this).apply {
             text = "MUAT MODEL LOKAL"
             setOnClickListener { loadModel() }
@@ -72,17 +92,98 @@ class MainActivity : Activity() {
             ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f
         ))
         root.addView(prompt)
+        root.addView(chooseButton)
+        root.addView(deleteButton)
         root.addView(loadButton)
         root.addView(sendButton)
         root.addView(resetButton)
         setContentView(root)
     }
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode != REQUEST_MODEL_FILE || resultCode != RESULT_OK) return
+        data?.data?.let { importModel(it) }
+    }
+
+    private fun importModel(uri: Uri) {
+        val destination = File(filesDir, "model.litertlm")
+        val temporary = File(filesDir, "model.litertlm.part")
+        if (StatFs(filesDir.absolutePath).availableBytes < EXPECTED_MODEL_BYTES + 32L * 1024 * 1024) {
+            status.text = "Ruang penyimpanan tidak cukup (perlu sekitar 620 MiB kosong)."
+            return
+        }
+        chooseButton.isEnabled = false
+        loadButton.isEnabled = false
+        deleteButton.isEnabled = false
+        status.text = "Menyalin dan memverifikasi model…"
+        worker.execute {
+            try {
+                temporary.delete()
+                val digest = MessageDigest.getInstance("SHA-256")
+                var total = 0L
+                val source = contentResolver.openInputStream(uri)
+                    ?: throw IllegalStateException("File tidak dapat dibuka")
+                source.use { input ->
+                    temporary.outputStream().buffered().use { output ->
+                        val buffer = ByteArray(1024 * 1024)
+                        while (true) {
+                            val count = input.read(buffer)
+                            if (count < 0) break
+                            total += count
+                            if (total > EXPECTED_MODEL_BYTES) throw IllegalStateException("Ukuran file terlalu besar")
+                            digest.update(buffer, 0, count)
+                            output.write(buffer, 0, count)
+                        }
+                    }
+                }
+                val hash = digest.digest().joinToString("") { "%02x".format(it) }
+                if (total != EXPECTED_MODEL_BYTES) throw IllegalStateException("Ukuran file tidak cocok: $total byte")
+                if (hash != EXPECTED_MODEL_SHA256) throw IllegalStateException("SHA-256 tidak cocok; file ditolak")
+                if (engine != null) throw IllegalStateException("Model sedang dimuat; tutup aplikasi lalu coba lagi")
+                if (destination.exists() && !destination.delete()) throw IllegalStateException("Model lama gagal dihapus")
+                if (!temporary.renameTo(destination)) throw IllegalStateException("Gagal menyimpan model terverifikasi")
+                mainHandler.post {
+                    status.text = "Model terpasang • 586 MiB • ukuran dan SHA-256 valid"
+                    chooseButton.isEnabled = true
+                    deleteButton.isEnabled = true
+                    loadButton.isEnabled = true
+                }
+            } catch (error: Exception) {
+                temporary.delete()
+                mainHandler.post {
+                    status.text = "Pemasangan ditolak: " + (error.message ?: error.javaClass.simpleName)
+                    chooseButton.isEnabled = true
+                    deleteButton.isEnabled = destination.exists()
+                    loadButton.isEnabled = destination.exists()
+                }
+            }
+        }
+    }
+
+    private fun deleteModel() {
+        if (engine != null) {
+            status.text = "Model sedang dimuat. Tutup lalu buka kembali aplikasi untuk menghapus."
+            return
+        }
+        val model = File(filesDir, "model.litertlm")
+        if (model.exists() && !model.delete()) {
+            status.text = "Gagal menghapus file model."
+            return
+        }
+        status.text = "File model dihapus dari penyimpanan aplikasi."
+        loadButton.isEnabled = false
+        deleteButton.isEnabled = false
+    }
+
     private fun showModelInstructions() {
         val model = File(filesDir, "model.litertlm")
+        val installed = model.isFile && model.length() == EXPECTED_MODEL_BYTES
         status.text = "POC terisolasi • CPU • tanpa akses internet\n" +
-            "Letakkan model .litertlm di:\n" + model.absolutePath +
-            "\nUkuran harus sesuai model card."
+            if (installed) "Model terpasang • ukuran cocok" else
+                "Pilih file Qwen3-0.6B INT8 .litertlm. Ukuran dan SHA-256 akan diverifikasi."
+        loadButton.isEnabled = installed
+        deleteButton.isEnabled = model.exists()
     }
 
     private fun loadModel() {
@@ -174,6 +275,12 @@ class MainActivity : Activity() {
                 }
             }
         }
+    }
+
+    companion object {
+        private const val REQUEST_MODEL_FILE = 4107
+        private const val EXPECTED_MODEL_BYTES = 613722264L
+        private const val EXPECTED_MODEL_SHA256 = "c5f39b419192678c3e6668b62af4d6eb15248dfc7a5348252a9b406f33f2108"
     }
 
     override fun onDestroy() {
