@@ -308,6 +308,65 @@ jobs:
           private val Blue = Color(0xFF397BFF)
           private val Muted = Color(0xFF9DB2C9)
 
+          // Hak VIP+ yang sudah diverifikasi disimpan agar tetap tersedia tanpa internet.
+          // Cache terikat ke UID dan tidak boleh melewati masa berlaku membership.
+          private object VipEntitlementCache {
+              private const val PREFS = "vip_entitlement_cache"
+              private const val KEY_UID = "uid"
+              private const val KEY_ACTIVE = "active"
+              private const val KEY_ADMIN = "admin"
+              private const val KEY_EXPIRES_AT = "expires_at"
+              private const val KEY_VERIFIED_AT = "verified_at"
+              private const val OFFLINE_GRACE_MS = 30L * 24L * 60L * 60L * 1000L
+
+              fun save(
+                  context: android.content.Context,
+                  uid: String,
+                  active: Boolean,
+                  expiresAt: Long = 0L,
+                  admin: Boolean = false
+              ) {
+                  context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
+                      .edit()
+                      .putString(KEY_UID, uid)
+                      .putBoolean(KEY_ACTIVE, active)
+                      .putBoolean(KEY_ADMIN, admin)
+                      .putLong(KEY_EXPIRES_AT, expiresAt)
+                      .putLong(KEY_VERIFIED_AT, System.currentTimeMillis())
+                      .apply()
+              }
+
+              fun clear(context: android.content.Context, uid: String? = null) {
+                  val prefs = context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
+                  if (uid == null || prefs.getString(KEY_UID, null) == uid) {
+                      prefs.edit().clear().apply()
+                  }
+              }
+
+              fun isActive(context: android.content.Context, uid: String): Boolean {
+                  val prefs = context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
+                  if (prefs.getString(KEY_UID, null) != uid || !prefs.getBoolean(KEY_ACTIVE, false)) {
+                      return false
+                  }
+                  val now = System.currentTimeMillis()
+                  val verifiedAt = prefs.getLong(KEY_VERIFIED_AT, 0L)
+                  val expiresAt = prefs.getLong(KEY_EXPIRES_AT, 0L)
+                  val cacheLimit = if (expiresAt > 0L) expiresAt else verifiedAt + OFFLINE_GRACE_MS
+                  return verifiedAt > 0L && now < cacheLimit && now - verifiedAt <= OFFLINE_GRACE_MS
+              }
+
+              fun isAdmin(context: android.content.Context, uid: String): Boolean {
+                  val prefs = context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
+                  return prefs.getString(KEY_UID, null) == uid &&
+                      prefs.getBoolean(KEY_ADMIN, false) && isActive(context, uid)
+              }
+
+              fun expiry(context: android.content.Context, uid: String): Long {
+                  val prefs = context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
+                  return if (prefs.getString(KEY_UID, null) == uid) prefs.getLong(KEY_EXPIRES_AT, 0L) else 0L
+              }
+          }
+
           class MainActivity : ComponentActivity() {
 
               private var message by mutableStateOf("Widget mikrofon siap diaktifkan")
@@ -431,11 +490,16 @@ jobs:
                       .get(com.google.firebase.firestore.Source.SERVER)
                       .addOnSuccessListener { snap ->
                           val status = snap.getString("membershipStatus") ?: "FREE"
-                          val expiresAt = snap.getTimestamp("expiresAt")?.toDate()?.time
-                          val active = status == "ACTIVE" && (expiresAt == null || expiresAt > System.currentTimeMillis())
+                          val expiresAt = snap.getTimestamp("expiresAt")?.toDate()?.time ?: 0L
+                          val active = status == "ACTIVE" &&
+                              (expiresAt == 0L || expiresAt > System.currentTimeMillis())
+                          VipEntitlementCache.save(this, uid, active, expiresAt, false)
                           vipMembershipStatus = if (active) "VIP+ AKTIF" else "BELUM AKTIF"
                       }
-                      .addOnFailureListener { vipMembershipStatus = "STATUS BELUM TERSINKRON" }
+                      .addOnFailureListener {
+                          val cached = VipEntitlementCache.isActive(this, uid)
+                          vipMembershipStatus = if (cached) "VIP+ AKTIF • OFFLINE" else "STATUS BELUM TERSINKRON"
+                      }
               }
 
               private val permissionLauncher =
@@ -577,13 +641,12 @@ jobs:
                           val intent = Intent(this, FloatingVoiceService::class.java)
                               .putExtra(FloatingVoiceService.EXTRA_MODE, mode)
                           if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                              // Layanan mikrofon harus dimulai sebagai foreground service pada kedua paket.
                               startForegroundService(intent)
                           } else {
                               startService(intent)
                           }
                           message = if (mode == FloatingVoiceService.MODE_VIP) {
-                              "Widget VIP+ aktif. Ketuk untuk sapaan dan perintah suara."
+                              "Widget VIP+ aktif. M Asisten siap menunggu panggilan Hallo M."
                           } else {
                               "Widget Standar aktif. Ketuk lalu ucapkan perintah untuk aplikasi bawaan."
                           }
@@ -592,13 +655,12 @@ jobs:
                       }
                   }
 
-                  val user = FirebaseAuth.getInstance().currentUser
-                  if (user == null) {
-                      launchWidget(FloatingVoiceService.MODE_STANDARD)
-                      return
-                  }
-
-                  fun activateVerifiedVip(isVip: Boolean) {
+                  fun activateVerifiedVip(isVip: Boolean, expiresAt: Long = 0L, admin: Boolean = false) {
+                      if (isVip) {
+                          VipEntitlementCache.save(this, userUid, true, expiresAt, admin)
+                      } else {
+                          VipEntitlementCache.clear(this, userUid)
+                      }
                       if (isVip &&
                           checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED
                       ) {
@@ -606,49 +668,48 @@ jobs:
                           permissionLauncher.launch(arrayOf(Manifest.permission.RECORD_AUDIO))
                           return
                       }
-                      launchWidget(
-                          if (isVip) FloatingVoiceService.MODE_VIP
-                          else FloatingVoiceService.MODE_STANDARD
+                      launchWidget(if (isVip) FloatingVoiceService.MODE_VIP else FloatingVoiceService.MODE_STANDARD)
+                  }
+
+                  val user = FirebaseAuth.getInstance().currentUser
+                  if (user == null) {
+                      launchWidget(FloatingVoiceService.MODE_STANDARD)
+                      return
+                  }
+                  val userUid = user.uid
+
+                  fun useOfflineEntitlement() {
+                      val cached = VipEntitlementCache.isActive(this, userUid)
+                      activateVerifiedVip(
+                          cached,
+                          VipEntitlementCache.expiry(this, userUid),
+                          VipEntitlementCache.isAdmin(this, userUid)
                       )
                   }
 
-                  // Periksa Custom Claims terbaru agar akun admin otomatis mendapat VIP+.
                   user.getIdToken(true)
                       .addOnSuccessListener { token ->
                           val admin = token.claims["admin"] == true
                           isAdminAccount = admin
                           if (admin) {
                               vipMembershipStatus = "VIP+ AKTIF • ADMIN"
-                              activateVerifiedVip(true)
+                              activateVerifiedVip(true, 0L, true)
                           } else {
                               FirebaseFirestore.getInstance()
                                   .collection("vip_members")
-                                  .document(user.uid)
+                                  .document(userUid)
                                   .get(com.google.firebase.firestore.Source.SERVER)
                                   .addOnSuccessListener { member ->
-                                      val expiresAt = member.getTimestamp("expiresAt")?.toDate()?.time
-                                      val vipActive = member.getString("membershipStatus") == "ACTIVE" &&
-                                          (expiresAt == null || expiresAt > System.currentTimeMillis())
-                                      activateVerifiedVip(vipActive)
+                                      val expiresAt = member.getTimestamp("expiresAt")?.toDate()?.time ?: 0L
+                                      val active = member.getString("membershipStatus") == "ACTIVE" &&
+                                          (expiresAt == 0L || expiresAt > System.currentTimeMillis())
+                                      vipMembershipStatus = if (active) "VIP+ AKTIF" else "BELUM AKTIF"
+                                      activateVerifiedVip(active, expiresAt, false)
                                   }
-                                  .addOnFailureListener { activateVerifiedVip(false) }
+                                  .addOnFailureListener { useOfflineEntitlement() }
                           }
                       }
-                      .addOnFailureListener {
-                          isAdminAccount = false
-                          // Klaim admin yang gagal diverifikasi tidak pernah dianggap aktif.
-                          FirebaseFirestore.getInstance()
-                              .collection("vip_members")
-                              .document(user.uid)
-                              .get(com.google.firebase.firestore.Source.SERVER)
-                              .addOnSuccessListener { member ->
-                                  val expiresAt = member.getTimestamp("expiresAt")?.toDate()?.time
-                                  val vipActive = member.getString("membershipStatus") == "ACTIVE" &&
-                                      (expiresAt == null || expiresAt > System.currentTimeMillis())
-                                  activateVerifiedVip(vipActive)
-                              }
-                              .addOnFailureListener { activateVerifiedVip(false) }
-                      }
+                      .addOnFailureListener { useOfflineEntitlement() }
               }
           }
 
@@ -1588,13 +1649,17 @@ jobs:
                       .get(com.google.firebase.firestore.Source.SERVER)
                       .addOnSuccessListener { member ->
                           if (verificationId != modeVerificationRequest) return@addOnSuccessListener
-                          val expiresAt = member.getTimestamp("expiresAt")?.toDate()?.time
+                          val expiresAt = member.getTimestamp("expiresAt")?.toDate()?.time ?: 0L
                           val vipActive = member.getString("membershipStatus") == "ACTIVE" &&
-                              (expiresAt == null || expiresAt > System.currentTimeMillis())
+                              (expiresAt == 0L || expiresAt > System.currentTimeMillis())
+                          VipEntitlementCache.save(this, uid, vipActive, expiresAt, false)
                           configureMode(vipActive)
                       }
                       .addOnFailureListener {
-                          if (verificationId == modeVerificationRequest) configureMode(false)
+                          if (verificationId == modeVerificationRequest) {
+                              val cached = VipEntitlementCache.isActive(this, uid)
+                              configureMode(cached)
+                          }
                       }
               }
 
@@ -1624,6 +1689,16 @@ jobs:
                   }
 
                   createOverlay()
+                  if (vipMode) {
+                      // Setelah widget berhasil diaktifkan, langsung tunggu kata pemicu.
+                      // Pengguna tidak perlu mengetuk ikon mikrofon terlebih dahulu.
+                      handler.postDelayed({
+                          if (serviceInitialized && vipMode && !listening) {
+                              awaitingWakeWord = true
+                              startVoiceRecognition()
+                          }
+                      }, 900L)
+                  }
               }
 
               private fun stopCurrentMode() {
@@ -1683,19 +1758,25 @@ jobs:
                       .collection("vip_members")
                       .document(uid)
                       .addSnapshotListener { snapshot, error ->
-                          val expiresAt = snapshot?.getTimestamp("expiresAt")?.toDate()?.time
-                          val vipStillActive = snapshot?.getString("membershipStatus") == "ACTIVE" &&
-                              (expiresAt == null || expiresAt > System.currentTimeMillis())
-                          // Pengguna biasa tetap mengikuti status dan masa aktif VIP+ di Firestore.
-                          if (error != null || snapshot == null || !vipStillActive) {
+                          if (error != null || snapshot == null) {
+                              // Gangguan jaringan bukan berarti membership telah berakhir.
+                              if (!VipEntitlementCache.isActive(this, uid)) {
+                                  handler.post { if (vipMode) configureMode(false) }
+                              }
+                              return@addSnapshotListener
+                          }
+
+                          val expiresAt = snapshot.getTimestamp("expiresAt")?.toDate()?.time ?: 0L
+                          val vipStillActive = snapshot.getString("membershipStatus") == "ACTIVE" &&
+                              (expiresAt == 0L || expiresAt > System.currentTimeMillis())
+                          if (vipStillActive) {
+                              VipEntitlementCache.save(this, uid, true, expiresAt, false)
+                          } else if (!snapshot.metadata.isFromCache) {
+                              // Hanya hasil server yang menyatakan nonaktif yang boleh mencabut cache.
+                              VipEntitlementCache.clear(this, uid)
                               handler.post {
                                   if (vipMode) {
-                                      showMessage(
-                                          if (error != null || snapshot == null)
-                                              "Status VIP+ tidak dapat diverifikasi. Kembali ke sistem Standar."
-                                          else
-                                              "VIP+ berakhir. Kembali ke sistem Standar."
-                                      )
+                                      showMessage("VIP+ berakhir. Kembali ke sistem Standar.")
                                       configureMode(false)
                                   }
                               }
@@ -2172,6 +2253,19 @@ jobs:
 
                               override fun onError(error: Int) {
                                   listening = false
+                                  val wasWaitingForWakeWord = awaitingWakeWord
+                                  val retryWakeWord = wasWaitingForWakeWord && (
+                                      error == SpeechRecognizer.ERROR_NO_MATCH ||
+                                      error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT ||
+                                      error == SpeechRecognizer.ERROR_NETWORK ||
+                                      error == SpeechRecognizer.ERROR_NETWORK_TIMEOUT
+                                  )
+                                  if (retryWakeWord) {
+                                      awaitingWakeWord = true
+                                      showMessage("Menunggu panggilan Hallo M...", speak = false)
+                                      scheduleWakeWordListening(900L)
+                                      return
+                                  }
                                   awaitingWakeWord = false
                                   val detail = when (error) {
                                       SpeechRecognizer.ERROR_AUDIO -> "Masalah pada input mikrofon"
@@ -4954,30 +5048,39 @@ jobs:
                       }
                   }
 
+                  fun useOfflineEntitlement() {
+                      if (VipEntitlementCache.isActive(this, user.uid)) {
+                          openVipTarget()
+                      } else {
+                          showMessage("Akses VIP+ belum dapat diverifikasi. Periksa koneksi internet atau status keanggotaan.")
+                      }
+                  }
+
                   fun checkRegularVip() {
                       FirebaseFirestore.getInstance()
                           .collection("vip_members")
                           .document(user.uid)
                           .get(com.google.firebase.firestore.Source.SERVER)
                           .addOnSuccessListener { member ->
-                              val expiresAt = member.getTimestamp("expiresAt")?.toDate()?.time
+                              val expiresAt = member.getTimestamp("expiresAt")?.toDate()?.time ?: 0L
                               val vipActive = member.getString("membershipStatus") == "ACTIVE" &&
-                                  (expiresAt == null || expiresAt > System.currentTimeMillis())
+                                  (expiresAt == 0L || expiresAt > System.currentTimeMillis())
+                              VipEntitlementCache.save(this, user.uid, vipActive, expiresAt, false)
                               if (vipActive) openVipTarget()
                               else showMessage("Aplikasi ini khusus VIP+. Aktifkan VIP+ untuk membukanya.")
                           }
-                          .addOnFailureListener {
-                              showMessage("Akses VIP+ belum dapat diverifikasi. Periksa koneksi internet.")
-                          }
+                          .addOnFailureListener { useOfflineEntitlement() }
                   }
 
                   showMessage("Memeriksa akses VIP+...")
                   user.getIdToken(true)
                       .addOnSuccessListener { token ->
-                          if (token.claims["admin"] == true) openVipTarget()
-                          else checkRegularVip()
+                          if (token.claims["admin"] == true) {
+                              VipEntitlementCache.save(this, user.uid, true, 0L, true)
+                              openVipTarget()
+                          } else checkRegularVip()
                       }
-                      .addOnFailureListener { checkRegularVip() }
+                      .addOnFailureListener { useOfflineEntitlement() }
               }
 
               private fun launchIntent(intent: Intent) {
