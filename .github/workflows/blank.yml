@@ -5376,20 +5376,14 @@ jobs:
 
           image = Image.open(source).convert("RGBA")
 
-          # Buat seluruh logo aplikasi benar-benar bulat dengan sudut luar transparan.
-          # Mask resolusi tinggi menjaga tepi lingkaran tetap halus saat diperkecil.
+          # Pangkas sumber menjadi persegi penuh agar artwork memenuhi area ikon.
+          # Bentuk akhir mengikuti masking ikon yang diterapkan launcher Android.
           side = min(image.size)
           left = (image.width - side) // 2
           top = (image.height - side) // 2
           image = image.crop((left, top, left + side, top + side))
-          scale = 4
-          mask = Image.new("L", (side * scale, side * scale), 0)
-          draw = ImageDraw.Draw(mask)
-          draw.ellipse((0, 0, side * scale - 1, side * scale - 1), fill=255)
-          mask = mask.resize((side, side), Image.Resampling.LANCZOS)
-          image.putalpha(mask)
 
-          # Sumber resolusi tinggi untuk logo halaman beranda juga berbentuk lingkaran.
+          # Sumber resolusi tinggi untuk logo halaman beranda memakai artwork penuh.
           home_icon_dir = Path("app/src/main/res/drawable-nodpi")
           home_icon_dir.mkdir(parents=True, exist_ok=True)
           image.save(home_icon_dir / "launcher_home.png", optimize=True)
