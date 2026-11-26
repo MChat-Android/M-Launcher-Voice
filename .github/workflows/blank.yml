@@ -1577,6 +1577,8 @@ jobs:
           import android.widget.LinearLayout
           import android.widget.FrameLayout
           import android.widget.TextView
+          import android.widget.ImageView
+          import android.graphics.BitmapFactory
           import android.graphics.drawable.GradientDrawable
           import java.util.Locale
           import com.google.firebase.auth.FirebaseAuth
@@ -1596,7 +1598,7 @@ jobs:
               private var membershipListener: com.google.firebase.firestore.ListenerRegistration? = null
               private lateinit var windowManager: WindowManager
               private lateinit var container: FrameLayout
-              private lateinit var micButton: TextView
+              private lateinit var micButton: View
               private var speechRecognizer: SpeechRecognizer? = null
               private var textToSpeech: TextToSpeech? = null
               private var textToSpeechReady = false
@@ -1844,31 +1846,34 @@ jobs:
 
                   windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
 
-                  // Widget mengambang tetap menjadi tombol mikrofon; mode VIP mendapat identitas visual premium.
+                  // Widget VIP+ memakai logo VIP bulat; widget Standar tetap memakai ikon mikrofon seperti semula.
                   container = FrameLayout(this).apply {
-                      if (vipMode) {
-                          // Bingkai VIP+ berlapis emas dengan dasar navy premium.
-                          setPadding(6, 6, 6, 6)
-                          background = vipWidgetFrameBackground()
-                      } else {
-                          setPadding(0, 0, 0, 0)
-                          background = null
-                      }
+                      setPadding(0, 0, 0, 0)
+                      background = null
                   }
 
-                  micButton = TextView(this).apply {
-                      text = if (vipMode) "🎙" else "🎤"
-                      textSize = 25f
-                      typeface = Typeface.DEFAULT
-                      gravity = Gravity.CENTER
-                      textAlignment = View.TEXT_ALIGNMENT_CENTER
-                      includeFontPadding = false
-                      setTextColor(Color.WHITE)
-                      background = if (vipMode) vipWidgetBackground()
-                          else roundedBackground(0xFF087F9C.toInt(), 100)
-                      elevation = if (vipMode) 14f else 8f
-                      setPadding(0, 0, 0, 0)
-                      setOnClickListener { handleWidgetTap() }
+                  micButton = if (vipMode) {
+                      ImageView(this).apply {
+                          setImageResource(R.drawable.vip_widget)
+                          scaleType = ImageView.ScaleType.FIT_CENTER
+                          background = null
+                          elevation = 8f
+                          setOnClickListener { handleWidgetTap() }
+                      }
+                  } else {
+                      TextView(this).apply {
+                          text = "🎤"
+                          textSize = 25f
+                          typeface = Typeface.DEFAULT
+                          gravity = Gravity.CENTER
+                          textAlignment = View.TEXT_ALIGNMENT_CENTER
+                          includeFontPadding = false
+                          setTextColor(Color.WHITE)
+                          background = roundedBackground(0xFF087F9C.toInt(), 100)
+                          elevation = 8f
+                          setPadding(0, 0, 0, 0)
+                          setOnClickListener { handleWidgetTap() }
+                      }
                   }
 
                   container.addView(
