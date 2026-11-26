@@ -4791,7 +4791,7 @@ jobs:
 
                   val target = text
                       .replace(Regex("\\b(aplikasi|app|program)\\b"), " ")
-                      .replace(Regex("\\b(jalankan|mulai|tolong|dong|ya|please)\\b"), " ")
+                      .replace(Regex("\\b(buka|bukakan|jalankan|jalankanlah|mulai|akses|tolong|dong|ya|please)\\b"), " ")
                       .replace(Regex("\\s+"), " ")
                       .trim()
 
@@ -4814,7 +4814,17 @@ jobs:
                           "gmail" to arrayOf("Gmail"),
                           "tiktok" to arrayOf("TikTok"),
                           "telegram" to arrayOf("Telegram"),
-                          "spotify" to arrayOf("Spotify")
+                          "spotify" to arrayOf("Spotify"),
+                          "accesskai" to arrayOf("Access by KAI", "AccessKAI", "Access Kai", "KAI Access"),
+                          "access kai" to arrayOf("Access by KAI", "AccessKAI", "Access Kai", "KAI Access"),
+                          "access by kai" to arrayOf("Access by KAI", "AccessKAI", "Access Kai", "KAI Access"),
+                          "kai access" to arrayOf("Access by KAI", "AccessKAI", "Access Kai", "KAI Access"),
+                          "byu" to arrayOf("by.U", "by U", "b.y.u"),
+                          "by u" to arrayOf("by.U", "by U", "b.y.u"),
+                          "b y u" to arrayOf("by.U", "by U", "b.y.u"),
+                          "ikd" to arrayOf("Identitas Kependudukan Digital", "IKD"),
+                          "i k d" to arrayOf("Identitas Kependudukan Digital", "IKD"),
+                          "identitas kependudukan digital" to arrayOf("Identitas Kependudukan Digital", "IKD")
                       )
                       val aliases = appAliases[target] ?: arrayOf(target)
                       if (!openAppByName(*aliases)) {
