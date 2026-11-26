@@ -761,6 +761,14 @@ jobs:
               val premiumPanelRaised = Color(0xFF211A10)
               val premiumText = Color(0xFFFFF2D2)
               val premiumMuted = Color(0xFFC7B58E)
+              // Bayangan tipografi memberi kedalaman 3D tanpa mengubah warna judul.
+              val vipTitleStyle = androidx.compose.ui.text.TextStyle(
+                  shadow = androidx.compose.ui.graphics.Shadow(
+                      color = Color(0xFF000000),
+                      blurRadius = 5f,
+                      offset = androidx.compose.ui.geometry.Offset(2f, 3f)
+                  )
+              )
               BoxWithConstraints(
                   modifier = Modifier
                       .fillMaxSize()
@@ -806,7 +814,7 @@ jobs:
                           )
                           Spacer(Modifier.width(13.dp))
                           Column {
-                              Text("M ASISTEN", color = Color.White, fontSize = if (compactWidth) 15.sp else 18.sp, fontWeight = FontWeight.ExtraBold)
+                              Text("M ASISTEN", color = Color.White, fontSize = if (compactWidth) 15.sp else 18.sp, fontWeight = FontWeight.ExtraBold, style = if (isVipPlus) vipTitleStyle else androidx.compose.ui.text.TextStyle.Default)
                               Text("DIBUAT DI INDONESIA", color = Muted, fontSize = 8.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.1.sp)
                           }
                           Spacer(Modifier.weight(1f))
@@ -872,7 +880,8 @@ jobs:
                           color = if (isVipPlus) premiumText else Color.White,
                           fontSize = if (compactWidth) 21.sp else 25.sp,
                           fontWeight = FontWeight.ExtraBold,
-                          textAlign = TextAlign.Center
+                          textAlign = TextAlign.Center,
+                          style = if (isVipPlus) vipTitleStyle else androidx.compose.ui.text.TextStyle.Default
                       )
                       Spacer(Modifier.height(8.dp))
                       Text(
@@ -978,7 +987,7 @@ jobs:
                               else androidx.compose.foundation.BorderStroke(1.dp, Cyan)
                       ) {
                           Column(modifier = Modifier.fillMaxWidth().padding(20.dp)) {
-                              Text("APLIKASI PAKET STANDAR", color = if (isVipPlus) premiumGold else Cyan, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold)
+                              Text("APLIKASI PAKET STANDAR", color = if (isVipPlus) premiumGold else Cyan, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, style = if (isVipPlus) vipTitleStyle else androidx.compose.ui.text.TextStyle.Default)
                               Spacer(Modifier.height(8.dp))
                               Text("Perintah suara untuk fitur dan aplikasi bawaan ponsel:", color = Color.White, fontSize = 12.sp, lineHeight = 18.sp)
                               Spacer(Modifier.height(10.dp))
@@ -1023,7 +1032,7 @@ jobs:
                           )
                       ) {
                           Column(modifier = Modifier.fillMaxWidth().padding(20.dp)) {
-                              Text("APLIKASI PAKET VIP", color = if (isVipPlus) premiumGold else Cyan, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold)
+                              Text("APLIKASI PAKET VIP", color = if (isVipPlus) premiumGold else Cyan, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, style = if (isVipPlus) vipTitleStyle else androidx.compose.ui.text.TextStyle.Default)
                               Spacer(Modifier.height(8.dp))
                               Text("Dapat membuka semua aplikasi terpasang yang memiliki ikon aplikasi dan dapat dijalankan Android.", color = Color.White, fontSize = 12.sp, lineHeight = 18.sp)
                               Spacer(Modifier.height(10.dp))
@@ -1040,7 +1049,7 @@ jobs:
                           modifier = Modifier.fillMaxWidth(),
                           verticalAlignment = Alignment.CenterVertically
                       ) {
-                          Text("KEBIJAKAN & PRIVASI", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                          Text("KEBIJAKAN & PRIVASI", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold, style = if (isVipPlus) vipTitleStyle else androidx.compose.ui.text.TextStyle.Default)
                           Spacer(Modifier.weight(1f))
                           Text("Informasi aplikasi", color = Muted, fontSize = 10.sp)
                       }
@@ -1115,7 +1124,8 @@ jobs:
                               Text(
                                   "KEANGGOTAAN VIP",
                                   color = Cyan,
-                                  fontWeight = FontWeight.ExtraBold
+                                  fontWeight = FontWeight.ExtraBold,
+                                  style = if (isVipPlus) vipTitleStyle else androidx.compose.ui.text.TextStyle.Default
                               )
                           },
                           text = {
