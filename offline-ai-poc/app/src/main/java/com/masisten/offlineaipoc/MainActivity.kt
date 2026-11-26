@@ -28,14 +28,15 @@ import java.util.concurrent.Executors
 class MainActivity : Activity() {
     private val worker = Executors.newSingleThreadExecutor()
     private val mainHandler = Handler(Looper.getMainLooper())
-    private var engine: Engine? = null
-    private var conversation: Conversation? = null
+    @Volatile private var engine: Engine? = null
+    @Volatile private var conversation: Conversation? = null
     private lateinit var status: TextView
     private lateinit var transcript: TextView
     private lateinit var prompt: EditText
     private lateinit var chooseButton: Button
     private lateinit var deleteButton: Button
     private lateinit var loadButton: Button
+    private lateinit var unloadButton: Button
     private lateinit var sendButton: Button
     private lateinit var resetButton: Button
     private var closing = false
@@ -77,6 +78,11 @@ class MainActivity : Activity() {
             text = "MUAT MODEL LOKAL"
             setOnClickListener { loadModel() }
         }
+        unloadButton = Button(this).apply {
+            text = "LEPAS MODEL DARI MEMORI"
+            isEnabled = false
+            setOnClickListener { unloadModel() }
+        }
         sendButton = Button(this).apply {
             text = "KIRIM"
             isEnabled = false
@@ -95,6 +101,7 @@ class MainActivity : Activity() {
         root.addView(chooseButton)
         root.addView(deleteButton)
         root.addView(loadButton)
+        root.addView(unloadButton)
         root.addView(sendButton)
         root.addView(resetButton)
         setContentView(root)
@@ -119,6 +126,7 @@ class MainActivity : Activity() {
         status.text = "Menyalin dan memverifikasi model…"
         worker.execute {
             try {
+                if (engine != null) throw IllegalStateException("Lepas model dari memori sebelum mengganti file")
                 temporary.delete()
                 val digest = MessageDigest.getInstance("SHA-256")
                 var total = 0L
@@ -184,6 +192,7 @@ class MainActivity : Activity() {
                 "Pilih file Qwen3-0.6B INT8 .litertlm. Ukuran dan SHA-256 akan diverifikasi."
         loadButton.isEnabled = installed
         deleteButton.isEnabled = model.exists()
+        unloadButton.isEnabled = false
     }
 
     private fun loadModel() {
@@ -216,12 +225,57 @@ class MainActivity : Activity() {
                     sendButton.isEnabled = true
                     resetButton.isEnabled = true
                     loadButton.isEnabled = false
+                    unloadButton.isEnabled = true
+                    chooseButton.isEnabled = false
+                    deleteButton.isEnabled = false
                 }
             } catch (error: Exception) {
                 mainHandler.post {
                     status.text = "Gagal memuat model: " +
                         (error.message ?: error.javaClass.simpleName)
                     loadButton.isEnabled = true
+                    unloadButton.isEnabled = false
+                    chooseButton.isEnabled = true
+                    deleteButton.isEnabled = File(filesDir, "model.litertlm").exists()
+                }
+            }
+        }
+    }
+
+    private fun closeRuntime() {
+        val oldConversation = conversation
+        val oldEngine = engine
+        conversation = null
+        engine = null
+        try { oldConversation?.close() } finally { oldEngine?.close() }
+    }
+
+    private fun unloadModel() {
+        if (closing) return
+        sendButton.isEnabled = false
+        resetButton.isEnabled = false
+        unloadButton.isEnabled = false
+        loadButton.isEnabled = false
+        chooseButton.isEnabled = false
+        deleteButton.isEnabled = false
+        status.text = "Melepas model dari memori…"
+        worker.execute {
+            try {
+                closeRuntime()
+                mainHandler.post {
+                    status.text = "Model dilepas dari memori • file tetap tersimpan"
+                    sendButton.isEnabled = false
+                    resetButton.isEnabled = false
+                    loadButton.isEnabled = File(filesDir, "model.litertlm").isFile
+                    chooseButton.isEnabled = true
+                    deleteButton.isEnabled = File(filesDir, "model.litertlm").exists()
+                }
+            } catch (error: Exception) {
+                mainHandler.post {
+                    status.text = "Pelepasan model selesai dengan peringatan: " + (error.message ?: error.javaClass.simpleName)
+                    loadButton.isEnabled = File(filesDir, "model.litertlm").isFile
+                    chooseButton.isEnabled = true
+                    deleteButton.isEnabled = File(filesDir, "model.litertlm").exists()
                 }
             }
         }
@@ -286,8 +340,7 @@ class MainActivity : Activity() {
     override fun onDestroy() {
         closing = true
         worker.execute {
-            try { conversation?.close(); conversation = null } catch (_: Exception) {}
-            try { engine?.close(); engine = null } catch (_: Exception) {}
+            try { closeRuntime() } catch (_: Exception) {}
         }
         worker.shutdown()
         super.onDestroy()
