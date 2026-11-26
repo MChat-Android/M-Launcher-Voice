@@ -1271,10 +1271,10 @@ jobs:
                                           Column {
                                               Text("STATUS KEANGGOTAAN", color = Muted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                                               Spacer(Modifier.height(3.dp))
-                                              Text(if (googleAccountEmail.isBlank()) "Hubungkan akun Google untuk memulai" else googleAccountName + " • " + vipMembershipStatus, color = Color.White, fontSize = 11.sp)
+                                              Text(if (googleAccountEmail.isBlank()) "Hubungkan akun Google untuk memulai" else googleAccountName + " • " + vipMembershipStatus.replace("VIP+", "VIP"), color = Color.White, fontSize = 11.sp)
                                           }
                                           Spacer(Modifier.weight(1f))
-                                          Text(vipMembershipStatus, color = Cyan, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
+                                          Text(vipMembershipStatus.replace("VIP+", "VIP"), color = Cyan, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
                                       }
                                   }
                                   Spacer(Modifier.height(10.dp))
