@@ -146,8 +146,8 @@ class MainActivity : Activity() {
                     }
                 }
                 val hash = digest.digest().joinToString("") { "%02x".format(it) }
-                if (total != EXPECTED_MODEL_BYTES) throw IllegalStateException("Ukuran file tidak cocok: $total byte")
-                if (hash != EXPECTED_MODEL_SHA256) throw IllegalStateException("SHA-256 tidak cocok; file ditolak")
+                if (total != EXPECTED_MODEL_BYTES) throw IllegalStateException("Ukuran file tidak cocok: $total byte (seharusnya $EXPECTED_MODEL_BYTES)")
+                if (hash != EXPECTED_MODEL_SHA256) throw IllegalStateException("SHA-256 tidak cocok; hasil file: $hash")
                 if (engine != null) throw IllegalStateException("Model sedang dimuat; tutup aplikasi lalu coba lagi")
                 if (destination.exists() && !destination.delete()) throw IllegalStateException("Model lama gagal dihapus")
                 if (!temporary.renameTo(destination)) throw IllegalStateException("Gagal menyimpan model terverifikasi")
