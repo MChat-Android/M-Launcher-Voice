@@ -1649,7 +1649,13 @@ jobs:
                           }
                       }
                       .addOnFailureListener {
-                          if (verificationId == modeVerificationRequest) verifyRegularVip(user.uid, verificationId)
+                          if (verificationId == modeVerificationRequest) {
+                              if (VipEntitlementCache.isAdmin(this, user.uid)) {
+                                  configureMode(true)
+                              } else {
+                                  verifyRegularVip(user.uid, verificationId)
+                              }
+                          }
                       }
                   return START_STICKY
               }
@@ -1759,8 +1765,10 @@ jobs:
                           watchRegularVipMembership(user.uid)
                       }
                       .addOnFailureListener {
-                          // Jika klaim admin tidak dapat diverifikasi, hak admin tidak diasumsikan.
-                          watchRegularVipMembership(user.uid)
+                          // Klaim admin yang pernah diverifikasi tetap berlaku dalam masa cache offline.
+                          if (!VipEntitlementCache.isAdmin(this, user.uid)) {
+                              watchRegularVipMembership(user.uid)
+                          }
                       }
               }
 
