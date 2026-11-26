@@ -2134,11 +2134,18 @@ jobs:
 
               private fun handleWidgetTap() {
                   if (vipMode) {
-                      // VIP+: ketukan mengaktifkan pendengaran kata pemicu, bukan sapaan.
-                      if (listening) return
+                      // Ketukan VIP+ selalu memulihkan recognizer, termasuk jika status listening tersangkut.
+                      try { speechRecognizer?.cancel() } catch (_: Exception) {}
+                      try { speechRecognizer?.destroy() } catch (_: Exception) {}
+                      speechRecognizer = null
+                      listening = false
                       awaitingWakeWord = true
                       textToSpeech?.stop()
-                      startVoiceRecognition()
+                      handler.postDelayed({
+                          if (vipMode && serviceInitialized && !listening) {
+                              startVoiceRecognition()
+                          }
+                      }, 250L)
                   } else {
                       // Standar: langsung dengarkan satu perintah tanpa sapaan suara.
                       beginManualListening()
@@ -2280,10 +2287,13 @@ jobs:
                                       error == SpeechRecognizer.ERROR_NETWORK ||
                                       error == SpeechRecognizer.ERROR_NETWORK_TIMEOUT
                                   )
-                                  if (retryWakeWord) {
+                                  if (retryWakeWord || (vipMode &&
+                                      error != SpeechRecognizer.ERROR_AUDIO &&
+                                      error != SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS)
+                                  ) {
                                       awaitingWakeWord = true
                                       showMessage("Menunggu panggilan Hallo M...", speak = false)
-                                      scheduleWakeWordListening(900L)
+                                      resumeVipWakeWordListening(if (retryWakeWord) 900L else 1400L)
                                       return
                                   }
                                   awaitingWakeWord = false
@@ -2324,8 +2334,11 @@ jobs:
                                       showMessage("Perintah: $words", speak = false)
                                       executeCommand(words)
                                   } else {
-                                      showMessage("Perintah tidak dikenali. Ketuk widget untuk mencoba lagi.")
+                                      showMessage("Perintah tidak dikenali. Menunggu panggilan Hallo M...", speak = false)
                                   }
+                                  // Setelah satu perintah VIP+ selesai, selalu kembali ke mode wake-word,
+                                  // termasuk saat aplikasi tujuan dibuka ketika perangkat sedang offline.
+                                  if (vipMode) resumeVipWakeWordListening(2200L)
                               }
 
                               override fun onPartialResults(partialResults: android.os.Bundle?) {
@@ -5054,14 +5067,24 @@ jobs:
 
               // Setelah aplikasi tujuan dibuka, VIP+ kembali menunggu kata pemicu secara otomatis.
               // Service foreground tetap menjadi pemilik siklus pengenalan suara.
-              private fun resumeVipWakeWordListening(delayMs: Long = 1500L) {
+              private var wakeWordRestartRunnable: Runnable? = null
+
+              private fun resumeVipWakeWordListening(delayMs: Long = 1800L) {
                   if (!vipMode || !serviceInitialized) return
-                  handler.postDelayed({
-                      if (vipMode && serviceInitialized && !listening) {
+                  wakeWordRestartRunnable?.let { handler.removeCallbacks(it) }
+                  val restart = Runnable {
+                      if (vipMode && serviceInitialized) {
+                          // Reset recognizer lama agar sesi offline berulang tidak tertahan dalam status BUSY.
+                          try { speechRecognizer?.cancel() } catch (_: Exception) {}
+                          try { speechRecognizer?.destroy() } catch (_: Exception) {}
+                          speechRecognizer = null
+                          listening = false
                           awaitingWakeWord = true
                           startVoiceRecognition()
                       }
-                  }, delayMs)
+                  }
+                  wakeWordRestartRunnable = restart
+                  handler.postDelayed(restart, delayMs)
               }
 
               private fun launchVipApp(intent: Intent) {
