@@ -513,7 +513,7 @@ jobs:
                       if (grants[Manifest.permission.RECORD_AUDIO] == false ||
                           checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED
                       ) {
-                          message = "Izin mikrofon diperlukan untuk menjalankan widget Standar maupun VIP+."
+                          message = "Izin mikrofon diperlukan untuk menjalankan widget Standar maupun VIP."
                       } else {
                           continueSetup()
                       }
@@ -665,7 +665,7 @@ jobs:
                               startService(intent)
                           }
                           message = if (mode == FloatingVoiceService.MODE_VIP) {
-                              "Widget VIP+ aktif. M Asisten siap menunggu panggilan Hallo M."
+                              "Widget VIP aktif. M Asisten siap menunggu panggilan Hallo M."
                           } else {
                               "Widget Standar aktif. Ketuk lalu ucapkan perintah untuk aplikasi bawaan."
                           }
@@ -820,12 +820,12 @@ jobs:
                               contentScale = ContentScale.Fit
                           )
 
-                          // Lencana VIP menempel pada garis bingkai kanan-atas logo.
+                          // Lencana VIP menumpuk pada garis bingkai bagian bawah logo.
                           if (isVipPlus) {
                               Box(
                                   modifier = Modifier
-                                      .align(Alignment.TopEnd)
-                                      .offset(x = 9.dp, y = (-8).dp)
+                                      .align(Alignment.BottomCenter)
+                                      .offset(y = 8.dp)
                                       .background(
                                           brush = Brush.horizontalGradient(
                                               listOf(
@@ -918,7 +918,7 @@ jobs:
                                       Text("Buka semua aplikasi dengan perintah suara", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                                       Text("Mulai Rp15.000 / 7 hari", color = Muted, fontSize = 11.sp)
                                   }
-                                  Text("VIP+", color = if (isVipPlus) premiumGold else Cyan, fontSize = 25.sp, fontWeight = FontWeight.ExtraBold)
+                                  Text("VIP", color = if (isVipPlus) premiumGold else Cyan, fontSize = 25.sp, fontWeight = FontWeight.ExtraBold)
                               }
                               Spacer(Modifier.height(12.dp))
                               Button(
@@ -1050,7 +1050,7 @@ jobs:
                               )
                               Spacer(Modifier.height(10.dp))
                               Text(
-                                  "Nama profil dan pengaturan lokal disimpan di perangkat. Jika Anda masuk dengan Google atau mengajukan keanggotaan VIP+, aplikasi mengirim data akun, alamat surel, pilihan paket, nominal, nama pengirim, nomor referensi transfer jika diisi, serta status dan waktu permintaan ke Firebase untuk pemeriksaan keanggotaan dan pembayaran oleh admin. Aplikasi saat ini belum menyediakan unggahan bukti transfer. Aplikasi lain yang dibuka memiliki kebijakan privasi masing-masing. Jangan pernah membagikan PIN, OTP, atau kata sandi.",
+                                  "Nama profil dan pengaturan lokal disimpan di perangkat. Jika Anda masuk dengan Google atau mengajukan keanggotaan VIP, aplikasi mengirim data akun, alamat surel, pilihan paket, nominal, nama pengirim, nomor referensi transfer jika diisi, serta status dan waktu permintaan ke Firebase untuk pemeriksaan keanggotaan dan pembayaran oleh admin. Aplikasi saat ini belum menyediakan unggahan bukti transfer. Aplikasi lain yang dibuka memiliki kebijakan privasi masing-masing. Jangan pernah membagikan PIN, OTP, atau kata sandi.",
                                   color = Muted, fontSize = 10.sp, lineHeight = 16.sp
                               )
                           }
@@ -1071,7 +1071,7 @@ jobs:
                           containerColor = Panel,
                           title = {
                               Text(
-                                  "KEANGGOTAAN VIP+",
+                                  "KEANGGOTAAN VIP",
                                   color = Cyan,
                                   fontWeight = FontWeight.ExtraBold
                               )
@@ -1087,7 +1087,7 @@ jobs:
                                           colors = CardDefaults.cardColors(containerColor = Color(0xFF0D2932)),
                                           border = androidx.compose.foundation.BorderStroke(1.dp, Cyan)) {
                                           Column(Modifier.padding(12.dp)) {
-                                              Text("PANEL ADMIN VIP+", color = Cyan, fontWeight = FontWeight.ExtraBold)
+                                              Text("PANEL ADMIN VIP", color = Cyan, fontWeight = FontWeight.ExtraBold)
                                               Text("Cocokkan pembayaran dengan mutasi SeaBank secara manual sebelum verifikasi.", color = Muted, fontSize = 10.sp)
                                               Card(
                                                   Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 8.dp),
@@ -1095,7 +1095,7 @@ jobs:
                                                   border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF547087))
                                               ) {
                                                   Column(Modifier.padding(10.dp)) {
-                                                      Text("SIMULASI MASA AKTIF VIP+", color = Cyan, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                                                      Text("SIMULASI MASA AKTIF VIP", color = Cyan, fontWeight = FontWeight.Bold, fontSize = 11.sp)
                                                       Text("Uji hitungan 4 paket secara lokal. Tidak membuat transaksi, tidak mengubah Firestore, dan tidak mengaktifkan akun.", color = Muted, fontSize = 10.sp, lineHeight = 15.sp)
                                                       OutlinedButton(
                                                           onClick = {
@@ -1112,7 +1112,7 @@ jobs:
                                                                   append(formatter.format(java.util.Date(nowMillis)))
                                                                   packages.forEach { (label, days) ->
                                                                       append("\\n")
-                                                                      append(label)
+                                                                      append(label.replace("VIP+", "VIP"))
                                                                       append(": ")
                                                                       if (days < 0) {
                                                                           append("Tidak kedaluwarsa")
@@ -1140,7 +1140,7 @@ jobs:
                                                           .whereEqualTo("status", "PENDING_REVIEW").get()
                                                           .addOnSuccessListener { snap ->
                                                               adminItems = snap.documents.map { d ->
-                                                                  val plan = d.getString("plan") ?: "Paket?"
+                                                                  val plan = (d.getString("plan") ?: "Paket?").replace("VIP+", "VIP")
                                                                   val payer = d.getString("payerName") ?: "?"
                                                                   val email = d.getString("email") ?: "?"
                                                                   val amount = d.getLong("amountIdr") ?: 0L
@@ -1155,14 +1155,14 @@ jobs:
                                                           }.addOnFailureListener { e -> adminBusy = false; adminMessage = "Gagal memuat: ${e.localizedMessage}" }
                                                   }
                                               }, enabled = !adminBusy, modifier = Modifier.fillMaxWidth()) {
-                                                  Text(if (adminBusy) "MEMUAT..." else "MUAT PERMINTAAN VIP+")
+                                                  Text(if (adminBusy) "MEMUAT..." else "MUAT PERMINTAAN VIP")
                                               }
                                               Text(adminMessage, color = Muted, fontSize = 10.sp)
                                               adminItems.forEach { (id, info) ->
                                                   Card(Modifier.fillMaxWidth().padding(vertical = 4.dp),
                                                       colors = CardDefaults.cardColors(containerColor = Panel)) {
                                                       Column(Modifier.padding(8.dp)) {
-                                                          Text(info, color = Color.White, fontSize = 10.sp)
+                                                          Text(info.replace("VIP+", "VIP"), color = Color.White, fontSize = 10.sp)
                                                           Text("ID: $id", color = Muted, fontSize = 8.sp)
                                                           Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                                               Button(onClick = {
@@ -1194,7 +1194,7 @@ jobs:
                                                                       tx.update(memberRef, mapOf("membershipStatus" to "ACTIVE", "membershipPlan" to plan, "startedAt" to now, "expiresAt" to expires, "verifiedPaymentRequestId" to id, "updatedAt" to com.google.firebase.firestore.FieldValue.serverTimestamp()))
                                                                       tx.update(reqRef, mapOf("status" to "VERIFIED", "adminUid" to operator.uid, "reviewedAt" to com.google.firebase.firestore.FieldValue.serverTimestamp(), "adminNote" to "Pembayaran diverifikasi oleh admin."))
                                                                       null
-                                                                  }.addOnSuccessListener { adminBusy = false; adminItems = adminItems.filterNot { it.first == id }; adminMessage = "VIP+ berhasil diaktifkan." }
+                                                                  }.addOnSuccessListener { adminBusy = false; adminItems = adminItems.filterNot { it.first == id }; adminMessage = "VIP berhasil diaktifkan." }
                                                                       .addOnFailureListener { e -> adminBusy = false; adminMessage = "Gagal verifikasi: ${e.localizedMessage}" }
                                                               }, enabled = !adminBusy, modifier = Modifier.weight(1f)) { Text("VERIFIKASI", fontSize = 9.sp) }
                                                               OutlinedButton(onClick = {
@@ -1235,7 +1235,7 @@ jobs:
                                                                           null
                                                                       }.addOnSuccessListener {
                                                                           adminBusy = false
-                                                                          adminMessage = "SIMULASI BERHASIL: VIP+ akun uji aktif 7 hari. Permintaan pembayaran tetap MENUNGGU VERIFIKASI."
+                                                                          adminMessage = "SIMULASI BERHASIL: akun VIP uji aktif 7 hari. Permintaan pembayaran tetap MENUNGGU VERIFIKASI."
                                                                       }.addOnFailureListener { e ->
                                                                           adminBusy = false
                                                                           adminMessage = "Simulasi gagal: ${e.localizedMessage}"
@@ -1243,7 +1243,7 @@ jobs:
                                                                   },
                                                                   enabled = !adminBusy,
                                                                   modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
-                                                              ) { Text("SIMULASI AKTIFKAN VIP+ 7 HARI (BUKAN PEMBAYARAN)", fontSize = 9.sp) }
+                                                              ) { Text("SIMULASI AKTIFKAN VIP 7 HARI (BUKAN PEMBAYARAN)", fontSize = 9.sp) }
                                                           }
                                                       }
                                                   }
@@ -1337,14 +1337,14 @@ jobs:
                                               modifier = Modifier.fillMaxWidth().padding(12.dp),
                                               verticalAlignment = Alignment.CenterVertically
                                           ) {
-                                              Text(plan, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                              Text(plan.replace("VIP+", "VIP"), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                               Spacer(Modifier.weight(1f))
                                               Text(price, color = Cyan, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold)
                                           }
                                       }
                                   }
                                   Spacer(Modifier.height(8.dp))
-                                  Text("Pilihan saat ini: $selectedVipPlan", color = Color.White, fontSize = 11.sp)
+                                  Text("Pilihan saat ini: ${selectedVipPlan.replace("VIP+", "VIP")}", color = Color.White, fontSize = 11.sp)
                                   Spacer(Modifier.height(10.dp))
                                   Spacer(Modifier.height(12.dp))
                                   Text("PEMBAYARAN TRANSFER BANK", color = Cyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
@@ -1448,7 +1448,7 @@ jobs:
                                                   .add(request)
                                                   .addOnSuccessListener {
                                                       paymentSubmitting = false
-                                                      paymentSubmitMessage = "Konfirmasi berhasil dikirim. Status: MENUNGGU VERIFIKASI ADMIN. VIP+ belum aktif."
+                                                      paymentSubmitMessage = "Konfirmasi berhasil dikirim. Status: MENUNGGU VERIFIKASI ADMIN. VIP belum aktif."
                                                       payerName = ""
                                                       transferReference = ""
                                                   }
@@ -1500,7 +1500,7 @@ jobs:
                                                                   "REJECTED" -> "DITOLAK"
                                                                   else -> "STATUS TIDAK DIKENAL"
                                                               }
-                                                              "$plan • $status"
+                                                              "${plan.replace("VIP+", "VIP")} • $status"
                                                           }
                                                       historyLoading = false
                                                   }
@@ -1520,7 +1520,7 @@ jobs:
                                       Text("• $item", color = Color.White, fontSize = 10.sp, lineHeight = 15.sp, modifier = Modifier.padding(vertical = 3.dp))
                                   }
                                   Text(
-                                      "Langkah: pilih paket, transfer sesuai nominal, lalu kirim konfirmasi dengan nama pengirim. Nomor referensi membantu pencocokan transaksi. Ini belum mengunggah bukti transfer. Permintaan akan berstatus menunggu pemeriksaan admin; VIP+ hanya diaktifkan setelah pembayaran diverifikasi dan status keanggotaan diperbarui oleh server. Jangan mengirim data rahasia seperti PIN, OTP, atau kata sandi.",
+                                      "Langkah: pilih paket, transfer sesuai nominal, lalu kirim konfirmasi dengan nama pengirim. Nomor referensi membantu pencocokan transaksi. Ini belum mengunggah bukti transfer. Permintaan akan berstatus menunggu pemeriksaan admin; VIP hanya diaktifkan setelah pembayaran diverifikasi dan status keanggotaan diperbarui oleh server. Jangan mengirim data rahasia seperti PIN, OTP, atau kata sandi.",
                                       color = Muted,
                                       fontSize = 10.sp,
                                       lineHeight = 16.sp
@@ -1798,7 +1798,7 @@ jobs:
                               VipEntitlementCache.clear(this, uid)
                               handler.post {
                                   if (vipMode) {
-                                      showMessage("VIP+ berakhir. Kembali ke sistem Standar.")
+                                      showMessage("VIP berakhir. Kembali ke sistem Standar.")
                                       configureMode(false)
                                   }
                               }
@@ -1846,67 +1846,31 @@ jobs:
 
                   windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
 
-                  // Widget VIP memakai logo bulat; widget Standar tetap memakai ikon mikrofon seperti semula.
+                  // Widget mengambang selalu memakai mikrofon; tidak ada logo atau lencana VIP.
                   container = FrameLayout(this).apply {
                       setPadding(0, 0, 0, 0)
                       background = null
                   }
 
-                  micButton = if (vipMode) {
-                      ImageView(this).apply {
-                          setImageResource(R.drawable.vip_widget)
-                          scaleType = ImageView.ScaleType.FIT_CENTER
-                          background = null
-                          elevation = 8f
-                          setOnClickListener { handleWidgetTap() }
-                      }
-                  } else {
-                      TextView(this).apply {
-                          text = "🎤"
-                          textSize = 25f
-                          typeface = Typeface.DEFAULT
-                          gravity = Gravity.CENTER
-                          textAlignment = View.TEXT_ALIGNMENT_CENTER
-                          includeFontPadding = false
-                          setTextColor(Color.WHITE)
-                          background = roundedBackground(0xFF087F9C.toInt(), 100)
-                          elevation = 8f
-                          setPadding(0, 0, 0, 0)
-                          setOnClickListener { handleWidgetTap() }
-                      }
+                  micButton = TextView(this).apply {
+                      text = "🎤"
+                      textSize = 25f
+                      typeface = Typeface.DEFAULT
+                      gravity = Gravity.CENTER
+                      textAlignment = View.TEXT_ALIGNMENT_CENTER
+                      includeFontPadding = false
+                      setTextColor(Color.WHITE)
+                      background = if (vipMode) vipWidgetBackground()
+                          else roundedBackground(0xFF087F9C.toInt(), 100)
+                      elevation = if (vipMode) 14f else 8f
+                      setPadding(0, 0, 0, 0)
+                      setOnClickListener { handleWidgetTap() }
                   }
 
                   container.addView(
                       micButton,
                       FrameLayout.LayoutParams(62, 62, Gravity.CENTER)
                   )
-
-                  if (vipMode) {
-                      val vipLabel = TextView(this).apply {
-                          text = "VIP"
-                          // Lebar badge dibuat cukup agar seluruh karakter dan jarak huruf tidak terpotong.
-                          textSize = 11f
-                          letterSpacing = 0.035f
-                          typeface = Typeface.create("sans-serif-black", Typeface.BOLD)
-                          gravity = Gravity.CENTER
-                          textAlignment = View.TEXT_ALIGNMENT_CENTER
-                          includeFontPadding = false
-                          setTextColor(0xFF352006.toInt())
-                          background = vipBadgeBackground()
-                          elevation = 22f
-                          setPadding(3, 2, 3, 2)
-                          minWidth = 56
-                          minHeight = 26
-                      }
-                      container.addView(
-                          vipLabel,
-                          FrameLayout.LayoutParams(
-                              56,
-                              26,
-                              Gravity.TOP or Gravity.END
-                          )
-                      )
-                  }
 
                   layoutParams = WindowManager.LayoutParams(
                       WindowManager.LayoutParams.WRAP_CONTENT,
@@ -5105,7 +5069,7 @@ jobs:
               private fun launchVipApp(intent: Intent) {
                   val user = FirebaseAuth.getInstance().currentUser
                   if (user == null) {
-                      showMessage("Aplikasi ini khusus VIP+. Hubungkan akun Google dan aktifkan VIP+.")
+                      showMessage("Aplikasi ini khusus VIP. Hubungkan akun Google dan aktifkan VIP.")
                       return
                   }
 
@@ -5123,7 +5087,7 @@ jobs:
                       if (VipEntitlementCache.isActive(this, user.uid)) {
                           openVipTarget()
                       } else {
-                          showMessage("Akses VIP+ belum dapat diverifikasi. Periksa koneksi internet atau status keanggotaan.")
+                          showMessage("Akses VIP belum dapat diverifikasi. Periksa koneksi internet atau status keanggotaan.")
                       }
                   }
 
@@ -5138,12 +5102,12 @@ jobs:
                                   (expiresAt == 0L || expiresAt > System.currentTimeMillis())
                               VipEntitlementCache.save(this, user.uid, vipActive, expiresAt, false)
                               if (vipActive) openVipTarget()
-                              else showMessage("Aplikasi ini khusus VIP+. Aktifkan VIP+ untuk membukanya.")
+                              else showMessage("Aplikasi ini khusus VIP. Aktifkan VIP untuk membukanya.")
                           }
                           .addOnFailureListener { useOfflineEntitlement() }
                   }
 
-                  showMessage("Memeriksa akses VIP+...")
+                  showMessage("Memeriksa akses VIP...")
                   user.getIdToken(true)
                       .addOnSuccessListener { token ->
                           if (token.claims["admin"] == true) {
