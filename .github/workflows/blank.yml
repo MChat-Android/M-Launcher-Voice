@@ -3006,21 +3006,64 @@ jobs:
                   }
               }
 
+              private fun localizeVoiceMessage(message: String): String {
+                  val language = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                      resources.configuration.locales[0]?.language
+                  } else {
+                      @Suppress("DEPRECATION")
+                      resources.configuration.locale?.language
+                  }
+                  if (!language.equals("en", ignoreCase = true)) return message
+
+                  val exact = mapOf(
+                      "Silahkan ucapkan perintah." to "Please speak a command.",
+                      "Menyiapkan sapaan suara..." to "Preparing voice greeting...",
+                      "Menunggu panggilan Hallo M..." to "Waiting for the Hallo M wake word...",
+                      "Mendengarkan perintah..." to "Listening for a command...",
+                      "Mendengarkan..." to "Listening...",
+                      "Memproses suara..." to "Processing speech...",
+                      "Hallo M terdeteksi. Mode perintah suara aktif." to "Hallo M detected. Voice command mode is active.",
+                      "Perintah tidak dikenali. Menunggu panggilan Hallo M..." to "Command not recognized. Waiting for the Hallo M wake word...",
+                      "Mode siaga VIP+ berhenti otomatis setelah 10 menit tanpa perintah. Ketuk widget untuk mengaktifkan kembali." to "VIP+ standby stops automatically after 10 minutes without a command. Tap the widget to reactivate it.",
+                      "Izin mikrofon diperlukan agar mode siaga VIP dapat berjalan." to "Microphone permission is required for VIP standby mode.",
+                      "Pengenalan suara offline memerlukan Android 12 atau lebih baru pada versi aplikasi ini." to "Offline speech recognition requires Android 12 or later in this app version.",
+                      "Pengenalan suara offline tidak tersedia. Periksa dukungan layanan suara offline dan paket Bahasa Indonesia di perangkat." to "Offline speech recognition is unavailable. Check offline speech support and the language pack on your device.",
+                      "Mikrofon atau mesin pengenalan suara offline tidak dapat diaktifkan." to "The microphone or offline speech recognition engine could not be started.",
+                      "Izin mikrofon belum diberikan" to "Microphone permission has not been granted",
+                      "Masalah pada input mikrofon" to "Microphone input problem",
+                      "Suara tidak dikenali. Ketuk widget untuk mencoba lagi." to "Speech was not recognized. Tap the widget to try again.",
+                      "Membuka pengaturan keyboard perangkat..." to "Opening device keyboard settings...",
+                      "Membuka pengaturan aksesibilitas perangkat..." to "Opening device accessibility settings..."
+                  )
+                  exact[message]?.let { return it }
+                  if (message.startsWith("Perintah: ")) return "Command: " + message.removePrefix("Perintah: ")
+                  if (message.startsWith("Pengenalan suara gagal (kode ")) {
+                      return message.replace("Pengenalan suara gagal (kode ", "Speech recognition failed (code ")
+                          .replace("). Ketuk widget untuk mencoba lagi.", "). Tap the widget to try again.")
+                  }
+                  if (message.startsWith("Menjalankan ") && message.endsWith(" perintah secara berurutan.")) {
+                      return message.replace("Menjalankan ", "Running ")
+                          .replace(" perintah secara berurutan.", " commands in sequence.")
+                  }
+                  return message
+              }
+
               private fun showMessage(message: String, speak: Boolean = true) {
                   handler.post {
+                      val localizedMessage = localizeVoiceMessage(message)
                       // Simpan pesan terakhir agar tetap terlihat saat layar utama dibuka kembali.
                       getSharedPreferences("m_voice_status", MODE_PRIVATE)
                           .edit()
-                          .putString("latest_message", message)
+                          .putString("latest_message", localizedMessage)
                           .apply()
                       // Widget tidak menampilkan teks; pesan dikirim ke layar utama aplikasi.
                       sendBroadcast(
                           Intent("com.m.launchervoice.VOICE_MESSAGE")
                               .setPackage(packageName)
-                              .putExtra("message", message)
+                              .putExtra("message", localizedMessage)
                       )
-                      if (speak && shouldSpeakResponse(message)) {
-                          speakResponse(message)
+                      if (speak && shouldSpeakResponse(localizedMessage)) {
+                          speakResponse(localizedMessage)
                       }
                   }
               }
