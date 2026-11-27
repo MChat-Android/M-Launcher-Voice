@@ -1881,6 +1881,8 @@ jobs:
               private var listening = false
               private var awaitingWakeWord = true
               private var vipWakeLock: android.os.PowerManager.WakeLock? = null
+              private val vipIdleTimeoutMs = 10 * 60 * 1000L
+              private var vipIdleTimeoutRunnable: Runnable? = null
 
               private lateinit var layoutParams: WindowManager.LayoutParams
 
@@ -1985,6 +1987,7 @@ jobs:
 
                   createOverlay()
                   if (vipMode) {
+                      scheduleVipIdleTimeout()
                       // Setelah widget berhasil diaktifkan, langsung tunggu kata pemicu.
                       // Pengguna tidak perlu mengetuk ikon mikrofon terlebih dahulu.
                       handler.postDelayed({
@@ -2016,7 +2019,29 @@ jobs:
                   vipWakeLock = null
               }
 
+              // Widget tetap tampil setelah 10 menit, tetapi sesi mikrofon dan wake lock dihentikan.
+              private fun scheduleVipIdleTimeout() {
+                  if (!vipMode || !serviceInitialized) return
+                  vipIdleTimeoutRunnable?.let { handler.removeCallbacks(it) }
+                  val timeout = Runnable {
+                      if (!vipMode || !serviceInitialized) return@Runnable
+                      try { speechRecognizer?.cancel() } catch (_: Exception) {}
+                      try { speechRecognizer?.destroy() } catch (_: Exception) {}
+                      speechRecognizer = null
+                      listening = false
+                      awaitingWakeWord = true
+                      vipGreetingPending = false
+                      textToSpeech?.stop()
+                      releaseVipWakeLock()
+                      showMessage("Mode siaga VIP+ berhenti otomatis setelah 10 menit tanpa perintah. Ketuk widget untuk mengaktifkan kembali.", speak = false)
+                  }
+                  vipIdleTimeoutRunnable = timeout
+                  handler.postDelayed(timeout, vipIdleTimeoutMs)
+              }
+
               private fun stopCurrentMode() {
+                  vipIdleTimeoutRunnable?.let { handler.removeCallbacks(it) }
+                  vipIdleTimeoutRunnable = null
                   releaseVipWakeLock()
                   membershipListener?.remove()
                   membershipListener = null
@@ -2404,7 +2429,10 @@ jobs:
 
               private fun handleWidgetTap() {
                   if (vipMode) {
-                      // Ketukan VIP+ selalu memulihkan recognizer, termasuk jika status listening tersangkut.
+                      // Ketukan mengaktifkan kembali standby VIP+ dan mengulang hitung 10 menit.
+                      acquireVipWakeLock()
+                      scheduleVipIdleTimeout()
+                      // Pulihkan recognizer, termasuk setelah standby otomatis berhenti.
                       try { speechRecognizer?.cancel() } catch (_: Exception) {}
                       try { speechRecognizer?.destroy() } catch (_: Exception) {}
                       speechRecognizer = null
@@ -2611,6 +2639,7 @@ jobs:
 
                                   awaitingWakeWord = false
                                   if (!words.isNullOrBlank()) {
+                                      if (vipMode) scheduleVipIdleTimeout()
                                       showMessage("Perintah: $words", speak = false)
                                       executeCommand(words)
                                   } else {
