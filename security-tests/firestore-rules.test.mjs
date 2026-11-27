@@ -141,6 +141,56 @@ try {
     reviewedAt: serverTimestamp(),
     adminNote: "Uji aturan Firestore"
   }));
+
+  const permanentRequestRef = doc(collection(alice, "vip_payment_requests"));
+  await allow("pengguna dapat mengajukan VIP+ Permanen Rp750.000", setDoc(permanentRequestRef, {
+    uid: "alice",
+    email: "alice@example.com",
+    displayName: "Alice",
+    plan: "VIP+ Permanen",
+    amountIdr: 750000,
+    paymentMethod: "SEABANK_TRANSFER",
+    bankName: "SeaBank",
+    accountNumber: "901023118338",
+    accountBrandName: "M Asisten",
+    registeredAccountHolder: "Muhamad Soleh",
+    payerName: "Alice Example",
+    transferReference: "TRX-TEST-PERMANEN",
+    status: "PENDING_REVIEW",
+    createdAt: serverTimestamp()
+  }));
+  await deny("paket permanen dengan nominal lama Rp500.000 ditolak", setDoc(
+    doc(collection(bob, "vip_payment_requests")), {
+      uid: "bob",
+      email: "bob@example.com",
+      displayName: "Bob",
+      plan: "VIP+ Permanen",
+      amountIdr: 500000,
+      paymentMethod: "SEABANK_TRANSFER",
+      bankName: "SeaBank",
+      accountNumber: "901023118338",
+      accountBrandName: "M Asisten",
+      registeredAccountHolder: "Muhamad Soleh",
+      payerName: "Bob Example",
+      transferReference: "TRX-TEST-PERMANEN-OLD",
+      status: "PENDING_REVIEW",
+      createdAt: serverTimestamp()
+    }
+  ));
+  await allow("admin dapat menyimpan metadata simulasi aktivasi VIP", updateDoc(doc(admin, "vip_members/alice"), {
+    membershipStatus: "ACTIVE",
+    membershipPlan: "VIP+ Mingguan (7 hari)",
+    startedAt: Timestamp.now(),
+    expiresAt: Timestamp.fromMillis(Date.now() + 7 * 86400000),
+    testMode: true,
+    testPaymentRequestId: "SIM-TEST-001",
+    updatedAt: serverTimestamp()
+  }));
+  await deny("pengguna biasa tidak dapat menulis metadata simulasi VIP", updateDoc(doc(alice, "vip_members/alice"), {
+    testMode: true,
+    testPaymentRequestId: "SIM-TEST-USER",
+    updatedAt: serverTimestamp()
+  }));
   await deny("admin tidak boleh mengubah data pengirim saat memverifikasi", updateDoc(doc(admin, requestRef.path), {
     payerName: "Nama Diubah",
     status: "REJECTED",
