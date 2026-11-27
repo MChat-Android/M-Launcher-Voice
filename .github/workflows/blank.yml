@@ -1427,6 +1427,23 @@ jobs:
                           "13. Kontak pengelola" to "Nama aplikasi: M Asisten. Email kontak resmi untuk pertanyaan privasi, permintaan akses atau penghapusan data, dan komunikasi terkait layanan: m.suara.pintar@gmail.com."
                       )
 
+                      // Terjemahan lengkap isi kebijakan untuk perangkat berbahasa Inggris.
+                      val englishPrivacySections = listOf(
+                          "1. About M Asisten" to "M Asisten is a voice assistant application that helps users execute commands and open features or apps on Android devices. This policy applies to the use of the M Asisten application. By using the app features, you acknowledge the data processing described below. Certain features require device permissions and an internet connection.",
+                          "2. Data We Process" to "The data that may be processed includes: (a) Google account data such as Firebase user ID, display name, and email address; (b) membership data such as VIP status, plan, expiration date, and update time; (c) VIP+ payment request data such as sender name, selected plan, amount, transfer reference if provided, request status, and submission or verification time; (d) profile names and preferences stored locally; and (e) technical information that may be processed by Android, Firebase, Google Play Services, and Google Mobile Ads according to their respective functions. M Asisten does not ask for your bank PIN, password, or one-time password (OTP).",
+                          "3. Microphone and Voice Recognition" to "Microphone permission is used to recognize voice commands. In Standard mode, voice recognition starts when you activate the floating widget or voice feature. In VIP+ mode, when voice standby is enabled, the app may continuously wait for the wake phrase “Hallo M” in the background so it can receive the next command. This feature uses Android device voice recognition through the offline speech recognition service available on the device. M Asisten does not send raw voice recordings to M Asisten servers or store voice recordings as an archive. Fully offline processing depends on the Android version, speech recognition service, and language packs installed on the device. If the device speech recognition service is not fully offline, processing by that service provider is governed by its own policy. VIP+ standby requires an active service notification, may increase battery usage, and may be stopped by Android or the device battery settings.",
+                          "4. Installed Apps and App Launch Commands" to "To display the app list and find an app mentioned in a voice command, M Asisten reads app names and launcher component information available on the device. This search takes place on the device to display or open the selected app. The launcher feature does not send the app list to Firebase. Target apps are opened through Android mechanisms; after an app is opened, its use and data collection are governed by that app developer’s own privacy policy.",
+                          "5. Device Permissions" to "Microphone permission is used for voice commands and VIP+ standby. Camera permission is used to control the flash as a flashlight, not to take photos or videos through the flashlight feature. Display-over-other-apps permission is used to show the floating widget. Foreground service and notification permissions are used to keep the voice service visible while active. Wake Lock permission helps keep the device awake while voice standby is running and may increase battery consumption. Internet and network-state permissions are used for sign-in, membership checks, VIP+ requests, and required Google services. Permission to modify system settings is used only when you request a function that requires a settings change, such as screen brightness. Alarm permission is used for alarm functions when available and requested. You can manage or revoke permissions in Android Settings; revoking a permission may cause the related feature to stop working.",
+                          "6. Google Account, Firebase, and VIP+ Membership" to "If you choose to sign in with Google, M Asisten uses Google Sign-In and Firebase Authentication to authenticate your account. The app may store your user ID, display name, email address, sign-in provider, and sign-in or update time through Firebase services. Membership data such as active status, plan, expiration date, and administrator verification information is processed through Cloud Firestore so VIP+ status can be displayed and verified. Some membership status information may be temporarily stored on the device to support access checks when a connection is unavailable. The local cache is tied to your account and limited by the expiration date or verification limits enforced by the app.",
+                          "7. VIP+ Payments and Data Sharing" to "In this version, VIP+ payments are made by manual SeaBank bank transfer and reviewed by an administrator. When you submit a payment confirmation, the app sends your account ID, available account name and email, selected plan, amount, payment method, sender name, transfer reference if provided, and request status and time to Cloud Firestore. Authorized administrators can view the information needed to match the transfer with bank transaction records and decide whether to approve or reject the request. The app does not process card numbers, bank PINs, bank passwords, or OTPs, and it currently does not provide an in-app payment receipt upload feature. Do not submit confidential banking information in the confirmation fields.",
+                          "8. Advertising and Third-Party Services" to "The application code includes the Google Mobile Ads SDK. The current version uses Google test app and ad unit IDs for development and testing, not M Asisten production advertising IDs. The SDK or Google services may process device information, diagnostics, ad interactions, or identifiers permitted by the system to provide and measure services in accordance with their configuration and Google policies. Google Sign-In, Firebase Authentication, and Cloud Firestore also process data required for account and membership features. Data may be processed by these service providers under their respective privacy terms. M Asisten does not sell users’ personal data.",
+                          "9. Storage, Security, and Retention" to "Certain settings and membership cache data are stored locally on your device. Account, membership, and payment request data required to provide the service are stored in the Firebase services used by the app. Data is transmitted through connections provided by Google and Firebase; access is restricted through authentication and service security rules. No electronic system can be guaranteed to be 100% risk-free, so users should protect their devices and Google accounts. Data is retained for as long as necessary to provide the service, review transactions, maintain security, and meet applicable obligations. Specific retention periods for transaction records and data deletion procedures will be established and announced before public release.",
+                          "10. User Rights and Data Deletion" to "You can stop using voice features, disable the floating widget, sign out of your Google account through the app, or revoke device permissions in Android Settings. Signing out is not the same as deleting account data from the server. A complete account and data deletion request process, including a method available outside the app, is not yet available in this development version and must be completed before public release if account creation remains available. Future deletion requests will cover account data and related data in Firebase services, subject to limited exceptions where retention is required for security, abuse prevention, or legal obligations. Do not assume server data has been deleted simply by uninstalling the app.",
+                          "11. Children and Safe Use" to "M Asisten is not an app specifically designed to collect children’s data. If a child uses the device, a parent or guardian should supervise use, especially when granting microphone or camera permissions or signing in to an account. Do not enter sensitive information, passwords, PINs, OTPs, or confidential financial information into voice commands or app fields.",
+                          "12. Policy Changes" to "This policy may be updated if app features, third-party services, or legal requirements change. The latest version will be displayed in the Policy & Privacy section of the app together with its update date. If a change materially affects how data is processed, users will be notified through available communication channels.",
+                          "13. Administrator Contact" to "App name: M Asisten. Official contact email for privacy questions, data access or deletion requests, and service-related communications: m.suara.pintar@gmail.com."
+                      );
+
                       if (showPrivacyPolicy) {
                           Card(
                               modifier = Modifier.fillMaxWidth(),
@@ -1449,7 +1466,7 @@ jobs:
                                   )
                                   Spacer(Modifier.height(7.dp))
                                   Text(
-                                      "Terakhir diperbarui: 27 November 2026",
+                                      mAsistenUiText("Terakhir diperbarui: 27 November 2026", isEnglish),
                                       color = Muted,
                                       fontSize = 10.sp
                                   )
@@ -1461,7 +1478,8 @@ jobs:
                                       lineHeight = 17.sp
                                   )
                                   Spacer(Modifier.height(10.dp))
-                                  privacySections.forEach { (heading, description) ->
+                                  privacySections.forEachIndexed { sectionIndex, (heading, description) ->
+                                      val (displayHeading, displayDescription) = if (isEnglish) englishPrivacySections[sectionIndex] else heading to description
                                       Column(
                                           modifier = Modifier
                                               .fillMaxWidth()
@@ -1477,7 +1495,7 @@ jobs:
                                               verticalAlignment = Alignment.CenterVertically
                                           ) {
                                               Text(
-                                                  heading,
+                                                  displayHeading,
                                                   modifier = Modifier.weight(1f),
                                                   color = if (isVipPlus) premiumText else Color.White,
                                                   fontSize = 11.sp,
@@ -1494,7 +1512,7 @@ jobs:
                                           if (expandedPrivacySection == heading) {
                                               Spacer(Modifier.height(8.dp))
                                               Text(
-                                                  description,
+                                                  displayDescription,
                                                   color = if (isVipPlus) premiumMuted else Muted,
                                                   fontSize = 10.sp,
                                                   lineHeight = 16.sp
