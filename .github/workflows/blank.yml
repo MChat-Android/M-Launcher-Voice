@@ -153,6 +153,7 @@ jobs:
 
               implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
               implementation("com.google.android.gms:play-services-auth:21.3.0")
+              implementation("com.google.android.gms:play-services-ads:25.5.0")
               implementation("com.google.firebase:firebase-auth")
               implementation("com.google.firebase:firebase-firestore")
           }
@@ -162,6 +163,7 @@ jobs:
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
               <uses-permission android:name="android.permission.CAMERA"/>
+              <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
               <uses-permission android:name="android.permission.WRITE_SETTINGS"/>
               <uses-permission android:name="android.permission.RECORD_AUDIO"/>
@@ -230,6 +232,10 @@ jobs:
                   android:icon="@mipmap/ic_launcher"
                   android:roundIcon="@mipmap/ic_launcher"
                   android:allowBackup="false">
+
+                  <meta-data
+                      android:name="com.google.android.gms.ads.APPLICATION_ID"
+                      android:value="ca-app-pub-3940256099942544~3347511713"/>
 
                   <activity
                       android:name=".MainActivity"
@@ -1158,7 +1164,7 @@ jobs:
                                               ) {
                                                   Column(Modifier.padding(10.dp)) {
                                                       Text("SIMULASI MASA AKTIF VIP", color = Cyan, fontWeight = FontWeight.Bold, fontSize = 11.sp)
-                                                      Text("Uji hitungan 4 paket secara lokal. Tidak membuat transaksi, tidak mengubah Firestore, dan tidak mengaktifkan akun.", color = Muted, fontSize = 10.sp, lineHeight = 15.sp)
+                                                      Text("Uji hitungan 3 paket secara lokal. Tidak membuat transaksi, tidak mengubah Firestore, dan tidak mengaktifkan akun.", color = Muted, fontSize = 10.sp, lineHeight = 15.sp)
                                                       OutlinedButton(
                                                           onClick = {
                                                               val nowMillis = System.currentTimeMillis()
@@ -1166,8 +1172,7 @@ jobs:
                                                               val packages = listOf(
                                                                   "VIP+ Mingguan • 7 hari" to 7,
                                                                   "VIP+ Bulanan • 30 hari" to 30,
-                                                                  "VIP+ Tahunan • 365 hari" to 365,
-                                                                  "VIP+ Seumur Hidup" to -1
+                                                                  "VIP+ Permanen" to -1
                                                               )
                                                               simulationMessage = buildString {
                                                                   append("Waktu mulai simulasi: ")
@@ -1249,8 +1254,7 @@ jobs:
                                                                       val days = when (plan) {
                                                                           "VIP+ Mingguan (7 hari)" -> if (amount == 15000L) 7 else 0
                                                                           "VIP+ Bulanan (30 hari)" -> if (amount == 50000L) 30 else 0
-                                                                          "VIP+ Tahunan (365 hari)" -> if (amount == 250000L) 365 else 0
-                                                                          "VIP+ Seumur Hidup" -> if (amount == 500000L) -1 else 0
+                                                                          "VIP+ Permanen" -> if (amount == 750000L) -1 else 0
                                                                           else -> 0
                                                                       }
                                                                       check(days != 0) { "Paket dan nominal tidak cocok." }
@@ -1391,8 +1395,7 @@ jobs:
                                   listOf(
                                       "VIP+ Mingguan (7 hari)" to "Rp15.000",
                                       "VIP+ Bulanan (30 hari)" to "Rp50.000",
-                                      "VIP+ Tahunan (365 hari)" to "Rp250.000",
-                                      "VIP+ Seumur Hidup" to "Rp500.000"
+                                      "VIP+ Permanen" to "Rp750.000"
                                   ).forEach { (plan, price) ->
                                       Card(
                                           modifier = Modifier
@@ -1509,8 +1512,8 @@ jobs:
                                               val amount = when (selectedVipPlan) {
                                                   "VIP+ Mingguan (7 hari)" -> 15000
                                                   "VIP+ Bulanan (30 hari)" -> 50000
-                                                  "VIP+ Tahunan (365 hari)" -> 250000
-                                                  else -> 500000
+                                                  "VIP+ Permanen" -> 750000
+                                                  else -> 750000
                                               }
                                               paymentSubmitting = true
                                               paymentSubmitMessage = "Mengirim konfirmasi..."
