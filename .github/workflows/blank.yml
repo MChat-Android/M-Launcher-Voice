@@ -5402,7 +5402,7 @@ jobs:
               resized = image.resize((size, size), Image.Resampling.LANCZOS)
 
               resized.save(folder / "ic_launcher.png", optimize=True)
-    PY
+          PY
 
       - name: Decode Release Keystore
         env:
