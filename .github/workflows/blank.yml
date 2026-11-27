@@ -1068,6 +1068,7 @@ jobs:
 
                       var showStandardApps by remember { mutableStateOf(false) }
                       var showVipApps by remember { mutableStateOf(false) }
+                      var showPrivacyPolicy by remember { mutableStateOf(false) }
 
                       Spacer(Modifier.height(18.dp))
                       Card(
@@ -1157,10 +1158,15 @@ jobs:
 
                       Spacer(Modifier.height(25.dp))
                       Row(
-                          modifier = Modifier.fillMaxWidth(),
+                          modifier = Modifier
+                              .fillMaxWidth()
+                              .clip(RoundedCornerShape(14.dp))
+                              .clickable { showPrivacyPolicy = !showPrivacyPolicy }
+                              .padding(vertical = 14.dp, horizontal = 12.dp),
                           verticalAlignment = Alignment.CenterVertically
                       ) {
-                          Text("KEBIJAKAN & PRIVASI", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold, style = if (isVipPlus) vipTitleStyle else androidx.compose.ui.text.TextStyle.Default)
+                          Text("KEBIJAKAN & PRIVASI", modifier = Modifier.weight(1f), color = if (isVipPlus) premiumGold else Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold, style = if (isVipPlus) vipTitleStyle else androidx.compose.ui.text.TextStyle.Default)
+                          Text(if (showPrivacyPolicy) "⌃" else "⌄", color = if (isVipPlus) premiumGold else Cyan, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                       }
                       Spacer(Modifier.height(12.dp))
 
@@ -1180,83 +1186,86 @@ jobs:
                           "13. Kontak pengelola" to "Nama aplikasi: M Asisten. Kontak privasi yang direncanakan: m.asisten@gmail.com. Alamat email ini masih akan dibuat dan belum aktif pada saat kebijakan ini ditampilkan. Sebelum aplikasi dirilis kepada publik, pengelola harus mengaktifkan alamat tersebut dan memastikan pengguna dapat menghubunginya untuk pertanyaan privasi maupun permintaan terkait data."
                       )
 
-                      Card(
-                          modifier = Modifier.fillMaxWidth(),
-                          shape = RoundedCornerShape(20.dp),
-                          elevation = CardDefaults.cardElevation(
-                              defaultElevation = if (isVipPlus) 10.dp else 0.dp,
-                              pressedElevation = if (isVipPlus) 14.dp else 0.dp
-                          ),
-                          colors = CardDefaults.cardColors(
-                              containerColor = if (isVipPlus) premiumPanel else Color(0xFF102238)
-                          ),
-                          border = if (isVipPlus) androidx.compose.foundation.BorderStroke(1.dp, premiumBorder) else null
-                      ) {
-                          Column(modifier = Modifier.padding(16.dp)) {
-                              Text(
-                                  "KEBIJAKAN PRIVASI M ASISTEN",
-                                  color = if (isVipPlus) premiumGold else Cyan,
-                                  fontSize = 15.sp,
-                                  fontWeight = FontWeight.Bold
-                              )
-                              Spacer(Modifier.height(7.dp))
-                              Text(
-                                  "Terakhir diperbarui: 27 November 2026",
-                                  color = Muted,
-                                  fontSize = 10.sp
-                              )
-                              Spacer(Modifier.height(8.dp))
-                              Text(
-                                  "Ketuk setiap bagian untuk membaca penjelasan lengkap mengenai data, izin, akun, dan layanan yang digunakan M Asisten.",
-                                  color = Color.White,
-                                  fontSize = 11.sp,
-                                  lineHeight = 17.sp
-                              )
-                              Spacer(Modifier.height(10.dp))
-                              privacySections.forEach { (heading, description) ->
-                                  Column(
-                                      modifier = Modifier
-                                          .fillMaxWidth()
-                                          .clip(RoundedCornerShape(10.dp))
-                                          .clickable {
-                                              expandedPrivacySection =
-                                                  if (expandedPrivacySection == heading) null else heading
-                                          }
-                                          .padding(vertical = 11.dp, horizontal = 7.dp)
-                                  ) {
-                                      Row(
-                                          modifier = Modifier.fillMaxWidth(),
-                                          verticalAlignment = Alignment.CenterVertically
+                      if (showPrivacyPolicy) {
+                          Card(
+                              modifier = Modifier.fillMaxWidth(),
+                              shape = RoundedCornerShape(20.dp),
+                              elevation = CardDefaults.cardElevation(
+                                  defaultElevation = if (isVipPlus) 10.dp else 0.dp,
+                                  pressedElevation = if (isVipPlus) 14.dp else 0.dp
+                              ),
+                              colors = CardDefaults.cardColors(
+                                  containerColor = if (isVipPlus) premiumPanel else Color(0xFF102238)
+                              ),
+                              border = if (isVipPlus) androidx.compose.foundation.BorderStroke(1.dp, premiumBorder) else null
+                          ) {
+                              Column(modifier = Modifier.padding(16.dp)) {
+                                  Text(
+                                      "KEBIJAKAN PRIVASI M ASISTEN",
+                                      color = if (isVipPlus) premiumGold else Cyan,
+                                      fontSize = 15.sp,
+                                      fontWeight = FontWeight.Bold
+                                  )
+                                  Spacer(Modifier.height(7.dp))
+                                  Text(
+                                      "Terakhir diperbarui: 27 November 2026",
+                                      color = Muted,
+                                      fontSize = 10.sp
+                                  )
+                                  Spacer(Modifier.height(8.dp))
+                                  Text(
+                                      "Ketuk setiap bagian untuk membaca penjelasan lengkap mengenai data, izin, akun, dan layanan yang digunakan M Asisten.",
+                                      color = Color.White,
+                                      fontSize = 11.sp,
+                                      lineHeight = 17.sp
+                                  )
+                                  Spacer(Modifier.height(10.dp))
+                                  privacySections.forEach { (heading, description) ->
+                                      Column(
+                                          modifier = Modifier
+                                              .fillMaxWidth()
+                                              .clip(RoundedCornerShape(10.dp))
+                                              .clickable {
+                                                  expandedPrivacySection =
+                                                      if (expandedPrivacySection == heading) null else heading
+                                              }
+                                              .padding(vertical = 11.dp, horizontal = 7.dp)
                                       ) {
-                                          Text(
-                                              heading,
-                                              modifier = Modifier.weight(1f),
-                                              color = if (isVipPlus) premiumText else Color.White,
-                                              fontSize = 11.sp,
-                                              fontWeight = FontWeight.SemiBold,
-                                              lineHeight = 16.sp
-                                          )
-                                          Text(
-                                              if (expandedPrivacySection == heading) "−" else "+",
-                                              color = if (isVipPlus) premiumGold else Cyan,
-                                              fontSize = 18.sp,
-                                              fontWeight = FontWeight.Bold
-                                          )
+                                          Row(
+                                              modifier = Modifier.fillMaxWidth(),
+                                              verticalAlignment = Alignment.CenterVertically
+                                          ) {
+                                              Text(
+                                                  heading,
+                                                  modifier = Modifier.weight(1f),
+                                                  color = if (isVipPlus) premiumText else Color.White,
+                                                  fontSize = 11.sp,
+                                                  fontWeight = FontWeight.SemiBold,
+                                                  lineHeight = 16.sp
+                                              )
+                                              Text(
+                                                  if (expandedPrivacySection == heading) "−" else "+",
+                                                  color = if (isVipPlus) premiumGold else Cyan,
+                                                  fontSize = 18.sp,
+                                                  fontWeight = FontWeight.Bold
+                                              )
+                                          }
+                                          if (expandedPrivacySection == heading) {
+                                              Spacer(Modifier.height(8.dp))
+                                              Text(
+                                                  description,
+                                                  color = if (isVipPlus) premiumMuted else Muted,
+                                                  fontSize = 10.sp,
+                                                  lineHeight = 16.sp
+                                              )
+                                          }
                                       }
-                                      if (expandedPrivacySection == heading) {
-                                          Spacer(Modifier.height(8.dp))
-                                          Text(
-                                              description,
-                                              color = if (isVipPlus) premiumMuted else Muted,
-                                              fontSize = 10.sp,
-                                              lineHeight = 16.sp
-                                          )
-                                      }
+                                      Divider(color = if (isVipPlus) premiumBorder.copy(alpha = 0.35f) else Color.White.copy(alpha = 0.10f))
                                   }
-                                  Divider(color = if (isVipPlus) premiumBorder.copy(alpha = 0.35f) else Color.White.copy(alpha = 0.10f))
                               }
                           }
                       }
+
 
                       Spacer(Modifier.height(25.dp))
                       Text(
