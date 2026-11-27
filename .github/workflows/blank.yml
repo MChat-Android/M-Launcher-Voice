@@ -897,25 +897,7 @@ jobs:
                           .padding(horizontal = pageHorizontalPadding, vertical = pageVerticalPadding),
                       horizontalAlignment = Alignment.CenterHorizontally
                   ) {
-                      Row(
-                          modifier = Modifier.fillMaxWidth(),
-                          verticalAlignment = Alignment.CenterVertically
-                      ) {
-                          Image(
-                              painter = painterResource(id = R.mipmap.ic_launcher),
-                              contentDescription = "Ikon M Asisten",
-                              modifier = Modifier.size(if (compactWidth) 44.dp else 52.dp).clip(CircleShape),
-                              contentScale = ContentScale.Crop
-                          )
-                          Spacer(Modifier.width(13.dp))
-                          Column {
-                              Text("M ASISTEN", color = Color.White, fontSize = if (compactWidth) 15.sp else 18.sp, fontWeight = FontWeight.ExtraBold, style = if (isVipPlus) vipTitleStyle else androidx.compose.ui.text.TextStyle.Default)
-                              Text("DIBUAT DI INDONESIA", color = Muted, fontSize = 8.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.1.sp)
-                          }
-                          Spacer(Modifier.weight(1f))
-                      }
-
-                      Spacer(Modifier.height(34.dp))
+                      Spacer(Modifier.height(8.dp))
 
                       Box(
                           modifier = Modifier.size(heroImageSize),
@@ -969,6 +951,14 @@ jobs:
                           }
                       }
 
+                      Text(
+                          "DIBUAT DI INDONESIA",
+                          color = if (isVipPlus) premiumMuted else Muted,
+                          fontSize = 9.sp,
+                          fontWeight = FontWeight.Bold,
+                          letterSpacing = 1.4.sp,
+                          textAlign = TextAlign.Center
+                      )
                       Spacer(Modifier.height(25.dp))
                       Text(
                           "Semua jadi lebih mudah.",
