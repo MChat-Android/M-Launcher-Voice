@@ -830,6 +830,9 @@ jobs:
               onLogout: () -> Unit
           ) {
               var showVipPlus by remember { mutableStateOf(false) }
+              var showStandardDetails by remember { mutableStateOf(false) }
+              var showVipDetails by remember { mutableStateOf(false) }
+              var showPrivacyDetails by remember { mutableStateOf(false) }
               var selectedVipPlan by remember { mutableStateOf("VIP+ Bulanan (30 hari)") }
               var payerName by remember { mutableStateOf("") }
               var transferReference by remember { mutableStateOf("") }
@@ -1066,12 +1069,13 @@ jobs:
 
                       Spacer(Modifier.height(18.dp))
                       Card(
-                          modifier = Modifier.fillMaxWidth(),
+                          modifier = Modifier.fillMaxWidth().clickable {
+                              showStandardDetails = !showStandardDetails
+                          },
                           shape = RoundedCornerShape(22.dp),
-                          // Elevasi berlapis memberi kesan panel 3D tanpa mengganti warna asli.
                           elevation = CardDefaults.cardElevation(
                               defaultElevation = if (isVipPlus) 10.dp else 0.dp,
-                              pressedElevation = if (isVipPlus) 14.dp else 0.dp
+                              pressedElevation = if (isVipPlus) 14.dp else 2.dp
                           ),
                           colors = CardDefaults.cardColors(
                               containerColor = if (isVipPlus) premiumPanel else Color(0xFF102238)
@@ -1080,41 +1084,62 @@ jobs:
                               else androidx.compose.foundation.BorderStroke(1.dp, Cyan)
                       ) {
                           Column(modifier = Modifier.fillMaxWidth().padding(20.dp)) {
-                              Text("APLIKASI PAKET STANDAR", color = if (isVipPlus) premiumGold else Cyan, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, style = if (isVipPlus) vipTitleStyle else androidx.compose.ui.text.TextStyle.Default)
-                              Spacer(Modifier.height(8.dp))
-                              Text("Perintah suara untuk fitur dan aplikasi bawaan ponsel:", color = Color.White, fontSize = 12.sp, lineHeight = 18.sp)
-                              Spacer(Modifier.height(10.dp))
-                              listOf(
-                                  "Telepon dan kontak",
-                                  "Pesan dan SMS",
-                                  "Kamera dan perekam video",
-                                  "Galeri dan foto",
-                                  "Peramban internet",
-                                  "Peta dan navigasi",
-                                  "Kalender dan alarm",
-                                  "Senter dan lampu kilat",
-                                  "Wi-Fi, Bluetooth, dan hotspot",
-                                  "Volume, kecerahan, dan pengaturan ponsel"
-                              ).forEach { app ->
-                                  Row(modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp), verticalAlignment = Alignment.Top) {
-                                      Text("•", color = if (isVipPlus) premiumGold else Cyan, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                                      Spacer(Modifier.width(8.dp))
-                                      Text(app, color = Color.White, fontSize = 12.sp, lineHeight = 17.sp)
-                                  }
+                              Row(
+                                  modifier = Modifier.fillMaxWidth(),
+                                  verticalAlignment = Alignment.CenterVertically
+                              ) {
+                                  Text(
+                                      "PAKET STANDAR",
+                                      modifier = Modifier.weight(1f),
+                                      color = if (isVipPlus) premiumGold else Cyan,
+                                      fontSize = 14.sp,
+                                      fontWeight = FontWeight.ExtraBold,
+                                      style = if (isVipPlus) vipTitleStyle else androidx.compose.ui.text.TextStyle.Default
+                                  )
+                                  Text(
+                                      if (showStandardDetails) "⌃" else "⌄",
+                                      color = if (isVipPlus) premiumGold else Cyan,
+                                      fontSize = 22.sp,
+                                      fontWeight = FontWeight.Bold
+                                  )
                               }
-                              Spacer(Modifier.height(8.dp))
-                              Text("Paket Standar berfokus pada aplikasi bawaan dan kendali dasar ponsel.", color = Muted, fontSize = 10.sp, lineHeight = 15.sp)
+                              if (showStandardDetails) {
+                                  Spacer(Modifier.height(12.dp))
+                                  Text("Perintah suara untuk fitur dan aplikasi bawaan ponsel:", color = Color.White, fontSize = 12.sp, lineHeight = 18.sp)
+                                  Spacer(Modifier.height(10.dp))
+                                  listOf(
+                                      "Telepon dan kontak",
+                                      "Pesan dan SMS",
+                                      "Kamera dan perekam video",
+                                      "Galeri dan foto",
+                                      "Peramban internet",
+                                      "Peta dan navigasi",
+                                      "Kalender dan alarm",
+                                      "Senter dan lampu kilat",
+                                      "Wi-Fi, Bluetooth, dan hotspot",
+                                      "Volume, kecerahan, dan pengaturan ponsel"
+                                  ).forEach { app ->
+                                      Row(modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp), verticalAlignment = Alignment.Top) {
+                                          Text("•", color = if (isVipPlus) premiumGold else Cyan, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                          Spacer(Modifier.width(8.dp))
+                                          Text(app, color = Color.White, fontSize = 12.sp, lineHeight = 17.sp)
+                                      }
+                                  }
+                                  Spacer(Modifier.height(8.dp))
+                                  Text("Paket Standar berfokus pada aplikasi bawaan dan kendali dasar ponsel.", color = Muted, fontSize = 10.sp, lineHeight = 15.sp)
+                              }
                           }
                       }
 
                       Spacer(Modifier.height(14.dp))
                       Card(
-                          modifier = Modifier.fillMaxWidth(),
+                          modifier = Modifier.fillMaxWidth().clickable {
+                              showVipDetails = !showVipDetails
+                          },
                           shape = RoundedCornerShape(22.dp),
-                          // Elevasi berlapis memberi kesan panel 3D tanpa mengganti warna asli.
                           elevation = CardDefaults.cardElevation(
                               defaultElevation = if (isVipPlus) 10.dp else 0.dp,
-                              pressedElevation = if (isVipPlus) 14.dp else 0.dp
+                              pressedElevation = if (isVipPlus) 14.dp else 2.dp
                           ),
                           colors = CardDefaults.cardColors(
                               containerColor = if (isVipPlus) premiumPanelRaised else Color(0xFF123344)
@@ -1125,31 +1150,44 @@ jobs:
                           )
                       ) {
                           Column(modifier = Modifier.fillMaxWidth().padding(20.dp)) {
-                              Text("APLIKASI PAKET VIP", color = if (isVipPlus) premiumGold else Cyan, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, style = if (isVipPlus) vipTitleStyle else androidx.compose.ui.text.TextStyle.Default)
-                              Spacer(Modifier.height(8.dp))
-                              Text("Dapat membuka semua aplikasi terpasang yang memiliki ikon aplikasi dan dapat dijalankan Android.", color = Color.White, fontSize = 12.sp, lineHeight = 18.sp)
-                              Spacer(Modifier.height(10.dp))
-                              Text("Contoh aplikasi:", color = Muted, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                              Spacer(Modifier.height(5.dp))
-                              Text("WhatsApp, Instagram, Facebook, YouTube, Chrome, Google Maps, Gmail, TikTok, Telegram, Spotify, dan aplikasi lain yang tersedia di ponsel.", color = Color.White, fontSize = 12.sp, lineHeight = 18.sp)
-                              Spacer(Modifier.height(8.dp))
-                              Text("Daftar sebenarnya mengikuti aplikasi yang terpasang pada masing-masing ponsel. Fitur di dalam aplikasi tetap dikendalikan oleh penggunanya.", color = Muted, fontSize = 10.sp, lineHeight = 15.sp)
+                              Row(
+                                  modifier = Modifier.fillMaxWidth(),
+                                  verticalAlignment = Alignment.CenterVertically
+                              ) {
+                                  Text(
+                                      "PAKET VIP",
+                                      modifier = Modifier.weight(1f),
+                                      color = if (isVipPlus) premiumGold else Cyan,
+                                      fontSize = 14.sp,
+                                      fontWeight = FontWeight.ExtraBold,
+                                      style = if (isVipPlus) vipTitleStyle else androidx.compose.ui.text.TextStyle.Default
+                                  )
+                                  Text(
+                                      if (showVipDetails) "⌃" else "⌄",
+                                      color = if (isVipPlus) premiumGold else Cyan,
+                                      fontSize = 22.sp,
+                                      fontWeight = FontWeight.Bold
+                                  )
+                              }
+                              if (showVipDetails) {
+                                  Spacer(Modifier.height(12.dp))
+                                  Text("Dapat membuka semua aplikasi terpasang yang memiliki ikon aplikasi dan dapat dijalankan Android.", color = Color.White, fontSize = 12.sp, lineHeight = 18.sp)
+                                  Spacer(Modifier.height(10.dp))
+                                  Text("Contoh aplikasi:", color = Muted, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                  Spacer(Modifier.height(5.dp))
+                                  Text("WhatsApp, Instagram, Facebook, YouTube, Chrome, Google Maps, Gmail, TikTok, Telegram, Spotify, dan aplikasi lain yang tersedia di ponsel.", color = Color.White, fontSize = 12.sp, lineHeight = 18.sp)
+                                  Spacer(Modifier.height(8.dp))
+                                  Text("Daftar sebenarnya mengikuti aplikasi yang terpasang pada masing-masing ponsel. Fitur di dalam aplikasi tetap dikendalikan oleh penggunanya.", color = Muted, fontSize = 10.sp, lineHeight = 15.sp)
+                              }
                           }
                       }
 
                       Spacer(Modifier.height(25.dp))
-                      Row(
-                          modifier = Modifier.fillMaxWidth(),
-                          verticalAlignment = Alignment.CenterVertically
-                      ) {
-                          Text("KEBIJAKAN & PRIVASI", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold, style = if (isVipPlus) vipTitleStyle else androidx.compose.ui.text.TextStyle.Default)
-                          Spacer(Modifier.weight(1f))
-                          Text("Informasi aplikasi", color = Muted, fontSize = 10.sp)
-                      }
-                      Spacer(Modifier.height(12.dp))
-
+                      Spacer(Modifier.height(25.dp))
                       Card(
-                          modifier = Modifier.fillMaxWidth(),
+                          modifier = Modifier.fillMaxWidth().clickable {
+                              showPrivacyDetails = !showPrivacyDetails
+                          },
                           shape = RoundedCornerShape(20.dp),
                           // Elevasi berlapis memberi kesan panel 3D tanpa mengganti warna asli.
                           elevation = CardDefaults.cardElevation(
@@ -1162,6 +1200,26 @@ jobs:
                           border = if (isVipPlus) androidx.compose.foundation.BorderStroke(1.dp, premiumBorder) else null
                       ) {
                           Column(modifier = Modifier.padding(17.dp)) {
+                              Row(
+                                  modifier = Modifier.fillMaxWidth(),
+                                  verticalAlignment = Alignment.CenterVertically
+                              ) {
+                                  Text(
+                                      "KEBIJAKAN DAN PRIVASI",
+                                      modifier = Modifier.weight(1f),
+                                      color = if (isVipPlus) premiumGold else Cyan,
+                                      fontSize = 14.sp,
+                                      fontWeight = FontWeight.ExtraBold,
+                                      style = if (isVipPlus) vipTitleStyle else androidx.compose.ui.text.TextStyle.Default
+                                  )
+                                  Text(
+                                      if (showPrivacyDetails) "⌃" else "⌄",
+                                      color = if (isVipPlus) premiumGold else Cyan,
+                                      fontSize = 22.sp,
+                                      fontWeight = FontWeight.Bold
+                                  )
+                              }
+                              if (showPrivacyDetails) {
                               Text("Privasi Anda penting", color = if (isVipPlus) premiumGold else Cyan, fontSize = 15.sp, fontWeight = FontWeight.Bold)
                               Spacer(Modifier.height(8.dp))
                               Text(
@@ -1197,6 +1255,7 @@ jobs:
                                   "Nama profil dan pengaturan lokal disimpan di perangkat. Jika Anda masuk dengan Google atau mengajukan keanggotaan VIP, aplikasi mengirim data akun, alamat surel, pilihan paket, nominal, nama pengirim, nomor referensi transfer jika diisi, serta status dan waktu permintaan ke Firebase untuk pemeriksaan keanggotaan dan pembayaran oleh admin. Aplikasi saat ini belum menyediakan unggahan bukti transfer. Aplikasi lain yang dibuka memiliki kebijakan privasi masing-masing. Jangan pernah membagikan PIN, OTP, atau kata sandi.",
                                   color = Muted, fontSize = 10.sp, lineHeight = 16.sp
                               )
+                              }
                           }
                       }
 
