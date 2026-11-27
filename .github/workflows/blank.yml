@@ -3392,6 +3392,10 @@ jobs:
                       Regex("^(open|launch|start) (the )?timer$") to "timer",
                       Regex("^(open|launch|start) (the )?(wi fi|wifi) settings$") to "wifi",
                       Regex("^(open|launch|start) (the )?bluetooth settings$") to "bluetooth",
+                      Regex("^(open|launch|start) (the )?location settings$") to "pengaturan lokasi",
+                      Regex("^(open|launch|start) (the )?accessibility settings$") to "pengaturan aksesibilitas",
+                      Regex("^(open|launch|start) (the )?keyboard settings$") to "pengaturan keyboard",
+                      Regex("^(open|launch|start) (the )?accounts settings$") to "pengaturan akun",
                       Regex("^(phone information|device information|phone model|what is my phone model)$") to "info hp",
                       Regex("^(what language is my phone|phone language|device language|system language)$") to "bahasa perangkat"
                   )
@@ -5282,6 +5286,53 @@ jobs:
                       text == "informasi perangkat di pengaturan"
                   ) {
                       openSettings(Settings.ACTION_DEVICE_INFO_SETTINGS)
+                      return
+                  }
+
+                  // Membuka pengaturan layanan lokasi/GPS tanpa mencoba mengaktifkan GPS secara paksa.
+                  if (
+                      text == "pengaturan lokasi" ||
+                      text == "lokasi" ||
+                      text == "pengaturan gps" ||
+                      text == "atur lokasi" ||
+                      text == "buka lokasi" ||
+                      text == "buka gps" ||
+                      text == "gps"
+                  ) {
+                      openSettings(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+                      return
+                  }
+
+                  // Membuka pengaturan aksesibilitas Android.
+                  if (
+                      text == "pengaturan aksesibilitas" ||
+                      text == "aksesibilitas" ||
+                      text == "atur aksesibilitas" ||
+                      text == "buka aksesibilitas"
+                  ) {
+                      openSettings(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                      return
+                  }
+
+                  // Membuka pengaturan keyboard dan metode masukan.
+                  if (
+                      text == "pengaturan keyboard" ||
+                      text == "keyboard" ||
+                      text == "atur keyboard" ||
+                      text == "buka keyboard"
+                  ) {
+                      openSettings(Settings.ACTION_INPUT_METHOD_SETTINGS)
+                      return
+                  }
+
+                  // Membuka pengaturan sinkronisasi akun Android.
+                  if (
+                      text == "pengaturan akun" ||
+                      text == "akun" ||
+                      text == "atur akun" ||
+                      text == "buka akun"
+                  ) {
+                      openSettings(Settings.ACTION_SYNC_SETTINGS)
                       return
                   }
 
