@@ -1219,39 +1219,69 @@ jobs:
                                   )
                               }
                               if (showPrivacyDetails) {
-                              Text("Privasi Anda penting", color = if (isVipPlus) premiumGold else Cyan, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                              Text("KEBIJAKAN PRIVASI M ASISTEN", color = if (isVipPlus) premiumGold else Cyan, fontSize = 15.sp, fontWeight = FontWeight.Bold)
                               Spacer(Modifier.height(8.dp))
                               Text(
-                                  "M Asisten menggunakan izin perangkat seperlunya untuk menjalankan perintah yang Anda pilih. Pemrosesan suara dirancang berlangsung di perangkat dan aplikasi tidak mengirim rekaman suara ke server M Asisten.",
+                                  "Terakhir diperbarui: 27 November 2026\\n\\nKebijakan ini menjelaskan data yang digunakan ketika Anda memakai M Asisten. Dengan menggunakan aplikasi, Anda memahami praktik yang dijelaskan di bawah ini.",
                                   color = Color.White, fontSize = 12.sp, lineHeight = 19.sp
                               )
-                              Spacer(Modifier.height(12.dp))
-                              Text("• Mikrofon", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                              Spacer(Modifier.height(14.dp))
+                              Text("1. DATA YANG DIGUNAKAN", color = if (isVipPlus) premiumGold else Cyan, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                               Text(
-                                  "Mikrofon aktif ketika Anda mengetuk widget atau memulai perintah suara. Aplikasi menggunakan pengenalan suara langsung di perangkat tanpa mengirim rekaman ke peladen M Asisten. Dukungan suara luring Bahasa Indonesia bergantung pada versi Android, layanan suara, dan paket bahasa yang tersedia; paket bahasa mungkin perlu diunduh satu kali.",
+                                  "M Asisten dapat memproses informasi akun Google seperti UID akun, nama profil, alamat email, penyedia login, serta waktu login dan pembaruan profil. Jika Anda mengajukan VIP+, data permintaan yang diproses meliputi pilihan paket, nominal, metode dan informasi rekening tujuan yang dicatat aplikasi, nama pengirim, referensi transfer jika diisi, status permintaan, serta waktu pengajuan. Status keanggotaan dapat mencakup paket, waktu mulai, waktu kedaluwarsa, dan catatan verifikasi. Pengaturan tertentu dan cache status VIP disimpan secara lokal di perangkat.",
                                   color = Muted, fontSize = 11.sp, lineHeight = 17.sp
                               )
                               Spacer(Modifier.height(10.dp))
-                              Text("• Kamera", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                              Text("2. MIKROFON DAN PENGENALAN SUARA", color = if (isVipPlus) premiumGold else Cyan, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                               Text(
-                                  "Izin kamera digunakan untuk memeriksa dan mengendalikan lampu kilat sebagai senter. Aplikasi tidak mengambil atau mengunggah foto dan video melalui fitur senter.",
+                                  "Mikrofon digunakan ketika Anda memulai atau mengetuk widget untuk memberikan perintah. Aplikasi meminta pengenalan suara dengan preferensi luring, tetapi ketersediaan dan pemrosesan sepenuhnya di perangkat bergantung pada layanan pengenalan suara, versi Android, dan paket bahasa pada perangkat. Layanan pengenalan suara Android atau penyedia perangkat dapat memiliki pemrosesan dan kebijakan privasinya sendiri. M Asisten tidak dirancang untuk menyimpan rekaman suara sebagai arsip akun atau mengirimkannya ke koleksi Firebase aplikasi.",
                                   color = Muted, fontSize = 11.sp, lineHeight = 17.sp
                               )
                               Spacer(Modifier.height(10.dp))
-                              Text("• Tampil di atas aplikasi lain", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                              Text("3. IZIN PERANGKAT", color = if (isVipPlus) premiumGold else Cyan, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                               Text(
-                                  "Digunakan untuk menampilkan widget mikrofon mengambang. Anda dapat menonaktifkan izin ini kapan saja melalui Pengaturan Android.",
+                                  "Mikrofon dipakai untuk perintah suara. Kamera dipakai untuk memeriksa dan mengendalikan lampu kilat sebagai senter, bukan untuk mengambil foto melalui fitur senter. Izin tampil di atas aplikasi dipakai untuk menampilkan widget mengambang. Notifikasi dipakai untuk pemberitahuan layanan/widget. Izin mengubah pengaturan sistem dapat digunakan untuk kendali seperti kecerahan layar. Android dapat meminta izin tambahan sesuai tindakan yang Anda pilih. Anda dapat mengelola atau mencabut izin melalui Pengaturan perangkat; fitur terkait mungkin tidak berfungsi setelah izin dicabut.",
                                   color = Muted, fontSize = 11.sp, lineHeight = 17.sp
                               )
                               Spacer(Modifier.height(10.dp))
-                              Text("• Kendali dan data akun", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                              Text("4. AKUN, FIREBASE, DAN VIP+", color = if (isVipPlus) premiumGold else Cyan, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                               Text(
-                                  "Widget mulai mendengarkan setelah Anda mengetuknya. Anda dapat menghentikan penggunaan dan mencabut izin mikrofon, kamera, notifikasi, atau tampilan di atas aplikasi melalui Pengaturan perangkat.",
+                                  "Login Google dan pengelolaan profil serta status VIP menggunakan Firebase Authentication dan Cloud Firestore. Informasi akun, profil, status keanggotaan, dan permintaan pembayaran dikirim ke layanan Firebase agar login, pemeriksaan akses, serta verifikasi admin dapat berjalan. Admin yang berwenang memeriksa permintaan VIP secara manual. Pengajuan pembayaran tidak otomatis mengaktifkan VIP; status berubah setelah verifikasi. Saat ini aplikasi mencatat rincian konfirmasi transfer, tetapi tidak menyediakan unggahan bukti transfer di dalam aplikasi.",
+                                  color = Muted, fontSize = 11.sp, lineHeight = 17.sp
+                              )
+                              Spacer(Modifier.height(10.dp))
+                              Text("5. IKLAN DAN LAYANAN PIHAK KETIGA", color = if (isVipPlus) premiumGold else Cyan, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                              Text(
+                                  "Aplikasi mengintegrasikan Google Mobile Ads untuk pemuatan iklan. SDK iklan dapat memproses informasi perangkat, data diagnostik, atau interaksi iklan sesuai konfigurasi dan kebijakan Google. Login menggunakan Google dan penyimpanan data menggunakan Firebase juga tunduk pada ketentuan privasi penyedia tersebut. Ketika Anda membuka aplikasi lain, aplikasi tujuan beroperasi berdasarkan kebijakan privasinya sendiri. M Asisten tidak mengendalikan praktik data aplikasi lain.",
+                                  color = Muted, fontSize = 11.sp, lineHeight = 17.sp
+                              )
+                              Spacer(Modifier.height(10.dp))
+                              Text("6. TUJUAN PENGGUNAAN DAN PEMBAGIAN DATA", color = if (isVipPlus) premiumGold else Cyan, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                              Text(
+                                  "Data digunakan untuk menjalankan perintah dan fitur, mengelola login, memeriksa hak VIP, memproses serta memverifikasi permintaan pembayaran, menjaga keamanan layanan, dan menangani gangguan. Data hanya diteruskan kepada penyedia layanan yang diperlukan untuk fungsi tersebut atau diproses oleh admin yang berwenang. M Asisten tidak menyatakan bahwa layanan pihak ketiga tidak mengumpulkan data; praktik mereka mengikuti kebijakan masing-masing.",
+                                  color = Muted, fontSize = 11.sp, lineHeight = 17.sp
+                              )
+                              Spacer(Modifier.height(10.dp))
+                              Text("7. PENYIMPANAN, KEAMANAN, DAN PENGHAPUSAN", color = if (isVipPlus) premiumGold else Cyan, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                              Text(
+                                  "Data lokal tersimpan pada perangkat dan data akun atau keanggotaan tersimpan pada layanan Firebase sesuai konfigurasi aplikasi. Pengembang menerapkan pembatasan akses dan aturan keamanan layanan, tetapi tidak ada sistem elektronik yang dapat dijamin aman sepenuhnya. Data dapat disimpan selama diperlukan untuk menyediakan layanan, mengelola keanggotaan, menyelesaikan pemeriksaan pembayaran, dan memenuhi kewajiban yang berlaku. Untuk meminta akses atau penghapusan data akun, hubungi pengembang melalui kanal dukungan resmi M Asisten. Penghapusan data tertentu dapat memengaruhi login atau status VIP dan mungkin memerlukan pemeriksaan agar tidak menghapus catatan transaksi yang masih diperlukan.",
+                                  color = Muted, fontSize = 11.sp, lineHeight = 17.sp
+                              )
+                              Spacer(Modifier.height(10.dp))
+                              Text("8. PRIVASI ANAK", color = if (isVipPlus) premiumGold else Cyan, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                              Text(
+                                  "M Asisten bukan layanan yang secara khusus dirancang untuk mengumpulkan data pribadi anak. Penggunaan oleh anak sebaiknya didampingi orang tua atau wali. Orang tua atau wali yang mengetahui adanya data anak yang diberikan tanpa izin dapat menghubungi pengembang melalui kanal dukungan resmi.",
+                                  color = Muted, fontSize = 11.sp, lineHeight = 17.sp
+                              )
+                              Spacer(Modifier.height(10.dp))
+                              Text("9. PERUBAHAN KEBIJAKAN DAN KONTAK", color = if (isVipPlus) premiumGold else Cyan, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                              Text(
+                                  "Kebijakan dapat diperbarui apabila fitur, layanan, atau ketentuan hukum berubah. Versi terbaru akan ditampilkan pada halaman ini. Jika ada pertanyaan atau permintaan terkait privasi, hubungi pengembang melalui kanal dukungan resmi yang menyertai distribusi M Asisten. Jangan mengirimkan kata sandi, PIN, atau kode OTP kepada siapa pun.",
                                   color = Muted, fontSize = 11.sp, lineHeight = 17.sp
                               )
                               Spacer(Modifier.height(10.dp))
                               Text(
-                                  "Nama profil dan pengaturan lokal disimpan di perangkat. Jika Anda masuk dengan Google atau mengajukan keanggotaan VIP, aplikasi mengirim data akun, alamat surel, pilihan paket, nominal, nama pengirim, nomor referensi transfer jika diisi, serta status dan waktu permintaan ke Firebase untuk pemeriksaan keanggotaan dan pembayaran oleh admin. Aplikasi saat ini belum menyediakan unggahan bukti transfer. Aplikasi lain yang dibuka memiliki kebijakan privasi masing-masing. Jangan pernah membagikan PIN, OTP, atau kata sandi.",
+                                  "Catatan: kebijakan ini menjelaskan perilaku aplikasi berdasarkan fitur yang tersedia saat ini. Pengembang harus memperbaruinya jika praktik pengumpulan data atau penyedia layanan berubah.",
                                   color = Muted, fontSize = 10.sp, lineHeight = 16.sp
                               )
                               }
