@@ -5551,7 +5551,7 @@ jobs:
         run: |
           python3 -m pip install --quiet Pillow
           python3 - <<'PY'
-          from PIL import Image, ImageDraw
+          from PIL import Image, ImageDraw, ImageChops
           from pathlib import Path
 
           source = Path("launcher_icon.png")
@@ -5561,14 +5561,22 @@ jobs:
 
           image = Image.open(source).convert("RGBA")
 
-          # Pangkas sumber menjadi persegi penuh agar artwork memenuhi area ikon.
-          # Bentuk akhir mengikuti masking ikon yang diterapkan launcher Android.
+          # Pangkas sumber menjadi persegi penuh.
           side = min(image.size)
           left = (image.width - side) // 2
           top = (image.height - side) // 2
           image = image.crop((left, top, left + side, top + side))
 
-          # Sumber resolusi tinggi untuk logo halaman beranda memakai artwork penuh.
+          # Buat area di luar emblem lingkaran transparan. Isi hitam di dalam
+          # lingkaran tetap dipertahankan agar logo, teks, dan efek neon tidak berubah.
+          scale = 4
+          mask = Image.new("L", (side * scale, side * scale), 0)
+          draw = ImageDraw.Draw(mask)
+          draw.ellipse((0, 0, side * scale - 1, side * scale - 1), fill=255)
+          mask = mask.resize((side, side), Image.Resampling.LANCZOS)
+          image.putalpha(ImageChops.multiply(image.getchannel("A"), mask))
+
+          # Sumber resolusi tinggi untuk logo halaman beranda.
           home_icon_dir = Path("app/src/main/res/drawable-nodpi")
           home_icon_dir.mkdir(parents=True, exist_ok=True)
           image.save(home_icon_dir / "launcher_home.png", optimize=True)
