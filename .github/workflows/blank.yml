@@ -842,6 +842,7 @@ jobs:
               var adminBusy by remember { mutableStateOf(false) }
               var adminMessage by remember { mutableStateOf("") }
               var simulationMessage by remember { mutableStateOf("") }
+              var expandedPrivacySection by remember { mutableStateOf<String?>(null) }
               val Navy = Color(0xFF07111F)
               val Panel = Color(0xFF111F32)
               val Cyan = Color(0xFF35D6E8)
@@ -1144,15 +1145,28 @@ jobs:
                           verticalAlignment = Alignment.CenterVertically
                       ) {
                           Text("KEBIJAKAN & PRIVASI", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold, style = if (isVipPlus) vipTitleStyle else androidx.compose.ui.text.TextStyle.Default)
-                          Spacer(Modifier.weight(1f))
-                          Text("Informasi aplikasi", color = Muted, fontSize = 10.sp)
                       }
                       Spacer(Modifier.height(12.dp))
+
+                      val privacySections = listOf(
+                          "1. Tentang M Asisten" to "M Asisten adalah aplikasi asisten suara untuk membantu menjalankan perintah dan membuka fitur atau aplikasi pada perangkat Android. Kebijakan ini berlaku untuk penggunaan aplikasi M Asisten. Dengan menggunakan fitur aplikasi, Anda memahami pemrosesan data sebagaimana dijelaskan di bawah. Fitur tertentu memerlukan izin perangkat dan koneksi internet.",
+                          "2. Data yang diproses" to "Data yang dapat diproses meliputi: (a) data akun Google seperti ID pengguna Firebase, nama tampilan, dan alamat email; (b) data keanggotaan seperti status VIP, paket, masa berlaku, dan waktu pembaruan; (c) data permintaan pembayaran VIP+ seperti nama pengirim, paket, nominal, referensi transfer jika diisi, status permintaan, dan waktu pengajuan/verifikasi; (d) nama profil dan preferensi yang disimpan secara lokal; serta (e) informasi teknis yang dapat diproses oleh sistem Android, Firebase, Google Play Services, dan Google Mobile Ads sesuai fungsi masing-masing. M Asisten tidak meminta PIN, kata sandi bank, atau kode OTP.",
+                          "3. Mikrofon dan pengenalan suara" to "Izin mikrofon digunakan untuk mengenali perintah suara. Pada mode Standar, pengenalan suara dimulai ketika Anda mengaktifkan widget atau fitur suara. Pada mode VIP+, ketika layanan standby suara diaktifkan, aplikasi dapat terus menunggu kata pemicu “Hallo M” di latar belakang agar dapat menerima perintah berikutnya. Layanan ini menggunakan pengenalan suara pada perangkat Android melalui layanan pengenalan suara luring yang tersedia di perangkat. Aplikasi M Asisten tidak mengirim rekaman suara mentah ke server M Asisten atau menyimpan rekaman suara sebagai arsip. Ketersediaan pemrosesan sepenuhnya luring bergantung pada versi Android, layanan pengenalan suara, dan paket bahasa yang terpasang. Jika layanan pengenalan suara perangkat tidak sepenuhnya luring, pemrosesan oleh penyedia layanan tersebut mengikuti kebijakan penyedianya. Standby VIP+ memerlukan notifikasi layanan aktif, dapat meningkatkan penggunaan baterai, dan dapat dihentikan oleh sistem Android atau pengaturan baterai perangkat.",
+                          "4. Aplikasi terpasang dan perintah membuka aplikasi" to "Untuk menampilkan daftar aplikasi dan menemukan aplikasi yang Anda sebutkan melalui perintah suara, M Asisten membaca nama aplikasi dan informasi komponen peluncur yang tersedia pada perangkat. Pencarian ini dilakukan di perangkat untuk menampilkan atau membuka aplikasi yang dipilih. Informasi daftar aplikasi tersebut tidak dikirim sebagai daftar ke Firebase oleh fitur launcher. Aplikasi tujuan dibuka melalui mekanisme Android; setelah dibuka, penggunaan dan pengumpulan data oleh aplikasi tujuan mengikuti kebijakan privasi masing-masing pengembang.",
+                          "5. Izin perangkat" to "Izin mikrofon digunakan untuk perintah suara dan standby VIP+. Izin kamera digunakan untuk mengendalikan lampu kilat sebagai senter, bukan untuk mengambil foto atau video melalui fitur senter. Izin tampil di atas aplikasi lain digunakan untuk menampilkan widget mengambang. Layanan latar depan dan notifikasi digunakan untuk menjaga layanan suara tetap terlihat ketika aktif. Izin Wake Lock membantu perangkat tetap aktif selama standby suara berjalan dan dapat menambah konsumsi baterai. Izin internet dan status jaringan digunakan untuk login, pemeriksaan keanggotaan, pengiriman permintaan VIP+, serta layanan Google yang diperlukan. Izin perubahan pengaturan sistem hanya digunakan ketika Anda meminta fungsi yang memerlukan perubahan pengaturan, seperti kecerahan layar. Izin alarm digunakan untuk fungsi alarm jika tersedia dan diminta. Anda dapat mengelola atau mencabut izin melalui Pengaturan Android; pencabutan izin dapat membuat fitur terkait tidak berfungsi.",
+                          "6. Akun Google, Firebase, dan keanggotaan VIP+" to "Jika Anda memilih masuk dengan Google, M Asisten menggunakan Google Sign-In dan Firebase Authentication untuk mengautentikasi akun. Aplikasi dapat menyimpan ID pengguna, nama tampilan, alamat email, penyedia login, serta waktu login/pembaruan pada layanan Firebase. Data keanggotaan seperti status aktif, paket, masa berlaku, dan informasi pemeriksaan admin diproses melalui Cloud Firestore agar status VIP+ dapat ditampilkan dan diverifikasi. Sebagian status keanggotaan dapat disimpan sementara di perangkat untuk mendukung pemeriksaan akses saat koneksi tidak tersedia. Cache lokal terikat pada akun dan dibatasi oleh masa berlaku atau batas verifikasi yang diterapkan aplikasi.",
+                          "7. Pembayaran VIP+ dan pembagian data" to "Pembayaran VIP+ pada versi ini dilakukan melalui transfer manual SeaBank dan diperiksa oleh admin. Saat Anda mengirim konfirmasi, aplikasi mengirim ID akun, nama dan email akun yang tersedia, paket yang dipilih, nominal, metode pembayaran, nama pengirim, referensi transfer jika diisi, serta status dan waktu permintaan ke Cloud Firestore. Admin yang berwenang dapat melihat data yang diperlukan untuk mencocokkan mutasi dan memutuskan verifikasi atau penolakan. Aplikasi tidak memproses nomor kartu, PIN, kata sandi bank, atau OTP dan saat ini tidak menyediakan unggahan bukti transfer. Jangan mengirim data rahasia perbankan melalui kolom konfirmasi.",
+                          "8. Iklan dan layanan pihak ketiga" to "Kode aplikasi menyertakan Google Mobile Ads SDK. Versi saat ini menggunakan ID aplikasi dan unit iklan pengujian milik Google untuk pengembangan/pengujian, bukan ID iklan produksi milik M Asisten. SDK atau layanan Google dapat memproses informasi perangkat, diagnostik, interaksi iklan, atau pengenal yang diizinkan sistem untuk menyediakan dan mengukur layanan sesuai konfigurasi serta kebijakan Google. Google Sign-In, Firebase Authentication, dan Cloud Firestore juga memproses data yang diperlukan untuk fungsi akun dan keanggotaan. Data dapat diproses oleh penyedia layanan tersebut sesuai ketentuan privasi mereka. M Asisten tidak menjual data pribadi pengguna.",
+                          "9. Penyimpanan, keamanan, dan masa retensi" to "Pengaturan tertentu dan cache keanggotaan disimpan secara lokal pada perangkat. Data akun, keanggotaan, dan permintaan pembayaran yang diperlukan untuk layanan disimpan pada layanan Firebase yang digunakan aplikasi. Data dikirim melalui koneksi layanan yang disediakan Google/Firebase; akses ke data dibatasi oleh autentikasi dan aturan keamanan layanan. Tidak ada sistem elektronik yang dapat dijamin 100% bebas risiko, sehingga pengguna tetap perlu menjaga keamanan perangkat dan akun Google. Data disimpan selama diperlukan untuk menyediakan layanan, memeriksa transaksi, menjaga keamanan, dan memenuhi kewajiban yang berlaku. Jangka retensi khusus untuk arsip transaksi dan penghapusan data akan ditetapkan dan diumumkan sebelum layanan dirilis secara publik.",
+                          "10. Hak pengguna dan penghapusan data" to "Anda dapat berhenti menggunakan fitur suara, menonaktifkan widget, keluar dari akun Google melalui aplikasi, atau mencabut izin perangkat melalui Pengaturan Android. Keluar dari akun tidak sama dengan menghapus data akun di server. Mekanisme permintaan penghapusan akun dan data secara menyeluruh, termasuk jalur dari luar aplikasi, belum tersedia pada versi pengembangan ini dan harus diselesaikan sebelum rilis publik apabila pembuatan akun tetap disediakan. Permintaan penghapusan nantinya akan mencakup data akun dan data terkait pada layanan Firebase, dengan pengecualian terbatas jika penyimpanan diwajibkan untuk keamanan, pencegahan penyalahgunaan, atau kewajiban hukum. Jangan menganggap data server telah terhapus hanya dengan menghapus aplikasi dari perangkat.",
+                          "11. Anak-anak dan penggunaan yang aman" to "M Asisten bukan aplikasi yang dirancang khusus untuk mengumpulkan data anak. Jika anak menggunakan perangkat, orang tua atau wali perlu mendampingi penggunaan, terutama saat memberikan izin mikrofon, kamera, atau login akun. Jangan memasukkan informasi sensitif, kata sandi, PIN, OTP, atau informasi keuangan rahasia ke dalam perintah suara maupun kolom aplikasi.",
+                          "12. Perubahan kebijakan" to "Kebijakan ini dapat diperbarui jika fitur, layanan pihak ketiga, atau ketentuan hukum berubah. Versi terbaru akan ditampilkan pada bagian Kebijakan & Privasi di dalam aplikasi beserta tanggal pembaruannya. Jika perubahan berdampak penting pada cara data diproses, pengguna akan diberi pemberitahuan melalui sarana yang tersedia.",
+                          "13. Kontak pengelola" to "Nama aplikasi: M Asisten. Kontak privasi yang direncanakan: m.asisten@gmail.com. Alamat email ini masih akan dibuat dan belum aktif pada saat kebijakan ini ditampilkan. Sebelum aplikasi dirilis kepada publik, pengelola harus mengaktifkan alamat tersebut dan memastikan pengguna dapat menghubunginya untuk pertanyaan privasi maupun permintaan terkait data."
+                      )
 
                       Card(
                           modifier = Modifier.fillMaxWidth(),
                           shape = RoundedCornerShape(20.dp),
-                          // Elevasi berlapis memberi kesan panel 3D tanpa mengganti warna asli.
                           elevation = CardDefaults.cardElevation(
                               defaultElevation = if (isVipPlus) 10.dp else 0.dp,
                               pressedElevation = if (isVipPlus) 14.dp else 0.dp
@@ -1162,42 +1176,69 @@ jobs:
                           ),
                           border = if (isVipPlus) androidx.compose.foundation.BorderStroke(1.dp, premiumBorder) else null
                       ) {
-                          Column(modifier = Modifier.padding(17.dp)) {
-                              Text("Privasi Anda penting", color = if (isVipPlus) premiumGold else Cyan, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                          Column(modifier = Modifier.padding(16.dp)) {
+                              Text(
+                                  "KEBIJAKAN PRIVASI M ASISTEN",
+                                  color = if (isVipPlus) premiumGold else Cyan,
+                                  fontSize = 15.sp,
+                                  fontWeight = FontWeight.Bold
+                              )
+                              Spacer(Modifier.height(7.dp))
+                              Text(
+                                  "Terakhir diperbarui: 27 November 2026",
+                                  color = Muted,
+                                  fontSize = 10.sp
+                              )
                               Spacer(Modifier.height(8.dp))
                               Text(
-                                  "M Asisten menggunakan izin perangkat seperlunya untuk menjalankan perintah yang Anda pilih. Pemrosesan suara dirancang berlangsung di perangkat dan aplikasi tidak mengirim rekaman suara ke server M Asisten.",
-                                  color = Color.White, fontSize = 12.sp, lineHeight = 19.sp
-                              )
-                              Spacer(Modifier.height(12.dp))
-                              Text("• Mikrofon", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                              Text(
-                                  "Mikrofon aktif ketika Anda mengetuk widget atau memulai perintah suara. Aplikasi menggunakan pengenalan suara langsung di perangkat tanpa mengirim rekaman ke peladen M Asisten. Dukungan suara luring Bahasa Indonesia bergantung pada versi Android, layanan suara, dan paket bahasa yang tersedia; paket bahasa mungkin perlu diunduh satu kali.",
-                                  color = Muted, fontSize = 11.sp, lineHeight = 17.sp
+                                  "Ketuk setiap bagian untuk membaca penjelasan lengkap mengenai data, izin, akun, dan layanan yang digunakan M Asisten.",
+                                  color = Color.White,
+                                  fontSize = 11.sp,
+                                  lineHeight = 17.sp
                               )
                               Spacer(Modifier.height(10.dp))
-                              Text("• Kamera", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                              Text(
-                                  "Izin kamera digunakan untuk memeriksa dan mengendalikan lampu kilat sebagai senter. Aplikasi tidak mengambil atau mengunggah foto dan video melalui fitur senter.",
-                                  color = Muted, fontSize = 11.sp, lineHeight = 17.sp
-                              )
-                              Spacer(Modifier.height(10.dp))
-                              Text("• Tampil di atas aplikasi lain", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                              Text(
-                                  "Digunakan untuk menampilkan widget mikrofon mengambang. Anda dapat menonaktifkan izin ini kapan saja melalui Pengaturan Android.",
-                                  color = Muted, fontSize = 11.sp, lineHeight = 17.sp
-                              )
-                              Spacer(Modifier.height(10.dp))
-                              Text("• Kendali dan data akun", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                              Text(
-                                  "Widget mulai mendengarkan setelah Anda mengetuknya. Anda dapat menghentikan penggunaan dan mencabut izin mikrofon, kamera, notifikasi, atau tampilan di atas aplikasi melalui Pengaturan perangkat.",
-                                  color = Muted, fontSize = 11.sp, lineHeight = 17.sp
-                              )
-                              Spacer(Modifier.height(10.dp))
-                              Text(
-                                  "Nama profil dan pengaturan lokal disimpan di perangkat. Jika Anda masuk dengan Google atau mengajukan keanggotaan VIP, aplikasi mengirim data akun, alamat surel, pilihan paket, nominal, nama pengirim, nomor referensi transfer jika diisi, serta status dan waktu permintaan ke Firebase untuk pemeriksaan keanggotaan dan pembayaran oleh admin. Aplikasi saat ini belum menyediakan unggahan bukti transfer. Aplikasi lain yang dibuka memiliki kebijakan privasi masing-masing. Jangan pernah membagikan PIN, OTP, atau kata sandi.",
-                                  color = Muted, fontSize = 10.sp, lineHeight = 16.sp
-                              )
+                              privacySections.forEach { (heading, description) ->
+                                  Column(
+                                      modifier = Modifier
+                                          .fillMaxWidth()
+                                          .clip(RoundedCornerShape(10.dp))
+                                          .clickable {
+                                              expandedPrivacySection =
+                                                  if (expandedPrivacySection == heading) null else heading
+                                          }
+                                          .padding(vertical = 11.dp, horizontal = 7.dp)
+                                  ) {
+                                      Row(
+                                          modifier = Modifier.fillMaxWidth(),
+                                          verticalAlignment = Alignment.CenterVertically
+                                      ) {
+                                          Text(
+                                              heading,
+                                              modifier = Modifier.weight(1f),
+                                              color = if (isVipPlus) premiumText else Color.White,
+                                              fontSize = 11.sp,
+                                              fontWeight = FontWeight.SemiBold,
+                                              lineHeight = 16.sp
+                                          )
+                                          Text(
+                                              if (expandedPrivacySection == heading) "−" else "+",
+                                              color = if (isVipPlus) premiumGold else Cyan,
+                                              fontSize = 18.sp,
+                                              fontWeight = FontWeight.Bold
+                                          )
+                                      }
+                                      if (expandedPrivacySection == heading) {
+                                          Spacer(Modifier.height(8.dp))
+                                          Text(
+                                              description,
+                                              color = if (isVipPlus) premiumMuted else Muted,
+                                              fontSize = 10.sp,
+                                              lineHeight = 16.sp
+                                          )
+                                      }
+                                  }
+                                  Divider(color = if (isVipPlus) premiumBorder.copy(alpha = 0.35f) else Color.White.copy(alpha = 0.10f))
+                              }
                           }
                       }
 
