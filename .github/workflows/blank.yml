@@ -315,6 +315,7 @@ jobs:
           import androidx.compose.ui.unit.dp
           import androidx.compose.ui.unit.sp
           import androidx.compose.ui.window.DialogProperties
+          import java.util.Locale
 
           private val Navy = Color(0xFF07111F)
           private val Panel = Color(0xFF111F32)
@@ -1818,7 +1819,7 @@ jobs:
                                       }
                                   }
                                   Spacer(Modifier.height(8.dp))
-                                  Text(mAsistenUiText("Pilihan saat ini: ${selectedVipPlan.replace(", isEnglish)VIP+", "VIP")}", color = Color.White, fontSize = 11.sp)
+                                  Text(if (isEnglish) "Current selection: ${selectedVipPlan.replace("VIP+", "VIP")}" else "Pilihan saat ini: ${selectedVipPlan.replace("VIP+", "VIP")}", color = Color.White, fontSize = 11.sp)
                                   Spacer(Modifier.height(10.dp))
                                   Spacer(Modifier.height(12.dp))
                                   Text(mAsistenUiText("PEMBAYARAN TRANSFER BANK", isEnglish), color = Cyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
