@@ -84,8 +84,8 @@ jobs:
           cat > build.gradle.kts <<'EOF'
           plugins {
               id("com.android.application") version "8.7.3" apply false
-              id("org.jetbrains.kotlin.android") version "2.0.21" apply false
-              id("org.jetbrains.kotlin.plugin.compose") version "2.0.21" apply false
+              id("org.jetbrains.kotlin.android") version "2.2.0" apply false
+              id("org.jetbrains.kotlin.plugin.compose") version "2.2.0" apply false
               id("com.google.gms.google-services") version "4.4.2" apply false
           }
           EOF
@@ -153,6 +153,7 @@ jobs:
 
               implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
               implementation("com.google.android.gms:play-services-auth:21.3.0")
+              implementation("com.google.android.gms:play-services-ads:24.9.0")
               implementation("com.google.firebase:firebase-auth")
               implementation("com.google.firebase:firebase-firestore")
           }
@@ -162,6 +163,7 @@ jobs:
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
               <uses-permission android:name="android.permission.CAMERA"/>
+              <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
               <uses-permission android:name="android.permission.WRITE_SETTINGS"/>
               <uses-permission android:name="android.permission.RECORD_AUDIO"/>
@@ -231,6 +233,10 @@ jobs:
                   android:roundIcon="@mipmap/ic_launcher"
                   android:allowBackup="false">
 
+                  <meta-data
+                      android:name="com.google.android.gms.ads.APPLICATION_ID"
+                      android:value="ca-app-pub-3940256099942544~3347511713"/>
+
                   <activity
                       android:name=".MainActivity"
                       android:exported="true">
@@ -273,6 +279,13 @@ jobs:
           import com.google.android.gms.auth.api.signin.GoogleSignIn
           import com.google.android.gms.auth.api.signin.GoogleSignInOptions
           import com.google.android.gms.common.api.ApiException
+          import com.google.android.gms.ads.AdError
+          import com.google.android.gms.ads.AdRequest
+          import com.google.android.gms.ads.FullScreenContentCallback
+          import com.google.android.gms.ads.LoadAdError
+          import com.google.android.gms.ads.MobileAds
+          import com.google.android.gms.ads.interstitial.InterstitialAd
+          import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
           import com.google.firebase.auth.FirebaseAuth
           import com.google.firebase.auth.GoogleAuthProvider
           import com.google.firebase.firestore.FieldValue
@@ -307,6 +320,8 @@ jobs:
           private val Cyan = Color(0xFF35D6E8)
           private val Blue = Color(0xFF397BFF)
           private val Muted = Color(0xFF9DB2C9)
+
+          private const val TEST_INTERSTITIAL_AD_UNIT_ID = "ca-app-pub-3940256099942544/1033173712"
 
           // Hak VIP+ yang sudah diverifikasi disimpan agar tetap tersedia tanpa internet.
           // Cache terikat ke UID dan tidak boleh melewati masa berlaku membership.
@@ -374,6 +389,10 @@ jobs:
               private var googleAccountEmail by mutableStateOf("")
               private var vipMembershipStatus by mutableStateOf("BELUM AKTIF")
               private var isAdminAccount by mutableStateOf(false)
+              private var interstitialAd: InterstitialAd? = null
+              private var isAdLoading = false
+              private var standardActivationPending = false
+              private var standardWidgetStarter: (() -> Unit)? = null
 
               private val voiceMessageReceiver = object : android.content.BroadcastReceiver() {
                   override fun onReceive(context: android.content.Context?, intent: Intent?) {
@@ -556,6 +575,9 @@ jobs:
 
               override fun onCreate(savedInstanceState: Bundle?) {
                   super.onCreate(savedInstanceState)
+                  MobileAds.initialize(this) {
+                      runOnUiThread { loadStandardInterstitial() }
+                  }
 
                   FirebaseAuth.getInstance().currentUser?.let { user ->
                       googleAccountName = user.displayName ?: "Pengguna M Asisten"
@@ -586,6 +608,94 @@ jobs:
                               onLogout = { signOutAccount() }
                           )
                       }
+                  }
+              }
+
+              private fun loadStandardInterstitial() {
+                  if (isAdLoading || interstitialAd != null || isFinishing) return
+                  isAdLoading = true
+                  InterstitialAd.load(
+                      this,
+                      TEST_INTERSTITIAL_AD_UNIT_ID,
+                      AdRequest.Builder().build(),
+                      object : InterstitialAdLoadCallback() {
+                          override fun onAdLoaded(ad: InterstitialAd) {
+                              isAdLoading = false
+                              interstitialAd = ad
+                              if (standardActivationPending) showLoadedStandardInterstitial()
+                          }
+
+                          override fun onAdFailedToLoad(error: LoadAdError) {
+                              isAdLoading = false
+                              interstitialAd = null
+                              if (standardActivationPending) completeStandardActivation()
+                          }
+                      }
+                  )
+              }
+
+              private fun showStandardAdThen(activateWidget: () -> Unit) {
+                  if (standardActivationPending) return
+                  standardActivationPending = true
+                  standardWidgetStarter = activateWidget
+                  message = "Menyiapkan iklan sebelum widget diaktifkan..."
+                  if (interstitialAd != null) {
+                      showLoadedStandardInterstitial()
+                  } else if (!isAdLoading) {
+                      loadStandardInterstitial()
+                  }
+              }
+
+              private fun showLoadedStandardInterstitial() {
+                  val ad = interstitialAd
+                  if (ad == null) {
+                      if (!isAdLoading) loadStandardInterstitial()
+                      return
+                  }
+                  interstitialAd = null
+                  ad.fullScreenContentCallback = object : FullScreenContentCallback() {
+                      override fun onAdDismissedFullScreenContent() {
+                          completeStandardActivation()
+                          loadStandardInterstitial()
+                      }
+
+                      override fun onAdFailedToShowFullScreenContent(error: AdError) {
+                          completeStandardActivation()
+                          loadStandardInterstitial()
+                      }
+                  }
+                  try {
+                      ad.show(this)
+                  } catch (_: Exception) {
+                      completeStandardActivation()
+                      loadStandardInterstitial()
+                  }
+              }
+
+              private fun completeStandardActivation() {
+                  if (!standardActivationPending) return
+                  standardActivationPending = false
+                  val startWidget = standardWidgetStarter
+                  standardWidgetStarter = null
+                  startWidget?.invoke()
+              }
+
+              private fun startWidgetService(mode: String) {
+                  try {
+                      val intent = Intent(this, FloatingVoiceService::class.java)
+                          .putExtra(FloatingVoiceService.EXTRA_MODE, mode)
+                      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                          startForegroundService(intent)
+                      } else {
+                          startService(intent)
+                      }
+                      message = if (mode == FloatingVoiceService.MODE_VIP) {
+                          "Widget VIP aktif. M Asisten siap menunggu panggilan Hallo M."
+                      } else {
+                          "Widget Standar aktif. Ketuk lalu ucapkan perintah untuk aplikasi bawaan."
+                      }
+                  } catch (e: Exception) {
+                      message = "Tidak dapat mengaktifkan widget: ${e.message}"
                   }
               }
 
@@ -642,35 +752,18 @@ jobs:
               private fun startFloatingService() {
                   val user = FirebaseAuth.getInstance().currentUser
                   if (user == null) {
-                      try {
-                          val intent = Intent(this, FloatingVoiceService::class.java)
-                              .putExtra(FloatingVoiceService.EXTRA_MODE, FloatingVoiceService.MODE_STANDARD)
-                          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(intent)
-                          else startService(intent)
-                          message = "Widget Standar aktif. Ketuk lalu ucapkan perintah untuk aplikasi bawaan."
-                      } catch (e: Exception) {
-                          message = "Tidak dapat mengaktifkan widget: ${e.message}"
+                      showStandardAdThen {
+                          startWidgetService(FloatingVoiceService.MODE_STANDARD)
                       }
                       return
                   }
                   val userUid = user.uid
 
                   fun launchWidget(mode: String) {
-                      try {
-                          val intent = Intent(this, FloatingVoiceService::class.java)
-                              .putExtra(FloatingVoiceService.EXTRA_MODE, mode)
-                          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                              startForegroundService(intent)
-                          } else {
-                              startService(intent)
-                          }
-                          message = if (mode == FloatingVoiceService.MODE_VIP) {
-                              "Widget VIP aktif. M Asisten siap menunggu panggilan Hallo M."
-                          } else {
-                              "Widget Standar aktif. Ketuk lalu ucapkan perintah untuk aplikasi bawaan."
-                          }
-                      } catch (e: Exception) {
-                          message = "Tidak dapat mengaktifkan widget: ${e.message}"
+                      if (mode == FloatingVoiceService.MODE_STANDARD) {
+                          showStandardAdThen { startWidgetService(mode) }
+                      } else {
+                          startWidgetService(mode)
                       }
                   }
 
@@ -1510,6 +1603,7 @@ jobs:
                                                   "VIP+ Mingguan (7 hari)" -> 15000
                                                   "VIP+ Bulanan (30 hari)" -> 50000
                                                   "VIP+ Tahunan (365 hari)" -> 250000
+                                                  "VIP+ Seumur Hidup" -> 500000
                                                   else -> 500000
                                               }
                                               paymentSubmitting = true
@@ -5376,20 +5470,14 @@ jobs:
 
           image = Image.open(source).convert("RGBA")
 
-          # Buat seluruh logo aplikasi benar-benar bulat dengan sudut luar transparan.
-          # Mask resolusi tinggi menjaga tepi lingkaran tetap halus saat diperkecil.
+          # Pangkas sumber menjadi persegi penuh agar artwork memenuhi area ikon.
+          # Bentuk akhir mengikuti masking ikon yang diterapkan launcher Android.
           side = min(image.size)
           left = (image.width - side) // 2
           top = (image.height - side) // 2
           image = image.crop((left, top, left + side, top + side))
-          scale = 4
-          mask = Image.new("L", (side * scale, side * scale), 0)
-          draw = ImageDraw.Draw(mask)
-          draw.ellipse((0, 0, side * scale - 1, side * scale - 1), fill=255)
-          mask = mask.resize((side, side), Image.Resampling.LANCZOS)
-          image.putalpha(mask)
 
-          # Sumber resolusi tinggi untuk logo halaman beranda juga berbentuk lingkaran.
+          # Sumber resolusi tinggi untuk logo halaman beranda memakai artwork penuh.
           home_icon_dir = Path("app/src/main/res/drawable-nodpi")
           home_icon_dir.mkdir(parents=True, exist_ok=True)
           image.save(home_icon_dir / "launcher_home.png", optimize=True)
@@ -5406,6 +5494,7 @@ jobs:
               folder = Path("app/src/main/res") / f"mipmap-{density}"
               folder.mkdir(parents=True, exist_ok=True)
               resized = image.resize((size, size), Image.Resampling.LANCZOS)
+
               resized.save(folder / "ic_launcher.png", optimize=True)
           PY
 
