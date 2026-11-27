@@ -5401,7 +5401,7 @@ jobs:
               folder.mkdir(parents=True, exist_ok=True)
               resized = image.resize((size, size), Image.Resampling.LANCZOS)
 
-                    resized.save(folder / "ic_launcher.png", optimize=True)
+              resized.save(folder / "ic_launcher.png", optimize=True)
     PY
 
       - name: Decode Release Keystore
