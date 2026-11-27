@@ -333,7 +333,22 @@ jobs:
               private const val KEY_ADMIN = "admin"
               private const val KEY_EXPIRES_AT = "expires_at"
               private const val KEY_VERIFIED_AT = "verified_at"
+              private const val KEY_VERIFIED_ELAPSED = "verified_elapsed"
+              private const val KEY_VERIFIED_BOOT = "verified_boot"
               private const val OFFLINE_GRACE_MS = 30L * 24L * 60L * 60L * 1000L
+
+              private fun currentBootCount(context: android.content.Context): Int {
+                  if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.N) return -1
+                  return try {
+                      android.provider.Settings.Global.getInt(
+                          context.contentResolver,
+                          android.provider.Settings.Global.BOOT_COUNT,
+                          -1
+                      )
+                  } catch (_: Exception) {
+                      -1
+                  }
+              }
 
               fun save(
                   context: android.content.Context,
@@ -349,6 +364,8 @@ jobs:
                       .putBoolean(KEY_ADMIN, admin)
                       .putLong(KEY_EXPIRES_AT, expiresAt)
                       .putLong(KEY_VERIFIED_AT, System.currentTimeMillis())
+                      .putLong(KEY_VERIFIED_ELAPSED, android.os.SystemClock.elapsedRealtime())
+                      .putInt(KEY_VERIFIED_BOOT, currentBootCount(context))
                       .apply()
               }
 
@@ -364,11 +381,24 @@ jobs:
                   if (prefs.getString(KEY_UID, null) != uid || !prefs.getBoolean(KEY_ACTIVE, false)) {
                       return false
                   }
-                  val now = System.currentTimeMillis()
+                  // Cache offline hanya berlaku pada boot yang sama. Setelah restart,
+                  // pengguna wajib tersambung ke Firebase untuk verifikasi ulang.
+                  val bootCount = currentBootCount(context)
+                  val verifiedBoot = prefs.getInt(KEY_VERIFIED_BOOT, -1)
+                  val verifiedElapsed = prefs.getLong(KEY_VERIFIED_ELAPSED, 0L)
+                  val elapsedNow = android.os.SystemClock.elapsedRealtime()
+                  if (bootCount < 0 || verifiedBoot < 0 || bootCount != verifiedBoot ||
+                      verifiedElapsed <= 0L || elapsedNow < verifiedElapsed) {
+                      return false
+                  }
+
+                  val elapsedSinceVerification = elapsedNow - verifiedElapsed
                   val verifiedAt = prefs.getLong(KEY_VERIFIED_AT, 0L)
                   val expiresAt = prefs.getLong(KEY_EXPIRES_AT, 0L)
                   val cacheLimit = if (expiresAt > 0L) expiresAt else verifiedAt + OFFLINE_GRACE_MS
-                  return verifiedAt > 0L && now < cacheLimit && now - verifiedAt <= OFFLINE_GRACE_MS
+                  return verifiedAt > 0L &&
+                      elapsedSinceVerification <= OFFLINE_GRACE_MS &&
+                      (expiresAt <= 0L || System.currentTimeMillis() < cacheLimit)
               }
 
               fun isAdmin(context: android.content.Context, uid: String): Boolean {
@@ -768,10 +798,15 @@ jobs:
                       }
                   }
 
-                  fun activateVerifiedVip(isVip: Boolean, expiresAt: Long = 0L, admin: Boolean = false) {
-                      if (isVip) {
+                  fun activateVerifiedVip(
+                      isVip: Boolean,
+                      expiresAt: Long = 0L,
+                      admin: Boolean = false,
+                      fromOfflineCache: Boolean = false
+                  ) {
+                      if (isVip && !fromOfflineCache) {
                           VipEntitlementCache.save(this, userUid, true, expiresAt, admin)
-                      } else {
+                      } else if (!isVip) {
                           VipEntitlementCache.clear(this, userUid)
                       }
                       if (isVip &&
@@ -789,7 +824,8 @@ jobs:
                       activateVerifiedVip(
                           cached,
                           VipEntitlementCache.expiry(this, userUid),
-                          VipEntitlementCache.isAdmin(this, userUid)
+                          VipEntitlementCache.isAdmin(this, userUid),
+                          fromOfflineCache = true
                       )
                   }
 
