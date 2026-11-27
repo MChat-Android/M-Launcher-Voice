@@ -575,9 +575,7 @@ jobs:
 
               override fun onCreate(savedInstanceState: Bundle?) {
                   super.onCreate(savedInstanceState)
-                  MobileAds.initialize(this) {
-                      runOnUiThread { loadStandardInterstitial() }
-                  }
+                  initializeAdsSafely()
 
                   FirebaseAuth.getInstance().currentUser?.let { user ->
                       googleAccountName = user.displayName ?: "Pengguna M Asisten"
@@ -611,27 +609,52 @@ jobs:
                   }
               }
 
+              // Inisialisasi iklan tidak boleh menghentikan aplikasi saat startup.
+              private fun initializeAdsSafely() {
+                  try {
+                      MobileAds.initialize(this) {
+                          runOnUiThread {
+                              try {
+                                  loadStandardInterstitial()
+                              } catch (_: Exception) {
+                                  isAdLoading = false
+                                  interstitialAd = null
+                              }
+                          }
+                      }
+                  } catch (_: Exception) {
+                      isAdLoading = false
+                      interstitialAd = null
+                  }
+              }
+
               private fun loadStandardInterstitial() {
                   if (isAdLoading || interstitialAd != null || isFinishing) return
                   isAdLoading = true
-                  InterstitialAd.load(
-                      this,
-                      TEST_INTERSTITIAL_AD_UNIT_ID,
-                      AdRequest.Builder().build(),
-                      object : InterstitialAdLoadCallback() {
-                          override fun onAdLoaded(ad: InterstitialAd) {
-                              isAdLoading = false
-                              interstitialAd = ad
-                              if (standardActivationPending) showLoadedStandardInterstitial()
-                          }
+                  try {
+                      InterstitialAd.load(
+                          this,
+                          TEST_INTERSTITIAL_AD_UNIT_ID,
+                          AdRequest.Builder().build(),
+                          object : InterstitialAdLoadCallback() {
+                              override fun onAdLoaded(ad: InterstitialAd) {
+                                  isAdLoading = false
+                                  interstitialAd = ad
+                                  if (standardActivationPending) showLoadedStandardInterstitial()
+                              }
 
-                          override fun onAdFailedToLoad(error: LoadAdError) {
-                              isAdLoading = false
-                              interstitialAd = null
-                              if (standardActivationPending) completeStandardActivation()
+                              override fun onAdFailedToLoad(error: LoadAdError) {
+                                  isAdLoading = false
+                                  interstitialAd = null
+                                  if (standardActivationPending) completeStandardActivation()
+                              }
                           }
-                      }
-                  )
+                      )
+                  } catch (_: Exception) {
+                      isAdLoading = false
+                      interstitialAd = null
+                      if (standardActivationPending) completeStandardActivation()
+                  }
               }
 
               private fun showStandardAdThen(activateWidget: () -> Unit) {
