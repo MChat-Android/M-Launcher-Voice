@@ -2527,9 +2527,14 @@ jobs:
                                       // VIP+ selalu membuat sesi baru agar kata pemicu tetap dipantau.
                                       awaitingWakeWord = true
                                       showMessage("Menunggu panggilan Hallo M...", speak = false)
-                                      resumeVipWakeWordListening(
-                                          if (retryWakeWord) 900L else if (error == SpeechRecognizer.ERROR_AUDIO) 1800L else 1200L
-                                      )
+                                      val retryDelay = when {
+                                          retryWakeWord -> 900L
+                                          error == SpeechRecognizer.ERROR_AUDIO -> 1800L
+                                          error == SpeechRecognizer.ERROR_NETWORK ||
+                                              error == SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> 30_000L
+                                          else -> 3_000L
+                                      }
+                                      resumeVipWakeWordListening(retryDelay)
                                       return
                                   }
                                   awaitingWakeWord = false
@@ -2645,7 +2650,11 @@ jobs:
 
                                       if (targetLanguage == null) {
                                           listening = false
-                                          showMessage("Offline speech is not available for your device language or English. Check your Android speech-language settings.")
+                                          showMessage(
+                                              "Paket suara offline untuk bahasa perangkat dan Bahasa Inggris belum tersedia. VIP+ akan memeriksa kembali otomatis.",
+                                              speak = false
+                                          )
+                                          if (vipMode) resumeVipWakeWordListening(60_000L)
                                           return
                                       }
 
@@ -2663,16 +2672,27 @@ jobs:
                                           }
                                           hasLanguage(support.pendingOnDeviceLanguages, Locale.forLanguageTag(targetLanguage).language) -> {
                                               listening = false
-                                              showMessage("The speech language pack is being prepared by Android. Try again when it is ready.")
+                                              showMessage(
+                                                  "Paket bahasa offline sedang disiapkan Android. VIP+ akan mencoba kembali otomatis.",
+                                                  speak = false
+                                              )
+                                              if (vipMode) resumeVipWakeWordListening(30_000L)
                                           }
                                           else -> {
                                               listening = false
-                                              showMessage("Downloading the speech language pack. Connect to the internet, then try again.")
+                                              showMessage(
+                                                  "Paket bahasa offline belum terpasang. Hubungkan internet untuk mengunduhnya; VIP+ akan memeriksa kembali otomatis.",
+                                                  speak = false
+                                              )
                                               try {
                                                   recognizer.triggerModelDownload(intent)
                                               } catch (_: Exception) {
-                                                  showMessage("Could not download the speech language pack. Check Android speech settings.")
+                                                  showMessage(
+                                                      "Unduhan paket suara gagal dimulai. Periksa pengaturan suara Android.",
+                                                      speak = false
+                                                  )
                                               }
+                                              if (vipMode) resumeVipWakeWordListening(60_000L)
                                           }
                                       }
                                   }
