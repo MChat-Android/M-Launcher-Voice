@@ -3021,17 +3021,12 @@ jobs:
                       Regex("^(open|launch|start) (the )?bluetooth settings$") to "bluetooth",
                       Regex("^(phone information|device information|phone model|what is my phone model)$") to "info hp",
                       Regex("^(what language is my phone|phone language|device language|system language)$") to "bahasa perangkat",
-                      Regex("^(open|launch|start) (whatsapp|instagram|facebook|youtube|chrome|gmail|tiktok|telegram|spotify)$") to "$1 $3"
+                      Regex("^(what language is my phone|phone language|device language|system language)$") to "bahasa perangkat"
                   )
+                  val appCommand = Regex("^(open|launch|start) (the )?(whatsapp|instagram|facebook|youtube|chrome|gmail|tiktok|telegram|spotify)$").matchEntire(value)
+                  if (appCommand != null) return "buka " + appCommand.groupValues[3]
                   for ((pattern, replacement) in rules) {
-                      val match = pattern.matchEntire(value)
-                      if (match != null) {
-                          if (replacement.contains("$1")) {
-                              val appName = value.substringAfterLast(' ').trim()
-                              return "buka $appName"
-                          }
-                          return replacement
-                      }
+                      if (pattern.matches(value)) return replacement
                   }
                   return command
               }
