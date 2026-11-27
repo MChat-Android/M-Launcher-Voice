@@ -228,7 +228,7 @@ jobs:
                   android:theme="@android:style/Theme.Material.Light.NoActionBar"
                   android:label="M Asisten"
                   android:icon="@mipmap/ic_launcher"
-                  android:roundIcon="@mipmap/ic_launcher_round"
+                  android:roundIcon="@mipmap/ic_launcher"
                   android:allowBackup="false">
 
                   <activity
@@ -5401,49 +5401,8 @@ jobs:
               folder.mkdir(parents=True, exist_ok=True)
               resized = image.resize((size, size), Image.Resampling.LANCZOS)
 
-              # Ikon legacy berbentuk lingkaran transparan untuk Android lama.
-              from PIL import ImageDraw
-              circular = resized.copy()
-              circle_mask = Image.new("L", (size, size), 0)
-              ImageDraw.Draw(circle_mask).ellipse((0, 0, size - 1, size - 1), fill=255)
-              circular.putalpha(circle_mask)
-              circular.save(folder / "ic_launcher.png", optimize=True)
-              circular.save(folder / "ic_launcher_round.png", optimize=True)
-
-          # Foreground adaptif: artwork lingkaran di dalam zona aman launcher Android.
-          foreground_size = 432
-          foreground = Image.new("RGBA", (foreground_size, foreground_size), (0, 0, 0, 0))
-          artwork_size = 300
-          artwork = image.resize((artwork_size, artwork_size), Image.Resampling.LANCZOS)
-          circle_mask = Image.new("L", (artwork_size, artwork_size), 0)
-          ImageDraw.Draw(circle_mask).ellipse((0, 0, artwork_size - 1, artwork_size - 1), fill=255)
-          artwork.putalpha(circle_mask)
-          offset = (foreground_size - artwork_size) // 2
-          foreground.alpha_composite(artwork, (offset, offset))
-
-          drawable_dir = Path("app/src/main/res/drawable-nodpi")
-          foreground.save(drawable_dir / "ic_launcher_foreground.png", optimize=True)
-
-          adaptive_dir = Path("app/src/main/res/mipmap-anydpi-v26")
-          adaptive_dir.mkdir(parents=True, exist_ok=True)
-          adaptive_xml = """<?xml version="1.0" encoding="utf-8"?>
-          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-              <background android:drawable="@color/ic_launcher_background"/>
-              <foreground android:drawable="@drawable/ic_launcher_foreground"/>
-          </adaptive-icon>
-          """
-          (adaptive_dir / "ic_launcher.xml").write_text(adaptive_xml, encoding="utf-8")
-          (adaptive_dir / "ic_launcher_round.xml").write_text(adaptive_xml, encoding="utf-8")
-
-          colors_dir = Path("app/src/main/res/values")
-          colors_dir.mkdir(parents=True, exist_ok=True)
-          colors_xml = """<?xml version="1.0" encoding="utf-8"?>
-          <resources>
-              <color name="ic_launcher_background">#07111F</color>
-          </resources>
-          """
-          (colors_dir / "ic_launcher_colors.xml").write_text(colors_xml, encoding="utf-8")
-          PY
+                    resized.save(folder / "ic_launcher.png", optimize=True)
+    PY
 
       - name: Decode Release Keystore
         env:
