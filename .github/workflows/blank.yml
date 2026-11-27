@@ -3106,8 +3106,123 @@ jobs:
                       "Ucapkan nyalakan senter atau matikan senter" to "Say turn on flashlight or turn off flashlight.",
                       "Ucapkan naikkan volume, turunkan volume, atau matikan suara" to "Say increase volume, decrease volume, or mute sound.",
                       "Mikrofon atau mesin pengenalan suara offline tidak dapat diaktifkan." to "The microphone or offline speech recognition engine could not be started.",
-                      "Widget mikrofon sedang berjalan" to "The microphone widget is running"
+                      "Widget mikrofon sedang berjalan" to "The microphone widget is running",
+                      "Mode siaga VIP aktif, tetapi penghemat daya perangkat dapat membatasi mikrofon." to "VIP standby is active, but the device battery saver may restrict the microphone.",
+                      "VIP berakhir. Kembali ke sistem Standar." to "VIP has expired. Returning to Standard mode.",
+                      "Mode Standar hanya menerima satu perintah setiap ketukan widget. Ketuk kembali untuk perintah berikutnya." to "Standard mode accepts one command per widget tap. Tap again for the next command.",
+                      "Maksimal tiga perintah dalam satu ucapan. Silakan bagi menjadi beberapa ucapan." to "You can give up to three commands in one utterance. Please split them into separate utterances.",
+                      "Durasi pengingat maksimal tujuh hari." to "The reminder duration cannot exceed seven days.",
+                      "Waktu pengingat tidak valid. Gunakan format jam 07:30." to "The reminder time is invalid. Use a time such as 07:30.",
+                      "Sebutkan waktunya, misalnya ingatkan saya 10 menit lagi untuk minum, atau ingatkan saya jam 07:30 untuk rapat." to "Please specify a time, for example: remind me to drink water in 10 minutes, or remind me about a meeting at 07:30.",
+                      "Durasi timer maksimal tujuh hari." to "The timer duration cannot exceed seven days.",
+                      "Waktu alarm tidak valid. Gunakan format jam 06:30." to "The alarm time is invalid. Use a time such as 06:30.",
+                      "Angka perhitungan tidak terbaca." to "The calculation numbers could not be read.",
+                      "Tidak bisa membagi dengan nol." to "Cannot divide by zero.",
+                      "Hasil perhitungan terlalu besar." to "The calculation result is too large.",
+                      "Aplikasi kalkulator tidak ditemukan" to "Calculator app not found.",
+                      "Aplikasi YouTube tidak ditemukan" to "YouTube app not found.",
+                      "Membuka aplikasi pesan dengan draf SMS. Periksa nomor dan isi pesan sebelum mengirim." to "Opening the messaging app with an SMS draft. Check the number and message before sending.",
+                      "Nomor atau isi SMS belum lengkap. Ucapkan: kirim SMS ke nomor, isi pesan." to "The phone number or SMS message is incomplete. Say: send SMS to number, message.",
+                      "Halaman informasi aplikasi tidak dapat dibuka." to "The app information page could not be opened.",
+                      "Pengaturan notifikasi aplikasi tidak dapat dibuka." to "The app notification settings could not be opened.",
+                      "Izin mikrofon untuk M Asisten sudah diberikan." to "Microphone permission has been granted to M Asisten.",
+                      "Izin mikrofon untuk M Asisten belum diberikan. Fitur perintah suara memerlukan izin ini." to "Microphone permission has not been granted to M Asisten. Voice commands require this permission.",
+                      "Maaf, status izin mikrofon tidak dapat diperiksa." to "Sorry, microphone permission status could not be checked.",
+                      "Izin tampil di atas aplikasi untuk M Asisten sudah diberikan. Tombol mengambang dapat ditampilkan." to "Display-over-other-apps permission has been granted to M Asisten. The floating button can be shown.",
+                      "Izin tampil di atas aplikasi untuk M Asisten belum diberikan. Tombol mengambang memerlukan izin ini." to "Display-over-other-apps permission has not been granted to M Asisten. The floating button requires this permission.",
+                      "Maaf, status izin tampilan di atas aplikasi tidak dapat diperiksa." to "Sorry, display-over-other-apps permission status could not be checked.",
+                      "Izin mengubah pengaturan sistem untuk M Asisten sudah diberikan. Pengaturan seperti kecerahan layar dapat diubah." to "Permission to modify system settings has been granted to M Asisten. Settings such as screen brightness can be changed.",
+                      "Izin mengubah pengaturan sistem untuk M Asisten belum diberikan. Fitur pengaturan seperti kecerahan layar memerlukan izin ini." to "Permission to modify system settings has not been granted to M Asisten. Features such as screen brightness require this permission.",
+                      "Maaf, status izin mengubah pengaturan sistem tidak dapat diperiksa." to "Sorry, system settings permission status could not be checked.",
+                      "M Asisten dikecualikan dari optimasi baterai. Sistem tidak menerapkan pembatasan optimasi baterai pada aplikasi ini." to "M Asisten is exempt from battery optimization. The system will not apply battery optimization restrictions to this app.",
+                      "M Asisten masih mengikuti optimasi baterai Android. Sistem dapat membatasi aktivitas latar belakang aplikasi." to "M Asisten is still subject to Android battery optimization. The system may restrict background activity.",
+                      "Maaf, status optimasi baterai tidak dapat diperiksa." to "Sorry, battery optimization status could not be checked.",
+                      "Maaf, status notifikasi aplikasi tidak dapat dibaca." to "Sorry, app notification status could not be read.",
+                      "Kartu SD eksternal tidak terdeteksi pada perangkat ini." to "No external SD card was detected on this device.",
+                      "Maaf, status kartu SD tidak dapat diperiksa." to "Sorry, SD card status could not be checked.",
+                      "Tidak ditemukan sensor utama yang didukung pada perangkat ini." to "No supported primary sensors were found on this device.",
+                      "Maaf, daftar sensor perangkat tidak dapat dibaca." to "Sorry, the device sensor list could not be read.",
+                      "Maaf, informasi resolusi layar tidak dapat dibaca." to "Sorry, screen resolution information could not be read.",
+                      "Maaf, pengaturan waktu layar mati tidak dapat dibaca." to "Sorry, screen timeout settings could not be read.",
+                      "Maaf, status suara dan getaran tidak dapat dibaca." to "Sorry, sound and vibration status could not be read.",
+                      "Informasi refresh rate layar tidak tersedia." to "Screen refresh rate information is unavailable.",
+                      "Maaf, refresh rate layar tidak dapat dibaca." to "Sorry, screen refresh rate could not be read.",
+                      "Maaf, status rotasi otomatis layar tidak dapat dibaca." to "Sorry, automatic screen rotation status could not be read.",
+                      "Layanan lokasi perangkat sedang aktif." to "Device location services are on.",
+                      "Layanan lokasi perangkat sedang nonaktif." to "Device location services are off.",
+                      "Status layanan lokasi tidak dapat dibaca pada perangkat ini." to "Location services status cannot be read on this device.",
+                      "Mode pesawat sedang aktif." to "Airplane mode is on.",
+                      "Mode pesawat sedang nonaktif." to "Airplane mode is off.",
+                      "Status mode pesawat tidak dapat dibaca pada perangkat ini." to "Airplane mode status cannot be read on this device.",
+                      "Perangkat ini tidak memiliki fitur NFC." to "This device does not have NFC.",
+                      "NFC tersedia dan sedang aktif." to "NFC is available and turned on.",
+                      "NFC tersedia, tetapi sedang nonaktif." to "NFC is available but turned off.",
+                      "Status NFC tidak dapat dibaca pada perangkat ini." to "NFC status cannot be read on this device.",
+                      "Belum ada aplikasi yang dapat ditampilkan" to "There are no apps to display yet.",
+                      "Daftar aplikasi tidak dapat dibaca oleh Android" to "Android could not read the app list.",
+                      "Aplikasi kamera tidak dapat dibuka" to "The camera app could not be opened.",
+                      "Aplikasi pesan/SMS tidak dapat dibuka" to "The messaging/SMS app could not be opened.",
+                      "Pengaturan hotspot tidak dapat dibuka" to "Hotspot settings could not be opened.",
+                      "Izin perubahan kecerahan tidak dapat dibuka" to "Brightness permission settings could not be opened.",
+                      "Kecerahan tidak berhasil diubah" to "Brightness could not be changed.",
+                      "Kecerahan tidak dapat diubah. Periksa izin aplikasi." to "Brightness cannot be changed. Check the app permissions.",
+                      "Pengaturan tidak dapat dibuka" to "Settings could not be opened.",
+                      "Aplikasi ini khusus VIP. Hubungkan akun Google dan aktifkan VIP." to "This app is for VIP members only. Connect a Google account and activate VIP.",
+                      "Aplikasi ini khusus VIP. Aktifkan VIP untuk membukanya." to "This app is for VIP members only. Activate VIP to open it.",
+                      "Akses VIP belum dapat diverifikasi. Periksa koneksi internet atau status keanggotaan." to "VIP access could not be verified. Check your internet connection or membership status.",
+                      "Memeriksa akses VIP..." to "Checking VIP access...",
+                      "Aplikasi tidak dapat dibuka" to "The app could not be opened.",
+                      "Aplikasi tidak ditemukan" to "App not found.",
+                      "Izin kamera belum diberikan" to "Camera permission has not been granted.",
+                      "Senter tidak tersedia" to "Flashlight is unavailable.",
+                      "Senter tidak dapat digunakan" to "The flashlight cannot be used."
                   )
+
+                  Regex("^Volume diatur ke (\\d+) persen$").matchEntire(message)?.let {
+                      return "Volume is set to ${it.groupValues[1]} percent."
+                  }
+                  Regex("^Baterai tersisa (\\d+) persen, (.+)\\.$").matchEntire(message)?.let {
+                      val state = it.groupValues[2]
+                          .replace("sedang diisi", "charging")
+                          .replace("tidak sedang diisi", "not charging")
+                      return "Battery is at ${it.groupValues[1]} percent, $state."
+                  }
+                  Regex("^Perangkat sudah aktif selama (.+)\\.$").matchEntire(message)?.let {
+                      return "The device has been active for ${it.groupValues[1]}."
+                  }
+                  Regex("^Perangkat sudah menyala selama (.+) sejak terakhir dinyalakan atau dimulai ulang\\.$").matchEntire(message)?.let {
+                      return "The device has been powered on for ${it.groupValues[1]} since it was last started or restarted."
+                  }
+                  Regex("^Keyboard utama perangkat saat ini adalah (.+)\\.$").matchEntire(message)?.let {
+                      return "The current default keyboard on this device is ${it.groupValues[1]}."
+                  }
+                  Regex("^Status keamanan: (.+)\\. Status saat ini: (.+)\\.$").matchEntire(message)?.let {
+                      return "Security status: ${it.groupValues[1]}. Current status: ${it.groupValues[2]}."
+                  }
+                  Regex("^Format jam perangkat: (.+)\\. Format tanggal: (.+)\\.$").matchEntire(message)?.let {
+                      return "Device time format: ${it.groupValues[1]}. Date format: ${it.groupValues[2]}."
+                  }
+                  Regex("^Patch keamanan Android perangkat ini: (.+)\\.$").matchEntire(message)?.let {
+                      return "This device's Android security patch: ${it.groupValues[1]}."
+                  }
+                  Regex("^Teknologi baterai yang dilaporkan perangkat adalah (.+)\\.$").matchEntire(message)?.let {
+                      return "The battery technology reported by the device is ${it.groupValues[1]}."
+                  }
+                  Regex("^Bluetooth sedang (aktif|nonaktif)\\.$").matchEntire(message)?.let {
+                      return if (it.groupValues[1] == "aktif") "Bluetooth is on." else "Bluetooth is off."
+                  }
+                  Regex("^Jumlah siklus pengisian baterai yang dilaporkan perangkat adalah (\\d+) kali\\.$").matchEntire(message)?.let {
+                      return "The device reports ${it.groupValues[1]} battery charge cycles."
+                  }
+                  Regex("^Android mencatat perangkat sudah melakukan boot atau restart sebanyak (\\d+) kali sejak reset pabrik\\.$").matchEntire(message)?.let {
+                      return "Android reports that this device has booted or restarted ${it.groupValues[1]} times since the factory reset."
+                  }
+                  Regex("^Ukuran teks sistem saat ini (\\d+) persen, (.+)\\.$").matchEntire(message)?.let {
+                      return "The current system text size is ${it.groupValues[1]} percent, ${it.groupValues[2]}."
+                  }
+                  Regex("^Informasi (.+) tidak dapat dibaca\\.$").matchEntire(message)?.let {
+                      return "The ${it.groupValues[1]} information could not be read."
+                  }
 
                   Regex("^Volume diatur ke (\\d+) persen$").matchEntire(message)?.let {
                       return "Volume is set to ${it.groupValues[1]} percent."
