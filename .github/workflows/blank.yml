@@ -889,12 +889,78 @@ jobs:
               }
           }
 
+          private fun mAsistenUiText(id: String, english: Boolean): String {
+              if (!english) return id
+              return mapOf(
+                  "Asisten suara pintar Anda" to "Your smart voice assistant",
+                  "Selamat Datang" to "Welcome",
+                  "Masuk dengan akun Google untuk melanjutkan ke beranda M Asisten." to "Sign in with your Google account to continue to the M Asisten home screen.",
+                  "Menghubungkan akun..." to "Connecting account...",
+                  "Masuk dengan Google" to "Continue with Google",
+                  "Dengan masuk, Anda dapat menggunakan paket Standar dan mengelola keanggotaan VIP+." to "Sign in to use the Standard plan and manage your VIP+ membership.",
+                  "Ketentuan Layanan  •  Kebijakan Privasi" to "Terms of Service  •  Privacy Policy",
+                  "DIBUAT DI INDONESIA" to "MADE IN INDONESIA",
+                  "Semua jadi lebih mudah." to "Everything made easier.",
+                  "Kendalikan ponselmu cukup dengan suara." to "Control your phone with just your voice.",
+                  "MULAI GUNAKAN ASISTEN" to "START USING ASSISTANT",
+                  "🎙   AKTIFKAN WIDGET" to "🎙   ACTIVATE WIDGET",
+                  "TINGKATKAN KE VIP" to "UPGRADE TO VIP",
+                  "Buka semua aplikasi dengan perintah suara" to "Open all apps with voice commands",
+                  "Mulai Rp15.000 / 7 hari" to "Starting at Rp15,000 / 7 days",
+                  "LIHAT PAKET VIP" to "VIEW VIP PLANS",
+                  "PAKET APLIKASI STANDAR" to "STANDARD APP PACKAGE",
+                  "Perintah suara untuk fitur dan aplikasi bawaan ponsel:" to "Voice commands for built-in phone features and apps:",
+                  "Telepon dan kontak" to "Phone and contacts",
+                  "Pesan dan SMS" to "Messages and SMS",
+                  "Kamera dan perekam video" to "Camera and video recorder",
+                  "Galeri dan foto" to "Gallery and photos",
+                  "Peramban internet" to "Internet browser",
+                  "Peta dan navigasi" to "Maps and navigation",
+                  "Kalender dan alarm" to "Calendar and alarms",
+                  "Senter dan lampu kilat" to "Flashlight and torch",
+                  "Wi-Fi, Bluetooth, dan hotspot" to "Wi-Fi, Bluetooth, and hotspot",
+                  "Volume, kecerahan, dan pengaturan ponsel" to "Volume, brightness, and phone settings",
+                  "Paket Standar berfokus pada aplikasi bawaan dan kendali dasar ponsel." to "The Standard plan focuses on built-in apps and basic phone controls.",
+                  "PAKET APLIKASI VIP" to "VIP APP PACKAGE",
+                  "Dapat membuka semua aplikasi terpasang yang memiliki ikon aplikasi dan dapat dijalankan Android." to "Can open installed apps that have an app icon and can be launched by Android.",
+                  "Contoh aplikasi:" to "Example apps:",
+                  "WhatsApp, Instagram, Facebook, YouTube, Chrome, Google Maps, Gmail, TikTok, Telegram, Spotify, dan aplikasi lain yang tersedia di ponsel." to "WhatsApp, Instagram, Facebook, YouTube, Chrome, Google Maps, Gmail, TikTok, Telegram, Spotify, and other apps available on your phone.",
+                  "KEBIJAKAN & PRIVASI" to "POLICY & PRIVACY",
+                  "PANEL ADMIN VIP" to "VIP ADMIN PANEL",
+                  "Cocokkan pembayaran dengan mutasi SeaBank secara manual sebelum verifikasi." to "Manually match the payment with the SeaBank transaction record before approval.",
+                  "SIMULASI MASA AKTIF VIP" to "VIP MEMBERSHIP PERIOD SIMULATION",
+                  "Uji hitungan 3 paket secara lokal. Tidak membuat transaksi, tidak mengubah Firestore, dan tidak mengaktifkan akun." to "Test the duration calculations for 3 plans locally. This does not create a transaction, change Firestore, or activate an account.",
+                  "UJI HITUNG SEMUA PAKET" to "TEST ALL PLAN CALCULATIONS",
+                  "VERIFIKASI" to "APPROVE",
+                  "TOLAK" to "REJECT",
+                  "SIMULASI AKTIFKAN VIP 7 HARI (BUKAN PEMBAYARAN)" to "SIMULATE 7-DAY VIP ACTIVATION (NOT A PAYMENT)",
+                  "STATUS KEANGGOTAAN" to "MEMBERSHIP STATUS",
+                  "G   LANJUTKAN DENGAN GOOGLE" to "G   CONTINUE WITH GOOGLE",
+                  "KELUAR AKUN" to "SIGN OUT",
+                  "KEUNTUNGAN VIP" to "VIP BENEFITS",
+                  "PILIHAN PAKET" to "PLAN OPTIONS",
+                  "PEMBAYARAN TRANSFER BANK" to "BANK TRANSFER PAYMENT",
+                  "Nomor rekening" to "Account number",
+                  "Nama penerima: M Asisten" to "Recipient name: M Asisten",
+                  "Nama pemilik rekening terdaftar: Muhamad Soleh" to "Registered account holder: Muhamad Soleh",
+                  "BUKTI PEMBAYARAN" to "PAYMENT PROOF",
+                  "Siapkan bukti transfer yang jelas untuk dilampirkan saat mengirim konfirmasi kepada admin. Fitur lampiran langsung di aplikasi belum tersedia, jadi kirimkan bukti melalui saluran admin resmi." to "Prepare a clear transfer receipt to share with the admin when submitting your confirmation. Direct attachments are not yet supported in the app, so send the receipt through the official admin channel.",
+                  "Nama pengirim sesuai rekening" to "Sender name as shown on bank account",
+                  "Nomor referensi transfer (opsional)" to "Transfer reference number (optional)",
+                  "KIRIM KONFIRMASI TRANSFER" to "SUBMIT TRANSFER CONFIRMATION",
+                  "TUTUP" to "CLOSE",
+                  "KEBIJAKAN PRIVASI M ASISTEN" to "M ASISTEN PRIVACY POLICY",
+                  "Ketuk setiap bagian untuk membaca penjelasan lengkap mengenai data, izin, akun, dan layanan yang digunakan M Asisten." to "Tap each section to read details about the data, permissions, accounts, and services used by M Asisten"
+              )[id] ?: id
+          }
+
           @Composable
           private fun MAsistenLoginScreen(
               message: String,
               isLoading: Boolean,
               onGoogleSignIn: () -> Unit
           ) {
+              val isEnglish = Locale.getDefault().language.equals("en", ignoreCase = true)
               BoxWithConstraints(
                   modifier = Modifier
                       .fillMaxSize()
@@ -922,9 +988,9 @@ jobs:
                           contentScale = ContentScale.Fit
                       )
                       Spacer(Modifier.height(22.dp))
-                      Text("M Asisten", color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.ExtraBold)
+                      Text(mAsistenUiText("M Asisten", isEnglish), color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.ExtraBold)
                       Spacer(Modifier.height(8.dp))
-                      Text("Asisten suara pintar Anda", color = Color(0xFF9DB2C9), fontSize = 15.sp, textAlign = TextAlign.Center)
+                      Text(mAsistenUiText("Asisten suara pintar Anda", isEnglish), color = Color(0xFF9DB2C9), fontSize = 15.sp, textAlign = TextAlign.Center)
                       Spacer(Modifier.height(34.dp))
                       Surface(
                           modifier = Modifier.fillMaxWidth(),
@@ -936,7 +1002,7 @@ jobs:
                               modifier = Modifier.padding(24.dp),
                               horizontalAlignment = Alignment.CenterHorizontally
                           ) {
-                              Text("Selamat Datang", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                              Text(mAsistenUiText("Selamat Datang", isEnglish), color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
                               Spacer(Modifier.height(8.dp))
                               Text(
                                   "Masuk dengan akun Google untuk melanjutkan ke beranda M Asisten.",
@@ -965,16 +1031,16 @@ jobs:
                                           color = Color(0xFF397BFF)
                                       )
                                       Spacer(Modifier.width(12.dp))
-                                      Text("Menghubungkan akun...")
+                                      Text(mAsistenUiText("Menghubungkan akun...", isEnglish))
                                   } else {
                                       Box(
                                           modifier = Modifier.size(25.dp).clip(CircleShape).background(Color(0xFFF1F4F8)),
                                           contentAlignment = Alignment.Center
                                       ) {
-                                          Text("G", color = Color(0xFF4285F4), fontSize = 18.sp, fontWeight = FontWeight.Black)
+                                          Text(mAsistenUiText("G", isEnglish), color = Color(0xFF4285F4), fontSize = 18.sp, fontWeight = FontWeight.Black)
                                       }
                                       Spacer(Modifier.width(12.dp))
-                                      Text("Masuk dengan Google", fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                                      Text(mAsistenUiText("Masuk dengan Google", isEnglish), fontSize = 15.sp, fontWeight = FontWeight.Bold)
                                   }
                               }
                               if (message.isNotBlank() && message != "Silakan masuk untuk melanjutkan.") {
@@ -1013,6 +1079,7 @@ jobs:
               onGoogleSignIn: () -> Unit,
               onLogout: () -> Unit
           ) {
+              val isEnglish = Locale.getDefault().language.equals("en", ignoreCase = true)
               var showVipPlus by remember { mutableStateOf(false) }
               var selectedVipPlan by remember { mutableStateOf("VIP+ Bulanan (30 hari)") }
               var payerName by remember { mutableStateOf("") }
@@ -1177,7 +1244,7 @@ jobs:
                               modifier = Modifier.padding(20.dp),
                               horizontalAlignment = Alignment.CenterHorizontally
                           ) {
-                              Text("MULAI GUNAKAN ASISTEN", color = Muted, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.3.sp)
+                              Text(mAsistenUiText("MULAI GUNAKAN ASISTEN", isEnglish), color = Muted, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.3.sp)
                               Spacer(Modifier.height(14.dp))
                               Button(
                                   onClick = onActivate,
@@ -1188,7 +1255,7 @@ jobs:
                                       contentColor = Navy
                                   )
                               ) {
-                                  Text("🎙   AKTIFKAN WIDGET", fontSize = 15.sp, fontWeight = FontWeight.ExtraBold)
+                                  Text(mAsistenUiText("🎙   AKTIFKAN WIDGET", isEnglish), fontSize = 15.sp, fontWeight = FontWeight.ExtraBold)
                               }
                               Spacer(Modifier.height(12.dp))
                               Text(message, color = if (message.contains("diaktifkan")) Cyan else Muted, fontSize = 12.sp, textAlign = TextAlign.Center)
@@ -1217,12 +1284,12 @@ jobs:
                           Column(modifier = Modifier.padding(18.dp)) {
                               Row(verticalAlignment = Alignment.CenterVertically) {
                                   Column(modifier = Modifier.weight(1f)) {
-                                      Text("TINGKATKAN KE VIP", color = if (isVipPlus) premiumGold else Cyan, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp)
+                                      Text(mAsistenUiText("TINGKATKAN KE VIP", isEnglish), color = if (isVipPlus) premiumGold else Cyan, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp)
                                       Spacer(Modifier.height(5.dp))
-                                      Text("Buka semua aplikasi dengan perintah suara", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                                      Text("Mulai Rp15.000 / 7 hari", color = Muted, fontSize = 11.sp)
+                                      Text(mAsistenUiText("Buka semua aplikasi dengan perintah suara", isEnglish), color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                                      Text(mAsistenUiText("Mulai Rp15.000 / 7 hari", isEnglish), color = Muted, fontSize = 11.sp)
                                   }
-                                  Text("VIP", color = if (isVipPlus) premiumGold else Cyan, fontSize = 25.sp, fontWeight = FontWeight.ExtraBold)
+                                  Text(mAsistenUiText("VIP", isEnglish), color = if (isVipPlus) premiumGold else Cyan, fontSize = 25.sp, fontWeight = FontWeight.ExtraBold)
                               }
                               Spacer(Modifier.height(12.dp))
                               Button(
@@ -1234,7 +1301,7 @@ jobs:
                                   ),
                                   shape = RoundedCornerShape(13.dp)
                               ) {
-                                  Text("LIHAT PAKET VIP", fontWeight = FontWeight.ExtraBold)
+                                  Text(mAsistenUiText("LIHAT PAKET VIP", isEnglish), fontWeight = FontWeight.ExtraBold)
                               }
                           }
                       }
@@ -1260,13 +1327,13 @@ jobs:
                       ) {
                           Column(modifier = Modifier.fillMaxWidth().padding(20.dp)) {
                               Row(verticalAlignment = Alignment.CenterVertically) {
-                                  Text("PAKET APLIKASI STANDAR", color = if (isVipPlus) premiumGold else Cyan, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, style = if (isVipPlus) vipTitleStyle else androidx.compose.ui.text.TextStyle.Default)
+                                  Text(mAsistenUiText("PAKET APLIKASI STANDAR", isEnglish), color = if (isVipPlus) premiumGold else Cyan, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, style = if (isVipPlus) vipTitleStyle else androidx.compose.ui.text.TextStyle.Default)
                                   Spacer(Modifier.weight(1f))
                                   Text(if (showStandardApps) "⌃" else "⌄", color = if (isVipPlus) premiumGold else Cyan, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                               }
                               if (showStandardApps) {
                                   Spacer(Modifier.height(10.dp))
-                                  Text("Perintah suara untuk fitur dan aplikasi bawaan ponsel:", color = Color.White, fontSize = 12.sp, lineHeight = 18.sp)
+                                  Text(mAsistenUiText("Perintah suara untuk fitur dan aplikasi bawaan ponsel:", isEnglish), color = Color.White, fontSize = 12.sp, lineHeight = 18.sp)
                                   Spacer(Modifier.height(10.dp))
                                   listOf(
                                   "Telepon dan kontak",
@@ -1281,13 +1348,13 @@ jobs:
                                   "Volume, kecerahan, dan pengaturan ponsel"
                               ).forEach { app ->
                                   Row(modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp), verticalAlignment = Alignment.Top) {
-                                      Text("•", color = if (isVipPlus) premiumGold else Cyan, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                      Text(mAsistenUiText("•", isEnglish), color = if (isVipPlus) premiumGold else Cyan, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                                       Spacer(Modifier.width(8.dp))
                                       Text(app, color = Color.White, fontSize = 12.sp, lineHeight = 17.sp)
                                   }
                               }
                               Spacer(Modifier.height(8.dp))
-                                  Text("Paket Standar berfokus pada aplikasi bawaan dan kendali dasar ponsel.", color = Muted, fontSize = 10.sp, lineHeight = 15.sp)
+                                  Text(mAsistenUiText("Paket Standar berfokus pada aplikasi bawaan dan kendali dasar ponsel.", isEnglish), color = Muted, fontSize = 10.sp, lineHeight = 15.sp)
                               }
                           }
                       }
@@ -1311,7 +1378,7 @@ jobs:
                       ) {
                           Column(modifier = Modifier.fillMaxWidth().padding(20.dp)) {
                               Row(verticalAlignment = Alignment.CenterVertically) {
-                                  Text("PAKET APLIKASI VIP", color = if (isVipPlus) premiumGold else Cyan, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, style = if (isVipPlus) vipTitleStyle else androidx.compose.ui.text.TextStyle.Default)
+                                  Text(mAsistenUiText("PAKET APLIKASI VIP", isEnglish), color = if (isVipPlus) premiumGold else Cyan, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, style = if (isVipPlus) vipTitleStyle else androidx.compose.ui.text.TextStyle.Default)
                                   Spacer(Modifier.weight(1f))
                                   Text(if (showVipApps) "⌃" else "⌄", color = if (isVipPlus) premiumGold else Cyan, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                               }
@@ -1319,11 +1386,11 @@ jobs:
                                   Spacer(Modifier.height(10.dp))
 
                               Spacer(Modifier.height(8.dp))
-                              Text("Dapat membuka semua aplikasi terpasang yang memiliki ikon aplikasi dan dapat dijalankan Android.", color = Color.White, fontSize = 12.sp, lineHeight = 18.sp)
+                              Text(mAsistenUiText("Dapat membuka semua aplikasi terpasang yang memiliki ikon aplikasi dan dapat dijalankan Android.", isEnglish), color = Color.White, fontSize = 12.sp, lineHeight = 18.sp)
                               Spacer(Modifier.height(10.dp))
-                              Text("Contoh aplikasi:", color = Muted, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                              Text(mAsistenUiText("Contoh aplikasi:", isEnglish), color = Muted, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                               Spacer(Modifier.height(5.dp))
-                              Text("WhatsApp, Instagram, Facebook, YouTube, Chrome, Google Maps, Gmail, TikTok, Telegram, Spotify, dan aplikasi lain yang tersedia di ponsel.", color = Color.White, fontSize = 12.sp, lineHeight = 18.sp)
+                              Text(mAsistenUiText("WhatsApp, Instagram, Facebook, YouTube, Chrome, Google Maps, Gmail, TikTok, Telegram, Spotify, dan aplikasi lain yang tersedia di ponsel.", isEnglish), color = Color.White, fontSize = 12.sp, lineHeight = 18.sp)
                               Spacer(Modifier.height(8.dp))
                               }
                           }
@@ -1338,7 +1405,7 @@ jobs:
                               .padding(vertical = 14.dp, horizontal = 12.dp),
                           verticalAlignment = Alignment.CenterVertically
                       ) {
-                          Text("KEBIJAKAN & PRIVASI", modifier = Modifier.weight(1f), color = if (isVipPlus) premiumGold else Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold, style = if (isVipPlus) vipTitleStyle else androidx.compose.ui.text.TextStyle.Default)
+                          Text(mAsistenUiText("KEBIJAKAN & PRIVASI", isEnglish), modifier = Modifier.weight(1f), color = if (isVipPlus) premiumGold else Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold, style = if (isVipPlus) vipTitleStyle else androidx.compose.ui.text.TextStyle.Default)
                           Text(if (showPrivacyPolicy) "⌃" else "⌄", color = if (isVipPlus) premiumGold else Cyan, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                       }
                       Spacer(Modifier.height(12.dp))
@@ -1477,8 +1544,8 @@ jobs:
                           colors = CardDefaults.cardColors(containerColor = Color(0xFF0D2932)),
                                           border = androidx.compose.foundation.BorderStroke(1.dp, Cyan)) {
                                           Column(Modifier.padding(12.dp)) {
-                                              Text("PANEL ADMIN VIP", color = Cyan, fontWeight = FontWeight.ExtraBold)
-                                              Text("Cocokkan pembayaran dengan mutasi SeaBank secara manual sebelum verifikasi.", color = Muted, fontSize = 10.sp)
+                                              Text(mAsistenUiText("PANEL ADMIN VIP", isEnglish), color = Cyan, fontWeight = FontWeight.ExtraBold)
+                                              Text(mAsistenUiText("Cocokkan pembayaran dengan mutasi SeaBank secara manual sebelum verifikasi.", isEnglish), color = Muted, fontSize = 10.sp)
                                               Card(
                                                   Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 8.dp),
                                                   // Elevasi berlapis memberi kesan panel 3D tanpa mengganti warna asli.
@@ -1490,8 +1557,8 @@ jobs:
                                                   border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF547087))
                                               ) {
                                                   Column(Modifier.padding(10.dp)) {
-                                                      Text("SIMULASI MASA AKTIF VIP", color = Cyan, fontWeight = FontWeight.Bold, fontSize = 11.sp)
-                                                      Text("Uji hitungan 3 paket secara lokal. Tidak membuat transaksi, tidak mengubah Firestore, dan tidak mengaktifkan akun.", color = Muted, fontSize = 10.sp, lineHeight = 15.sp)
+                                                      Text(mAsistenUiText("SIMULASI MASA AKTIF VIP", isEnglish), color = Cyan, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                                                      Text(mAsistenUiText("Uji hitungan 3 paket secara lokal. Tidak membuat transaksi, tidak mengubah Firestore, dan tidak mengaktifkan akun.", isEnglish), color = Muted, fontSize = 10.sp, lineHeight = 15.sp)
                                                       OutlinedButton(
                                                           onClick = {
                                                               val nowMillis = System.currentTimeMillis()
@@ -1520,7 +1587,7 @@ jobs:
                                                           },
                                                           modifier = Modifier.fillMaxWidth()
                                                       ) {
-                                                          Text("UJI HITUNG SEMUA PAKET", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                                          Text(mAsistenUiText("UJI HITUNG SEMUA PAKET", isEnglish), fontSize = 10.sp, fontWeight = FontWeight.Bold)
                                                       }
                                                       if (simulationMessage.isNotBlank()) {
                                                           Text(simulationMessage, color = Color.White, fontSize = 10.sp, lineHeight = 16.sp)
@@ -1562,7 +1629,7 @@ jobs:
                           colors = CardDefaults.cardColors(containerColor = Panel)) {
                                                       Column(Modifier.padding(8.dp)) {
                                                           Text(info.replace("VIP+", "VIP"), color = Color.White, fontSize = 10.sp)
-                                                          Text("ID: $id", color = Muted, fontSize = 8.sp)
+                                                          Text(mAsistenUiText("ID: $id", isEnglish), color = Muted, fontSize = 8.sp)
                                                           Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                                               Button(onClick = {
                                                                   val operator = FirebaseAuth.getInstance().currentUser
@@ -1594,7 +1661,7 @@ jobs:
                                                                       null
                                                                   }.addOnSuccessListener { adminBusy = false; adminItems = adminItems.filterNot { it.first == id }; adminMessage = "VIP berhasil diaktifkan." }
                                                                       .addOnFailureListener { e -> adminBusy = false; adminMessage = "Gagal verifikasi: ${e.localizedMessage}" }
-                                                              }, enabled = !adminBusy, modifier = Modifier.weight(1f)) { Text("VERIFIKASI", fontSize = 9.sp) }
+                                                              }, enabled = !adminBusy, modifier = Modifier.weight(1f)) { Text(mAsistenUiText("VERIFIKASI", isEnglish), fontSize = 9.sp) }
                                                               OutlinedButton(onClick = {
                                                                   val operator = FirebaseAuth.getInstance().currentUser
                                                                   if (operator == null || adminBusy) { adminMessage = "Sesi admin tidak tersedia."; return@OutlinedButton }
@@ -1607,7 +1674,7 @@ jobs:
                                                                       null
                                                                   }.addOnSuccessListener { adminBusy = false; adminItems = adminItems.filterNot { it.first == id }; adminMessage = "Permintaan ditolak." }
                                                                       .addOnFailureListener { e -> adminBusy = false; adminMessage = "Gagal menolak: ${e.localizedMessage}" }
-                                                              }, enabled = !adminBusy, modifier = Modifier.weight(1f)) { Text("TOLAK", fontSize = 9.sp) }
+                                                              }, enabled = !adminBusy, modifier = Modifier.weight(1f)) { Text(mAsistenUiText("TOLAK", isEnglish), fontSize = 9.sp) }
                                                           }
                                                           if (info.contains("Referensi: test", ignoreCase = true)) {
                                                               OutlinedButton(
@@ -1641,7 +1708,7 @@ jobs:
                                                                   },
                                                                   enabled = !adminBusy,
                                                                   modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
-                                                              ) { Text("SIMULASI AKTIFKAN VIP 7 HARI (BUKAN PEMBAYARAN)", fontSize = 9.sp) }
+                                                              ) { Text(mAsistenUiText("SIMULASI AKTIFKAN VIP 7 HARI (BUKAN PEMBAYARAN)", isEnglish), fontSize = 9.sp) }
                                                           }
                                                       }
                                                   }
@@ -1672,7 +1739,7 @@ jobs:
                                           verticalAlignment = Alignment.CenterVertically
                                       ) {
                                           Column {
-                                              Text("STATUS KEANGGOTAAN", color = Muted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                              Text(mAsistenUiText("STATUS KEANGGOTAAN", isEnglish), color = Muted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                                               Spacer(Modifier.height(3.dp))
                                               Text(if (googleAccountEmail.isBlank()) "Hubungkan akun Google untuk memulai" else googleAccountName + " • " + vipMembershipStatus.replace("VIP+", "VIP"), color = Color.White, fontSize = 11.sp)
                                           }
@@ -1684,21 +1751,21 @@ jobs:
                                   if (googleAccountEmail.isBlank()) {
                                       Button(onClick = onGoogleSignIn, modifier = Modifier.fillMaxWidth(),
                                           colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color(0xFF202124))) {
-                                          Text("G   LANJUTKAN DENGAN GOOGLE", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                          Text(mAsistenUiText("G   LANJUTKAN DENGAN GOOGLE", isEnglish), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                       }
                                   } else {
-                                      Text("Akun: " + googleAccountEmail, color = Muted, fontSize = 10.sp)
+                                      Text(mAsistenUiText("Akun: ", isEnglish) + googleAccountEmail, color = Muted, fontSize = 10.sp)
                                       Spacer(Modifier.height(8.dp))
                                       OutlinedButton(
                                           onClick = onLogout,
                                           modifier = Modifier.fillMaxWidth(),
                                           colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFFF8A8A))
                                       ) {
-                                          Text("KELUAR AKUN", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                          Text(mAsistenUiText("KELUAR AKUN", isEnglish), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                       }
                                   }
                                   Spacer(Modifier.height(15.dp))
-                                  Text("KEUNTUNGAN VIP", color = Cyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                  Text(mAsistenUiText("KEUNTUNGAN VIP", isEnglish), color = Cyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                   Spacer(Modifier.height(8.dp))
                                   listOf(
                                       "Latar layar beranda VIP dengan tampilan khusus",
@@ -1711,13 +1778,13 @@ jobs:
                                           modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                                           verticalAlignment = Alignment.Top
                                       ) {
-                                          Text("✓", color = Cyan, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
+                                          Text(mAsistenUiText("✓", isEnglish), color = Cyan, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
                                           Spacer(Modifier.width(8.dp))
                                           Text(benefit, color = Color.White, fontSize = 12.sp, lineHeight = 18.sp)
                                       }
                                   }
                                   Spacer(Modifier.height(14.dp))
-                                  Text("PILIHAN PAKET", color = Cyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                  Text(mAsistenUiText("PILIHAN PAKET", isEnglish), color = Cyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                   Spacer(Modifier.height(7.dp))
                                   listOf(
                                       "VIP+ Mingguan (7 hari)" to "Rp15.000",
@@ -1751,10 +1818,10 @@ jobs:
                                       }
                                   }
                                   Spacer(Modifier.height(8.dp))
-                                  Text("Pilihan saat ini: ${selectedVipPlan.replace("VIP+", "VIP")}", color = Color.White, fontSize = 11.sp)
+                                  Text(mAsistenUiText("Pilihan saat ini: ${selectedVipPlan.replace(", isEnglish)VIP+", "VIP")}", color = Color.White, fontSize = 11.sp)
                                   Spacer(Modifier.height(10.dp))
                                   Spacer(Modifier.height(12.dp))
-                                  Text("PEMBAYARAN TRANSFER BANK", color = Cyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                  Text(mAsistenUiText("PEMBAYARAN TRANSFER BANK", isEnglish), color = Cyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                   Spacer(Modifier.height(7.dp))
                                   Card(
                                       modifier = Modifier.fillMaxWidth(),
@@ -1767,13 +1834,13 @@ jobs:
                                       shape = RoundedCornerShape(12.dp)
                                   ) {
                                       Column(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
-                                          Text("SeaBank", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                          Text(mAsistenUiText("SeaBank", isEnglish), color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                                           Spacer(Modifier.height(5.dp))
-                                          Text("Nomor rekening", color = Muted, fontSize = 10.sp)
-                                          Text("901023118338", color = Cyan, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
+                                          Text(mAsistenUiText("Nomor rekening", isEnglish), color = Muted, fontSize = 10.sp)
+                                          Text(mAsistenUiText("901023118338", isEnglish), color = Cyan, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
                                           Spacer(Modifier.height(5.dp))
-                                          Text("Nama penerima: M Asisten", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                                          Text("Nama pemilik rekening terdaftar: Muhamad Soleh", color = Muted, fontSize = 10.sp)
+                                          Text(mAsistenUiText("Nama penerima: M Asisten", isEnglish), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                          Text(mAsistenUiText("Nama pemilik rekening terdaftar: Muhamad Soleh", isEnglish), color = Muted, fontSize = 10.sp)
                                       }
                                   }
                                   Spacer(Modifier.height(8.dp))
@@ -1788,9 +1855,9 @@ jobs:
                                       shape = RoundedCornerShape(12.dp)
                                   ) {
                                       Column(Modifier.fillMaxWidth().padding(12.dp)) {
-                                          Text("BUKTI PEMBAYARAN", color = Cyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                          Text(mAsistenUiText("BUKTI PEMBAYARAN", isEnglish), color = Cyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                           Spacer(Modifier.height(4.dp))
-                                          Text("Siapkan bukti transfer yang jelas untuk dilampirkan saat mengirim konfirmasi kepada admin. Fitur lampiran langsung di aplikasi belum tersedia, jadi kirimkan bukti melalui saluran admin resmi.", color = Color.White, fontSize = 10.sp, lineHeight = 15.sp)
+                                          Text(mAsistenUiText("Siapkan bukti transfer yang jelas untuk dilampirkan saat mengirim konfirmasi kepada admin. Fitur lampiran langsung di aplikasi belum tersedia, jadi kirimkan bukti melalui saluran admin resmi.", isEnglish), color = Color.White, fontSize = 10.sp, lineHeight = 15.sp)
                                       }
                                   }
                                   Spacer(Modifier.height(10.dp))
@@ -1798,7 +1865,7 @@ jobs:
                                       value = payerName,
                                       onValueChange = { payerName = it },
                                       modifier = Modifier.fillMaxWidth(),
-                                      label = { Text("Nama pengirim sesuai rekening") },
+                                      label = { Text(mAsistenUiText("Nama pengirim sesuai rekening", isEnglish)) },
                                       singleLine = true,
                                       enabled = !paymentSubmitting,
                                       colors = OutlinedTextFieldDefaults.colors(
@@ -1814,7 +1881,7 @@ jobs:
                                       value = transferReference,
                                       onValueChange = { transferReference = it },
                                       modifier = Modifier.fillMaxWidth(),
-                                      label = { Text("Nomor referensi transfer (opsional)") },
+                                      label = { Text(mAsistenUiText("Nomor referensi transfer (opsional)", isEnglish)) },
                                       singleLine = true,
                                       enabled = !paymentSubmitting,
                                       colors = OutlinedTextFieldDefaults.colors(
@@ -1888,7 +1955,7 @@ jobs:
                                           CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = Navy)
                                           Spacer(Modifier.width(8.dp))
                                       }
-                                      Text("KIRIM KONFIRMASI TRANSFER", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                      Text(mAsistenUiText("KIRIM KONFIRMASI TRANSFER", isEnglish), fontSize = 10.sp, fontWeight = FontWeight.Bold)
                                   }
                                   if (paymentSubmitMessage.isNotBlank()) {
                                       Spacer(Modifier.height(7.dp))
@@ -1934,7 +2001,7 @@ jobs:
                                       Text(if (historyLoading) "MEMUAT RIWAYAT..." else "RIWAYAT TRANSAKSI", fontSize = 10.sp, fontWeight = FontWeight.Bold)
                                   }
                                   paymentHistory.forEach { item ->
-                                      Text("• $item", color = Color.White, fontSize = 10.sp, lineHeight = 15.sp, modifier = Modifier.padding(vertical = 3.dp))
+                                      Text(mAsistenUiText("• $item", isEnglish), color = Color.White, fontSize = 10.sp, lineHeight = 15.sp, modifier = Modifier.padding(vertical = 3.dp))
                                   }
                                   Text(
                                       "Langkah: pilih paket, transfer sesuai nominal, lalu kirim konfirmasi dengan nama pengirim. Nomor referensi membantu pencocokan transaksi. Ini belum mengunggah bukti transfer. Permintaan akan berstatus menunggu pemeriksaan admin; VIP hanya diaktifkan setelah pembayaran diverifikasi dan status keanggotaan diperbarui oleh server. Jangan mengirim data rahasia seperti PIN, OTP, atau kata sandi.",
@@ -1952,7 +2019,7 @@ jobs:
                                   border = androidx.compose.foundation.BorderStroke(1.dp, Cyan),
                                   shape = RoundedCornerShape(12.dp)
                               ) {
-                                  Text("TUTUP", color = Cyan, fontWeight = FontWeight.Bold)
+                                  Text(mAsistenUiText("TUTUP", isEnglish), color = Cyan, fontWeight = FontWeight.Bold)
                               }
                           }
                       )
