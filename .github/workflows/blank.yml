@@ -170,6 +170,7 @@ jobs:
               <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
               <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
               <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE"/>
+              <uses-permission android:name="android.permission.WAKE_LOCK"/>
               <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
               <uses-permission android:name="com.android.alarm.permission.SET_ALARM"/>
 
@@ -1784,6 +1785,7 @@ jobs:
               private val handler = Handler(Looper.getMainLooper())
               private var listening = false
               private var awaitingWakeWord = true
+              private var vipWakeLock: android.os.PowerManager.WakeLock? = null
 
               private lateinit var layoutParams: WindowManager.LayoutParams
 
@@ -1874,8 +1876,9 @@ jobs:
                   getSharedPreferences("m_widget_mode", MODE_PRIVATE)
                       .edit().putString("active_mode", if (vipMode) MODE_VIP else MODE_STANDARD).apply()
 
-                  // Standar dan VIP+ sama-sama memerlukan foreground service mikrofon.
+                  // Foreground service menjaga sesi mikrofon tetap berjalan.
                   createNotification()
+                  if (vipMode) acquireVipWakeLock() else releaseVipWakeLock()
                   // Mesin suara dan respons TTS tersedia pada kedua mode.
                   initializeVoiceAssistant()
                   if (vipMode) {
@@ -1898,7 +1901,28 @@ jobs:
                   }
               }
 
+              private fun acquireVipWakeLock() {
+                  try {
+                      val powerManager = getSystemService(POWER_SERVICE) as android.os.PowerManager
+                      val lock = vipWakeLock ?: powerManager.newWakeLock(
+                          android.os.PowerManager.PARTIAL_WAKE_LOCK,
+                          "MAsisten:VipVoiceStandby"
+                      ).also { vipWakeLock = it }
+                      if (!lock.isHeld) lock.acquire()
+                  } catch (_: Exception) {
+                      showMessage("Mode siaga VIP aktif, tetapi penghemat daya perangkat dapat membatasi mikrofon.")
+                  }
+              }
+
+              private fun releaseVipWakeLock() {
+                  try {
+                      vipWakeLock?.let { if (it.isHeld) it.release() }
+                  } catch (_: Exception) {}
+                  vipWakeLock = null
+              }
+
               private fun stopCurrentMode() {
+                  releaseVipWakeLock()
                   membershipListener?.remove()
                   membershipListener = null
                   try { speechRecognizer?.cancel() } catch (_: Exception) {}
@@ -2390,7 +2414,11 @@ jobs:
               }
 
               private fun startVoiceRecognition() {
-                  if (listening) return
+                  if (listening || !serviceInitialized) return
+                  if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                      showMessage("Izin mikrofon diperlukan agar mode siaga VIP dapat berjalan.")
+                      return
+                  }
 
                   // Jangan pernah jatuh kembali ke layanan pengenalan suara cloud.
                   // API on-device tersedia mulai Android 12 (API 31).
@@ -2438,13 +2466,14 @@ jobs:
                                       error == SpeechRecognizer.ERROR_NETWORK ||
                                       error == SpeechRecognizer.ERROR_NETWORK_TIMEOUT
                                   )
-                                  if (retryWakeWord || (vipMode &&
-                                      error != SpeechRecognizer.ERROR_AUDIO &&
-                                      error != SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS)
-                                  ) {
+                                  if (vipMode && error != SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS) {
+                                      // SpeechRecognizer menutup sesi setelah timeout atau hasil tertentu.
+                                      // VIP+ selalu membuat sesi baru agar kata pemicu tetap dipantau.
                                       awaitingWakeWord = true
                                       showMessage("Menunggu panggilan Hallo M...", speak = false)
-                                      resumeVipWakeWordListening(if (retryWakeWord) 900L else 1400L)
+                                      resumeVipWakeWordListening(
+                                          if (retryWakeWord) 900L else if (error == SpeechRecognizer.ERROR_AUDIO) 1800L else 1200L
+                                      )
                                       return
                                   }
                                   awaitingWakeWord = false
