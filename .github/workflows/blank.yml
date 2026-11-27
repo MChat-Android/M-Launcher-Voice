@@ -3294,6 +3294,9 @@ jobs:
                   Regex("^Informasi (.+) tidak dapat dibaca\\.$").matchEntire(message)?.let {
                       return "The ${it.groupValues[1]} information could not be read."
                   }
+                  Regex("^Membuka pencarian peta untuk (.+)\\.$").matchEntire(message)?.let {
+                      return "Opening map search for ${it.groupValues[1]}."
+                  }
                   exact[message]?.let { return it }
                   if (message.startsWith("Perintah: ")) return "Command: " + message.removePrefix("Perintah: ")
                   if (message.startsWith("Pengenalan suara gagal (kode ")) {
@@ -3392,6 +3395,8 @@ jobs:
                       Regex("^(phone information|device information|phone model|what is my phone model)$") to "info hp",
                       Regex("^(what language is my phone|phone language|device language|system language)$") to "bahasa perangkat"
                   )
+                  val navigationCommand = Regex("^(navigate to|directions to|route to|take me to) (.+)$").matchEntire(value)
+                  if (navigationCommand != null) return "navigasi ke " + navigationCommand.groupValues[2]
                   val appCommand = Regex("^(open|launch|start) (the )?(whatsapp|instagram|facebook|youtube|chrome|gmail|tiktok|telegram|spotify)$").matchEntire(value)
                   if (appCommand != null) return "buka " + appCommand.groupValues[3]
                   for ((pattern, replacement) in rules) {
@@ -4907,12 +4912,18 @@ jobs:
                   }
 
                   if (text.contains("kalkulator") || text.contains("calculator") ||
-                      text.contains("hitung") || text.startsWith("berapa ") ||
-                      text.startsWith("hasil ")
+                      text.contains("hitung") || text.contains("calculate") ||
+                      text.startsWith("berapa ") || text.startsWith("hasil ") ||
+                      text.startsWith("what is ")
                   ) {
+                      // Mendukung bilangan desimal yang diucapkan dengan kata "koma".
+                      val calculationText = text.replace(
+                          Regex("(\\d+)\\s+koma\\s+(\\d+)"),
+                          "$1.$2"
+                      )
                       val calculation = Regex(
-                          "(\\d+)\\s*(tambah|plus|\\+|dikurangi|kurang|minus|kali|dikali|x|bagi|dibagi)\\s*(\\d+)"
-                      ).find(text)
+                          "(\\d+(?:\\.\\d+)?)\\s*(tambah|plus|\\+|dikurangi|kurang|minus|kali|dikali|multiply|times|x|bagi|dibagi|divide)\\s*(\\d+(?:\\.\\d+)?)"
+                      ).find(calculationText)
 
                       if (calculation != null) {
                           val first = calculation.groupValues[1].toDoubleOrNull()
@@ -4921,13 +4932,13 @@ jobs:
 
                           if (first == null || second == null) {
                               showMessage("Angka perhitungan tidak terbaca.")
-                          } else if ((operation == "bagi" || operation == "dibagi") && second == 0.0) {
+                          } else if ((operation == "bagi" || operation == "dibagi" || operation == "divide") && second == 0.0) {
                               showMessage("Tidak bisa membagi dengan nol.")
                           } else {
                               val result = when (operation) {
                                   "tambah", "plus", "+" -> first + second
                                   "dikurangi", "kurang", "minus" -> first - second
-                                  "kali", "dikali", "x" -> first * second
+                                  "kali", "dikali", "multiply", "times", "x" -> first * second
                                   else -> first / second
                               }
                               if (!result.isFinite()) {
@@ -4961,8 +4972,20 @@ jobs:
                       return
                   }
 
-                  if (text.contains("peta") || text.contains("maps") || text.contains("navigasi") || text.contains("google map")) {
-                      launchIntent(Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=")))
+                  if (text.contains("peta") || text.contains("maps") ||
+                      text.contains("navigasi") || text.contains("google map") ||
+                      text.startsWith("arah ") || text.startsWith("rute ") ||
+                      text.startsWith("cari lokasi ")
+                  ) {
+                      val destination = text.replace(
+                          Regex("^(?:peta|maps|google maps?|navigasi|arah|rute|cari lokasi)(?:\\s+(?:ke|menuju|to))?\\s*"),
+                          ""
+                      ).trim()
+                      val mapQuery = if (destination.isBlank()) "" else Uri.encode(destination)
+                      launchIntent(Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=$mapQuery")))
+                      if (destination.isNotBlank()) {
+                          showMessage("Membuka pencarian peta untuk $destination.")
+                      }
                       return
                   }
 
