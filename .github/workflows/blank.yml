@@ -5506,10 +5506,10 @@ jobs:
           values_dir = Path("app/src/main/res/values")
           values_dir.mkdir(parents=True, exist_ok=True)
           (values_dir / "launcher_icon_colors.xml").write_text(
-              '<?xml version="1.0" encoding="utf-8"?>\\n'
-              '<resources>\\n'
-              '    <color name="launcher_icon_background">#07111F</color>\\n'
-              '</resources>\\n',
+              '<?xml version="1.0" encoding="utf-8"?>\n'
+              '<resources>\n'
+              '    <color name="launcher_icon_background">#07111F</color>\n'
+              '</resources>\n',
               encoding="utf-8"
           )
 
