@@ -2988,10 +2988,58 @@ jobs:
                   }
               }
 
+              private fun normalizeEnglishCommand(command: String): String {
+                  val value = command.lowercase(Locale.US)
+                      .replace(Regex("[^\\p{L}\\p{N}+ ]"), " ")
+                      .replace(Regex("\\s+"), " ")
+                      .trim()
+                  val rules = listOf(
+                      Regex("^(please )?(show|list)( me)? (all )?(installed )?(apps|applications)( please)?$") to "daftar aplikasi",
+                      Regex("^(what time is it|tell me the time|current time|time now)$") to "jam berapa",
+                      Regex("^(what is the date|what is today s date|today s date|what day is it|what date is it)$") to "tanggal hari ini",
+                      Regex("^(turn on|switch on|enable) (the )?(flashlight|torch)$") to "nyalakan senter",
+                      Regex("^(turn off|switch off|disable) (the )?(flashlight|torch)$") to "matikan senter",
+                      Regex("^(increase|raise|turn up) (the )?volume$") to "naikkan volume",
+                      Regex("^(decrease|lower|turn down) (the )?volume$") to "turunkan volume",
+                      Regex("^(mute|silence) (the )?(phone|sound|volume)$") to "matikan suara",
+                      Regex("^(increase|raise|brighten) (the )?screen brightness$") to "naikkan kecerahan layar",
+                      Regex("^(decrease|lower|dim) (the )?screen brightness$") to "turunkan kecerahan layar",
+                      Regex("^(battery status|battery level|how much battery is left|how much battery do i have)$") to "status baterai",
+                      Regex("^(internet status|network status|is the internet connected)$") to "status jaringan",
+                      Regex("^(show|list) (my )?(apps|applications)$") to "daftar aplikasi",
+                      Regex("^(open|launch|start) (the )?(settings|setting)$") to "pengaturan",
+                      Regex("^(open|launch|start) (the )?camera$") to "kamera",
+                      Regex("^(open|launch|start) (the )?(gallery|photos)$") to "galeri",
+                      Regex("^(open|launch|start) (the )?calculator$") to "kalkulator",
+                      Regex("^(open|launch|start) (the )?contacts$") to "kontak",
+                      Regex("^(open|launch|start) (the )?(messages|messaging|sms)$") to "pesan",
+                      Regex("^(open|launch|start) (the )?(phone|dialer)$") to "telepon",
+                      Regex("^(open|launch|start) (the )?calendar$") to "kalender",
+                      Regex("^(open|launch|start) (the )?alarm$") to "alarm",
+                      Regex("^(open|launch|start) (the )?timer$") to "timer",
+                      Regex("^(open|launch|start) (the )?(wi fi|wifi) settings$") to "wifi",
+                      Regex("^(open|launch|start) (the )?bluetooth settings$") to "bluetooth",
+                      Regex("^(phone information|device information|phone model|what is my phone model)$") to "info hp",
+                      Regex("^(what language is my phone|phone language|device language|system language)$") to "bahasa perangkat",
+                      Regex("^(open|launch|start) (whatsapp|instagram|facebook|youtube|chrome|gmail|tiktok|telegram|spotify)$") to "$1 $3"
+                  )
+                  for ((pattern, replacement) in rules) {
+                      val match = pattern.matchEntire(value)
+                      if (match != null) {
+                          if (replacement.contains("$1")) {
+                              val appName = value.substringAfterLast(' ').trim()
+                              return "buka $appName"
+                          }
+                          return replacement
+                      }
+                  }
+                  return command
+              }
+
               private fun executeCommand(command: String) {
                   // Pisahkan perintah berantai hanya pada penghubung urutan yang jelas.
                   val sequenceParts = command
-                      .split(Regex("\\s+(?:lalu|kemudian|setelah itu)\\s+", RegexOption.IGNORE_CASE))
+                      .split(Regex("\\s+(?:lalu|kemudian|setelah itu|then|and then)\\s+", RegexOption.IGNORE_CASE))
                       .map { it.trim() }
                       .filter { it.isNotBlank() }
 
@@ -3015,7 +3063,7 @@ jobs:
                       return
                   }
 
-                  val text = command.lowercase(Locale("id", "ID"))
+                  val text = normalizeEnglishCommand(command).lowercase(Locale("id", "ID"))
                       .replace(Regex("[^\\p{L}\\p{N}+ ]"), " ")
                       .replace(Regex("\\s+"), " ")
                       .trim()
