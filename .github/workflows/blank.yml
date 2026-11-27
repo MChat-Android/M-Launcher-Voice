@@ -3051,8 +3051,109 @@ jobs:
                       "Masalah pada input mikrofon" to "Microphone input problem",
                       "Suara tidak dikenali. Ketuk widget untuk mencoba lagi." to "Speech was not recognized. Tap the widget to try again.",
                       "Membuka pengaturan keyboard perangkat..." to "Opening device keyboard settings...",
-                      "Membuka pengaturan aksesibilitas perangkat..." to "Opening device accessibility settings..."
+                      "Membuka pengaturan aksesibilitas perangkat..." to "Opening device accessibility settings...",
+                      "Saat ini perangkat tidak terhubung ke jaringan." to "The device is currently not connected to a network.",
+                      "Status koneksi internet tidak dapat dibaca." to "The internet connection status could not be read.",
+                      "Lama waktu perangkat aktif tidak dapat dibaca." to "The device uptime could not be read.",
+                      "Informasi perangkat belum dapat dibaca." to "Device information is not available.",
+                      "Informasi RAM perangkat tidak dapat dibaca." to "Device RAM information could not be read.",
+                      "Informasi penyimpanan internal tidak dapat dibaca." to "Internal storage information could not be read.",
+                      "Mode hemat daya sedang aktif." to "Power saving mode is on.",
+                      "Mode hemat daya sedang tidak aktif." to "Power saving mode is off.",
+                      "Status mode hemat daya tidak dapat dibaca." to "Power saving mode status could not be read.",
+                      "Informasi baterai belum tersedia." to "Battery information is not available.",
+                      "Informasi suhu dan kesehatan baterai tidak dapat dibaca." to "Battery temperature and health information could not be read.",
+                      "Informasi kelistrikan baterai belum tersedia." to "Battery electrical information is not available.",
+                      "Tegangan dan arus baterai tidak dapat dibaca." to "Battery voltage and current could not be read.",
+                      "Sumber pengisian baterai belum dapat dibaca." to "The battery charging source could not be read.",
+                      "Maaf, sumber pengisian baterai tidak dapat diperiksa." to "Sorry, the battery charging source could not be checked.",
+                      "Maaf, data kapasitas atau muatan baterai tidak dapat dibaca." to "Sorry, battery capacity or charge data could not be read.",
+                      "Perangkat tidak menyediakan penghitung energi baterai yang dapat dibaca." to "The device does not provide a readable battery energy counter.",
+                      "Maaf, informasi energi baterai tidak dapat dibaca." to "Sorry, battery energy information could not be read.",
+                      "Perangkat tidak menyediakan data jumlah siklus baterai." to "The device does not provide battery cycle count data.",
+                      "Pembacaan status termal memerlukan Android 10 atau lebih baru." to "Reading thermal status requires Android 10 or later.",
+                      "Maaf, status termal perangkat tidak dapat dibaca." to "Sorry, the device thermal status could not be read.",
+                      "Maaf, informasi versi M Launcher Voice tidak dapat dibaca." to "Sorry, the M Asisten app version could not be read.",
+                      "Android tidak melaporkan keyboard utama yang sedang dipilih." to "Android did not report the currently selected default keyboard.",
+                      "Maaf, nama keyboard utama tidak dapat dibaca pada perangkat ini." to "Sorry, the default keyboard name could not be read on this device.",
+                      "Maaf, status keamanan kunci layar tidak dapat dibaca." to "Sorry, screen lock security status could not be read.",
+                      "Maaf, status sinkronisasi waktu otomatis tidak dapat dibaca." to "Sorry, automatic time synchronization status could not be read.",
+                      "Maaf, preferensi format jam dan tanggal tidak dapat dibaca." to "Sorry, time and date format preferences could not be read.",
+                      "Maaf, pengaturan skala animasi tidak dapat dibaca pada perangkat ini." to "Sorry, animation scale settings could not be read on this device.",
+                      "Maaf, ukuran teks sistem tidak dapat dibaca pada perangkat ini." to "Sorry, system text size could not be read on this device.",
+                      "Maaf, status opsi pengembang dan USB debugging tidak dapat dibaca." to "Sorry, developer options and USB debugging status could not be read.",
+                      "Maaf, informasi arsitektur CPU perangkat tidak dapat dibaca." to "Sorry, device CPU architecture information could not be read.",
+                      "Informasi nomor build tidak tersedia pada perangkat ini." to "Build number information is not available on this device.",
+                      "Maaf, informasi nomor build Android tidak dapat dibaca." to "Sorry, Android build number information could not be read.",
+                      "Maaf, informasi bahasa atau zona waktu perangkat tidak dapat dibaca." to "Sorry, device language or time zone information could not be read.",
+                      "Informasi patch keamanan tidak tersedia pada perangkat ini." to "Security patch information is not available on this device.",
+                      "Maaf, tanggal patch keamanan Android tidak dapat dibaca." to "Sorry, the Android security patch date could not be read.",
+                      "Informasi jumlah restart tidak tersedia pada perangkat ini." to "Restart count information is not available on this device.",
+                      "Jumlah restart memerlukan Android 7.0 atau lebih baru." to "Restart count requires Android 7.0 or later.",
+                      "Maaf, jumlah restart perangkat tidak dapat dibaca pada perangkat ini." to "Sorry, the device restart count could not be read.",
+                      "Maaf, lama waktu perangkat menyala tidak dapat dibaca." to "Sorry, device uptime could not be read.",
+                      "Informasi teknologi atau jenis baterai tidak disediakan oleh perangkat." to "The device does not provide battery technology or type information.",
+                      "Maaf, informasi jenis baterai tidak dapat dibaca." to "Sorry, battery type information could not be read.",
+                      "Persentase baterai belum dapat dibaca." to "The battery percentage could not be read.",
+                      "Maaf, informasi baterai tidak dapat dibaca." to "Sorry, battery information could not be read.",
+                      "Pemeriksaan status senter memerlukan Android 6 atau lebih baru." to "Checking flashlight status requires Android 6 or later.",
+                      "Izin kamera diperlukan Android untuk memeriksa status senter." to "Android requires camera permission to check flashlight status.",
+                      "Senter tidak tersedia pada perangkat ini." to "The flashlight is not available on this device.",
+                      "Status senter sedang tidak tersedia, mungkin sedang digunakan kamera." to "Flashlight status is currently unavailable; the camera may be using it.",
+                      "Status senter tidak berhasil dibaca." to "Flashlight status could not be read.",
+                      "Status senter tidak dapat dibaca pada perangkat ini." to "Flashlight status cannot be read on this device.",
+                      "Status Bluetooth tidak dapat dibaca pada perangkat ini." to "Bluetooth status cannot be read on this device.",
+                      "Ucapkan nyalakan senter atau matikan senter" to "Say turn on flashlight or turn off flashlight.",
+                      "Ucapkan naikkan volume, turunkan volume, atau matikan suara" to "Say increase volume, decrease volume, or mute sound.",
+                      "Mikrofon atau mesin pengenalan suara offline tidak dapat diaktifkan." to "The microphone or offline speech recognition engine could not be started.",
+                      "Widget mikrofon sedang berjalan" to "The microphone widget is running"
                   )
+
+                  Regex("^Volume diatur ke (\\d+) persen$").matchEntire(message)?.let {
+                      return "Volume is set to ${it.groupValues[1]} percent."
+                  }
+                  Regex("^Baterai tersisa (\\d+) persen, (.+)\\.$").matchEntire(message)?.let {
+                      val state = it.groupValues[2]
+                          .replace("sedang diisi", "charging")
+                          .replace("tidak sedang diisi", "not charging")
+                      return "Battery is at ${it.groupValues[1]} percent, $state."
+                  }
+                  Regex("^Perangkat sudah aktif selama (.+)\\.$").matchEntire(message)?.let {
+                      return "The device has been active for ${it.groupValues[1]}."
+                  }
+                  Regex("^Perangkat sudah menyala selama (.+) sejak terakhir dinyalakan atau dimulai ulang\\.$").matchEntire(message)?.let {
+                      return "The device has been powered on for ${it.groupValues[1]} since it was last started or restarted."
+                  }
+                  Regex("^Keyboard utama perangkat saat ini adalah (.+)\\.$").matchEntire(message)?.let {
+                      return "The current default keyboard on this device is ${it.groupValues[1]}."
+                  }
+                  Regex("^Status keamanan: (.+)\\. Status saat ini: (.+)\\.$").matchEntire(message)?.let {
+                      return "Security status: ${it.groupValues[1]}. Current status: ${it.groupValues[2]}."
+                  }
+                  Regex("^Format jam perangkat: (.+)\\. Format tanggal: (.+)\\.$").matchEntire(message)?.let {
+                      return "Device time format: ${it.groupValues[1]}. Date format: ${it.groupValues[2]}."
+                  }
+                  Regex("^Patch keamanan Android perangkat ini: (.+)\\.$").matchEntire(message)?.let {
+                      return "This device's Android security patch: ${it.groupValues[1]}."
+                  }
+                  Regex("^Teknologi baterai yang dilaporkan perangkat adalah (.+)\\.$").matchEntire(message)?.let {
+                      return "The battery technology reported by the device is ${it.groupValues[1]}."
+                  }
+                  Regex("^Bluetooth sedang (aktif|nonaktif)\\.$").matchEntire(message)?.let {
+                      return if (it.groupValues[1] == "aktif") "Bluetooth is on." else "Bluetooth is off."
+                  }
+                  Regex("^Jumlah siklus pengisian baterai yang dilaporkan perangkat adalah (\\d+) kali\\.$").matchEntire(message)?.let {
+                      return "The device reports ${it.groupValues[1]} battery charge cycles."
+                  }
+                  Regex("^Android mencatat perangkat sudah melakukan boot atau restart sebanyak (\\d+) kali sejak reset pabrik\\.$").matchEntire(message)?.let {
+                      return "Android reports that this device has booted or restarted ${it.groupValues[1]} times since the factory reset."
+                  }
+                  Regex("^Ukuran teks sistem saat ini (\\d+) persen, (.+)\\.$").matchEntire(message)?.let {
+                      return "The current system text size is ${it.groupValues[1]} percent, ${it.groupValues[2]}."
+                  }
+                  Regex("^Informasi (.+) tidak dapat dibaca\\.$").matchEntire(message)?.let {
+                      return "The ${it.groupValues[1]} information could not be read."
+                  }
                   exact[message]?.let { return it }
                   if (message.startsWith("Perintah: ")) return "Command: " + message.removePrefix("Perintah: ")
                   if (message.startsWith("Pengenalan suara gagal (kode ")) {
