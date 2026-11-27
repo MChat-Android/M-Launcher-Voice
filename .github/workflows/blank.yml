@@ -2852,6 +2852,10 @@ jobs:
                       .filter { it.isNotBlank() }
 
                   if (sequenceParts.size > 1) {
+                      if (!vipMode) {
+                          showMessage("Mode Standar hanya menerima satu perintah setiap ketukan widget. Ketuk kembali untuk perintah berikutnya.")
+                          return
+                      }
                       if (sequenceParts.size > 3) {
                           showMessage("Maksimal tiga perintah dalam satu ucapan. Silakan bagi menjadi beberapa ucapan.")
                           return
