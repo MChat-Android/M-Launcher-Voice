@@ -387,8 +387,11 @@ jobs:
                   val verifiedBoot = prefs.getInt(KEY_VERIFIED_BOOT, -1)
                   val verifiedElapsed = prefs.getLong(KEY_VERIFIED_ELAPSED, 0L)
                   val elapsedNow = android.os.SystemClock.elapsedRealtime()
-                  if (bootCount < 0 || verifiedBoot < 0 || bootCount != verifiedBoot ||
-                      verifiedElapsed <= 0L || elapsedNow < verifiedElapsed) {
+                  // Android sebelum API 24 tidak menyediakan BOOT_COUNT yang dapat dibaca.
+                  // Pada perangkat tersebut, elapsedRealtime tetap dipakai untuk mendeteksi
+                  // restart karena nilainya kembali ke awal setelah perangkat dinyalakan ulang.
+                  if (verifiedElapsed <= 0L || elapsedNow < verifiedElapsed ||
+                      (bootCount >= 0 && verifiedBoot >= 0 && bootCount != verifiedBoot)) {
                       return false
                   }
 
