@@ -23,8 +23,7 @@ service cloud.firestore {
     function validVipPlan(plan, amount) {
       return (plan == 'VIP+ Mingguan (7 hari)' && amount == 15000)
         || (plan == 'VIP+ Bulanan (30 hari)' && amount == 50000)
-        || (plan == 'VIP+ Tahunan (365 hari)' && amount == 250000)
-        || (plan == 'VIP+ Lifetime' && amount == 500000);
+        || (plan == 'VIP+ Permanen' && amount == 750000);
     }
 
     match /vip_payment_requests/{requestId} {
@@ -70,10 +69,6 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-
-    // Profil VIP+ yang terikat pada akun Google/Firebase.
-    // Klien hanya boleh membaca status. Klien tidak pernah boleh mengubah
-    // membershipStatus, masa berlaku, bukti pembayaran, atau peran admin.
     match /vip_members/{userId} {
       allow read: if signedInAs(userId) || isAdmin();
 
@@ -105,10 +100,16 @@ service cloud.firestore {
         || (isAdmin()
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
             'membershipStatus', 'membershipPlan', 'startedAt',
-            'expiresAt', 'verifiedPaymentRequestId', 'updatedAt'
+            'expiresAt', 'verifiedPaymentRequestId', 'updatedAt',
+            'testMode', 'testPaymentRequestId'
           ])
           && request.resource.data.membershipStatus in ['ACTIVE', 'FREE']
-          && request.resource.data.updatedAt == request.time);
+          && request.resource.data.updatedAt == request.time
+          && (!('testMode' in request.resource.data)
+            || request.resource.data.testMode == true)
+          && (!('testPaymentRequestId' in request.resource.data)
+            || (request.resource.data.testPaymentRequestId is string
+              && request.resource.data.testPaymentRequestId.size() > 0)));
 
       allow delete: if false;
     }
@@ -116,7 +117,6 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if signedInAs(userId);
 
-      // Profil pertama hanya boleh dibuat oleh pemilik akun yang emailnya terverifikasi.
       allow create: if verifiedOwner(userId)
         && request.resource.data.keys().hasOnly([
           'memberId', 'displayName', 'activeDeviceId',
@@ -132,8 +132,6 @@ service cloud.firestore {
         && request.resource.data.createdAt == request.time
         && request.resource.data.updatedAt == request.time;
 
-      // Hanya pemilik terverifikasi yang dapat memperbarui profil/perangkat.
-      // Field hak VIP+, peran admin, dan status pembayaran tidak dapat ditulis klien.
       allow update: if verifiedOwner(userId)
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'displayName', 'activeDeviceId', 'deviceChangedAt', 'updatedAt'
