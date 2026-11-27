@@ -1183,7 +1183,6 @@ jobs:
                       }
 
                       Spacer(Modifier.height(25.dp))
-                      Spacer(Modifier.height(25.dp))
                       Card(
                           modifier = Modifier.fillMaxWidth().clickable {
                               showPrivacyDetails = !showPrivacyDetails
