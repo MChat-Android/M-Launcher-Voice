@@ -3020,7 +3020,6 @@ jobs:
                       Regex("^(open|launch|start) (the )?(wi fi|wifi) settings$") to "wifi",
                       Regex("^(open|launch|start) (the )?bluetooth settings$") to "bluetooth",
                       Regex("^(phone information|device information|phone model|what is my phone model)$") to "info hp",
-                      Regex("^(what language is my phone|phone language|device language|system language)$") to "bahasa perangkat",
                       Regex("^(what language is my phone|phone language|device language|system language)$") to "bahasa perangkat"
                   )
                   val appCommand = Regex("^(open|launch|start) (the )?(whatsapp|instagram|facebook|youtube|chrome|gmail|tiktok|telegram|spotify)$").matchEntire(value)
