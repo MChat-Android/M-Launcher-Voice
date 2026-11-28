@@ -4,6 +4,13 @@
   "private": true,
   "description": "Trusted operator tools for verifying M Asisten VIP payments",
   "main": "vip-admin.js",
-  "scripts": { "help": "node vip-admin.js" },
-  "dependencies": { "firebase-admin": "^13.0.2" }
+  "scripts": {
+    "help": "node vip-admin.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.2"
+  },
+  "overrides": {
+    "uuid": "11.1.1"
+  }
 }
