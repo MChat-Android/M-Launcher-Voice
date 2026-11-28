@@ -1003,7 +1003,7 @@ jobs:
                               }
 
                               override fun onAdLoadFailed(ad: InMobiInterstitial, status: InMobiAdRequestStatus) {
-                                  inmobiLastDiagnostic = "AD_LOAD_FAILED: ${status}"
+                                  inmobiLastDiagnostic = "AD_LOAD_FAILED: code=${status.statusCode}, message=${status.message}"
                                   android.util.Log.e("MAsisten-InMobi", inmobiLastDiagnostic)
                                   runOnUiThread {
                                       isInMobiAdLoading = false
