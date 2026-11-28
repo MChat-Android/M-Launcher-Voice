@@ -836,6 +836,7 @@ jobs:
                                       } else {
                                           val batch = db.batch()
                                           batch.set(deviceRef, mapOf(
+                                              "uid" to uid,
                                               "deviceId" to deviceId,
                                               "startedAt" to FieldValue.serverTimestamp()
                                           ))
