@@ -11,7 +11,7 @@ Commit yang diaudit: e24a72863111c3c64ec7af60a860ce3c96ea5a1a
 - AI percakapan: sepenuhnya on-device; tidak mengirim prompt ke API AI/cloud.
 - Fungsi dasar asisten: tetap berjalan lokal.
 - Tidak ada iklan sebagai sumber pendapatan utama.
-- Firebase boleh dipertahankan untuk akun, lisensi, administrasi VIP+, dan sinkronisasi opsional. Koneksi internet untuk layanan tersebut tidak boleh menjadi syarat menjalankan mesin AI lokal setelah hak akses tersimpan secara aman.
+- Firebase boleh dipertahankan untuk akun, lisensi, administrasi VIP, dan sinkronisasi opsional. Koneksi internet untuk layanan tersebut tidak boleh menjadi syarat menjalankan mesin AI lokal setelah hak akses tersimpan secara aman.
 
 ## Temuan audit kode saat ini
 
@@ -19,7 +19,7 @@ Commit yang diaudit: e24a72863111c3c64ec7af60a860ce3c96ea5a1a
 2. Aplikasi sudah memakai `SpeechRecognizer.createOnDeviceSpeechRecognizer()` dan menolak fallback ke layanan speech cloud. Kode meminta paket bahasa perangkat dan dapat memicu pengunduhan model bahasa Android. Karena itu, pengenalan suara dapat offline setelah paket bahasa tersedia, tetapi ketersediaan Bahasa Indonesia bergantung pada implementasi speech service dan paket di masing-masing perangkat.
 3. Aplikasi menggunakan Android `TextToSpeech`. Ini tidak otomatis menjamin suara offline: voice/language data harus tersedia dan terpasang di perangkat. Perlu pemeriksaan ketersediaan voice offline dan fallback yang jelas.
 4. Logika perintah saat ini berupa pencocokan/perintah Kotlin melalui `executeCommand()`. Audit tidak menemukan runtime LLM lokal, model AI lokal, tokenizer, atau integrasi LiteRT-LM/llama.cpp. Dengan demikian, AI percakapan offline belum diimplementasikan.
-5. Firebase Authentication dan Cloud Firestore digunakan untuk Google sign-in, profil, status VIP+, permintaan pembayaran, serta validasi akses aplikasi/widget. Sejumlah pemeriksaan VIP secara eksplisit menggunakan `Source.SERVER` dan `getIdToken(true)`; akibatnya, validasi VIP+ dan pemulihan mode VIP+ saat ini membutuhkan internet.
+5. Firebase Authentication dan Cloud Firestore digunakan untuk Google sign-in, profil, status VIP, permintaan pembayaran, serta validasi akses aplikasi/widget. Sejumlah pemeriksaan VIP secara eksplisit menggunakan `Source.SERVER` dan `getIdToken(true)`; akibatnya, validasi VIP dan pemulihan mode VIP saat ini membutuhkan internet.
 6. Workflow mengaktifkan Firebase hanya jika secret `GOOGLE_SERVICES_JSON_BASE64` tersedia. Firebase bukan mesin AI, tetapi masih menjadi ketergantungan akun/keanggotaan.
 7. Dokumen integrasi pembayaran menyatakan belum ada payment gateway otomatis yang dipilih atau diaktifkan. Alur yang ada adalah permintaan pembayaran dan pemeriksaan admin. Harga yang tertulis di Firestore Rules saat audit: mingguan Rp15.000, bulanan Rp50.000, tahunan Rp250.000, Lifetime Rp500.000. Harga ini perlu keputusan bisnis terpisah sebelum diubah.
 8. Belum ditemukan URL endpoint AI atau API key AI di source workflow yang diaudit. Ini bukan bukti bahwa seluruh komponen aplikasi bebas jaringan; Firebase tetap digunakan untuk fungsi akun dan lisensi.
