@@ -7,14 +7,14 @@ Alat ini berjalan di komputer admin tepercaya, **bukan di aplikasi Android**. Fi
 1. Di Firebase Console, buka **Project settings → Service accounts**.
 2. Buat/unduh private service-account key hanya untuk komputer admin. Simpan di luar folder repository dan jangan unggah ke GitHub.
 3. Pasang Node.js 18 atau lebih baru.
-4. Dari folder `admin-tools`, jalankan `npm install`.
+4. Dari folder `admin-tools`, jalankan `npm ci` agar dependency dipasang persis sesuai lockfile yang sudah diaudit.
 5. Atur variabel lingkungan `GOOGLE_APPLICATION_CREDENTIALS` ke lokasi file JSON tersebut.
 
 Contoh Linux/macOS:
 
 ```bash
 export GOOGLE_APPLICATION_CREDENTIALS="/lokasi-aman/firebase-admin-key.json"
-npm install
+npm ci
 ```
 
 Windows PowerShell:
