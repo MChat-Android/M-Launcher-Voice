@@ -106,6 +106,12 @@ jobs:
               id("org.jetbrains.kotlin.plugin.compose") version "2.2.0" apply false
               id("com.google.gms.google-services") version "4.6.0" apply false
           }
+
+          allprojects {
+              dependencyLocking {
+                  lockAllConfigurations()
+              }
+          }
           EOF
 
           cat > app/build.gradle.kts <<'EOF'
@@ -7187,6 +7193,19 @@ jobs:
           else
             echo "Secret Firebase belum dipasang; build tetap berjalan tanpa konfigurasi Firebase."
           fi
+
+      - name: Resolve Android dependency lockfiles
+        run: |
+          gradle :app:dependencies --configuration releaseRuntimeClasspath --write-locks --no-daemon
+          gradle :app:dependencies --configuration releaseCompileClasspath --write-locks --no-daemon
+          test -s app/gradle.lockfile
+
+      - name: Scan Android and admin dependencies with OSV
+        uses: google/osv-scanner-action/osv-scanner-action@32d3cd482bdadfb38b186c0ad1b031902d55d932 # v2.7.1
+        with:
+          scan-args: |-
+            --lockfile=app/gradle.lockfile
+            --lockfile=admin-tools/package-lock.json
 
       - name: Validate M Asisten Launcher Artwork
         run: |
