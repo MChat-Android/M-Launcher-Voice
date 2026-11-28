@@ -4165,9 +4165,9 @@ jobs:
                   return !lower.startsWith("perintah:") &&
                       lower != "mendengarkan..." &&
                       lower != "memproses suara..." &&
-                      !lower.startsWith("memeriksa akses vip+") &&
+                      !lower.startsWith("memeriksa akses vip") &&
                       !lower.startsWith("menyiapkan sapaan suara") &&
-                      !lower.startsWith("aplikasi vip+ sedang diperiksa")
+                      !lower.startsWith("aplikasi vip sedang diperiksa")
               }
 
               private fun speakResponse(message: String) {
