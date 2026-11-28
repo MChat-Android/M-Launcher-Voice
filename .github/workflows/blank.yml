@@ -374,6 +374,7 @@ jobs:
               private const val KEY_ACTIVE = "active"
               private const val KEY_ADMIN = "admin"
               private const val KEY_EXPIRES_AT = "expires_at"
+              private const val KEY_EXPIRES_ELAPSED = "expires_elapsed"
               private const val KEY_VERIFIED_AT = "verified_at"
               private const val KEY_VERIFIED_ELAPSED = "verified_elapsed"
               private const val KEY_VERIFIED_BOOT = "verified_boot"
@@ -410,13 +411,21 @@ jobs:
                           "Paket VIP Anda sudah aktif. Selamat menggunakan fitur VIP M Asisten."
                       )
                   }
+                  val verifiedAt = System.currentTimeMillis()
+                  val verifiedElapsed = android.os.SystemClock.elapsedRealtime()
+                  val expiryElapsed = if (expiresAt > 0L) {
+                      verifiedElapsed + (expiresAt - verifiedAt).coerceAtLeast(0L)
+                  } else {
+                      0L
+                  }
                   prefs.edit()
                       .putString(KEY_UID, uid)
                       .putBoolean(KEY_ACTIVE, active)
                       .putBoolean(KEY_ADMIN, admin)
                       .putLong(KEY_EXPIRES_AT, expiresAt)
-                      .putLong(KEY_VERIFIED_AT, System.currentTimeMillis())
-                      .putLong(KEY_VERIFIED_ELAPSED, android.os.SystemClock.elapsedRealtime())
+                      .putLong(KEY_EXPIRES_ELAPSED, expiryElapsed)
+                      .putLong(KEY_VERIFIED_AT, verifiedAt)
+                      .putLong(KEY_VERIFIED_ELAPSED, verifiedElapsed)
                       .putInt(KEY_VERIFIED_BOOT, currentBootCount(context))
                       .putString("last_notified_state", if (active) "ACTIVE" else "INACTIVE")
                       .apply()
@@ -466,10 +475,12 @@ jobs:
                   val elapsedSinceVerification = elapsedNow - verifiedElapsed
                   val verifiedAt = prefs.getLong(KEY_VERIFIED_AT, 0L)
                   val expiresAt = prefs.getLong(KEY_EXPIRES_AT, 0L)
-                  val cacheLimit = if (expiresAt > 0L) expiresAt else verifiedAt + OFFLINE_GRACE_MS
+                  val expiresElapsed = prefs.getLong(KEY_EXPIRES_ELAPSED, 0L)
+                  val beforeMonotonicExpiry = expiresAt <= 0L ||
+                      (expiresElapsed > 0L && elapsedNow < expiresElapsed)
                   return verifiedAt > 0L &&
                       elapsedSinceVerification <= OFFLINE_GRACE_MS &&
-                      (expiresAt <= 0L || System.currentTimeMillis() < cacheLimit)
+                      beforeMonotonicExpiry
               }
 
               fun isAdmin(context: android.content.Context, uid: String): Boolean {
