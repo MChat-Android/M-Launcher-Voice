@@ -37,11 +37,8 @@ jobs:
             exit 1
           fi
 
-      - name: Resolve patched admin dependencies
-        run: |
-          # Rebuild the lock from exact direct dependencies and the patched uuid override.
-          npm install --package-lock-only --ignore-scripts --prefix admin-tools
-          npm ci --ignore-scripts --prefix admin-tools
+      - name: Install pinned admin dependencies
+        run: npm ci --ignore-scripts --prefix admin-tools
 
       - name: Audit admin dependencies
         run: npm audit --prefix admin-tools --audit-level=moderate
