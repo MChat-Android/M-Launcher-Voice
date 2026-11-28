@@ -1192,15 +1192,25 @@ jobs:
                                           activateVerifiedVip(true, expiresAt, false)
                                       } else {
                                           VipEntitlementCache.clear(this, userUid)
-                                          resolveTrialEntitlement(userUid, true) { trialActive, _ ->
-                                              if (trialActive) {
-                                                  vipMembershipStatus = "TRIAL AKTIF"
-                                                  showStandardAdThen {
+                                          // Periksa Trial yang sudah ada tanpa memulai waktu baru.
+                                          // Untuk Trial pertama, catatan Firebase baru dibuat setelah iklan selesai
+                                          // dan tepat sebelum widget VIP benar-benar dijalankan.
+                                          resolveTrialEntitlement(userUid, false) { existingTrialActive, _ ->
+                                              showStandardAdThen {
+                                                  if (existingTrialActive) {
+                                                      vipMembershipStatus = "TRIAL AKTIF"
                                                       startWidgetService(FloatingVoiceService.MODE_VIP)
+                                                  } else {
+                                                      resolveTrialEntitlement(userUid, true) { trialStarted, _ ->
+                                                          if (trialStarted) {
+                                                              vipMembershipStatus = "TRIAL AKTIF"
+                                                              startWidgetService(FloatingVoiceService.MODE_VIP)
+                                                          } else {
+                                                              vipMembershipStatus = "PAKET STANDAR"
+                                                              startWidgetService(FloatingVoiceService.MODE_STANDARD)
+                                                          }
+                                                      }
                                                   }
-                                              } else {
-                                                  vipMembershipStatus = "PAKET STANDAR"
-                                                  activateVerifiedVip(false, 0L, false)
                                               }
                                           }
                                       }
@@ -2945,7 +2955,10 @@ jobs:
               }
 
               private fun currentTrialDeviceId(): String {
-                  return Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID).orEmpty()
+                  return Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
+                      .orEmpty()
+                      .takeIf { it.matches(Regex("^[A-Za-z0-9_-]{16,64}$")) }
+                      .orEmpty()
               }
 
               private fun verifyTrialEntitlement(uid: String, verificationId: Int) {

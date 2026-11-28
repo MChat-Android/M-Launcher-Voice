@@ -75,6 +75,7 @@ try {
   await allow("pengguna dapat memeriksa Android ID yang belum diklaim", getDoc(doc(alice, "trial_devices/" + trialDeviceId)));
   const trialBatch = writeBatch(alice);
   trialBatch.set(doc(alice, "trial_devices/" + trialDeviceId), {
+    uid: "alice",
     deviceId: trialDeviceId,
     startedAt: serverTimestamp()
   });
@@ -86,18 +87,28 @@ try {
   await allow("akun dapat memulai Trial satu kali dengan waktu server", trialBatch.commit());
   await allow("akun dapat membaca data Trial miliknya", getDoc(doc(alice, "trial_entitlements/alice")));
   await deny("akun lain tidak dapat membaca data Trial pengguna", getDoc(doc(bob, "trial_entitlements/alice")));
+  await deny("akun lain tidak dapat membaca data perangkat Trial", getDoc(doc(bob, "trial_devices/" + trialDeviceId)));
+  await deny("akun tidak dapat mengklaim perangkat tanpa entitlement dalam batch yang sama", setDoc(
+    doc(bob, "trial_devices/device_unpaired_123456"), {
+      uid: "bob",
+      deviceId: "device_unpaired_123456",
+      startedAt: serverTimestamp()
+    }
+  ));
   await deny("akun tidak dapat memperpanjang atau mengubah Trial", updateDoc(doc(alice, "trial_entitlements/alice"), {
     startedAt: serverTimestamp()
   }));
   await deny("akun tidak dapat menghapus catatan Trial", deleteDoc(doc(alice, "trial_entitlements/alice")));
   await deny("akun lain tidak dapat memakai Android ID yang sudah diklaim", setDoc(
     doc(bob, "trial_devices/" + trialDeviceId), {
+      uid: "bob",
       deviceId: trialDeviceId,
       startedAt: serverTimestamp()
     }
   ));
   const secondDeviceBatch = writeBatch(alice);
   secondDeviceBatch.set(doc(alice, "trial_devices/device_abcdefghijklmnop"), {
+    uid: "alice",
     deviceId: "device_abcdefghijklmnop",
     startedAt: serverTimestamp()
   });

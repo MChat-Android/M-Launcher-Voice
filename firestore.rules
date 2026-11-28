@@ -132,23 +132,36 @@ service cloud.firestore {
         && validTrialDeviceId(request.resource.data.deviceId)
         && request.resource.data.startedAt == request.time
         && getAfter(/databases/$(database)/documents/trial_devices/$(request.resource.data.deviceId)).data.deviceId
-          == request.resource.data.deviceId;
+          == request.resource.data.deviceId
+        && getAfter(/databases/$(database)/documents/trial_devices/$(request.resource.data.deviceId)).data.uid
+          == userId;
 
       allow update, delete: if false;
     }
 
     match /trial_devices/{deviceId} {
-      // Izinkan pemeriksaan ID yang belum diklaim tanpa membuka daftar perangkat.
+      // ID yang belum diklaim boleh diperiksa; data perangkat terdaftar hanya
+      // dapat dibaca kembali oleh akun pemiliknya.
       allow get: if request.auth != null
         && (!exists(/databases/$(database)/documents/trial_devices/$(deviceId))
-          || resource.data.deviceId == deviceId);
+          || resource.data.uid == request.auth.uid);
       allow list: if false;
 
+      // Klaim perangkat wajib satu batch dengan entitlement milik akun yang sama.
+      // Ini mencegah akun lain mengunci Android ID secara terpisah.
       allow create: if request.auth != null
-        && request.resource.data.keys().hasOnly(['deviceId', 'startedAt'])
+        && request.auth.token.email_verified == true
+        && request.resource.data.keys().hasOnly(['uid', 'deviceId', 'startedAt'])
+        && request.resource.data.uid == request.auth.uid
         && validTrialDeviceId(deviceId)
         && request.resource.data.deviceId == deviceId
-        && request.resource.data.startedAt == request.time;
+        && request.resource.data.startedAt == request.time
+        && getAfter(/databases/$(database)/documents/trial_entitlements/$(request.auth.uid)).data.uid
+          == request.auth.uid
+        && getAfter(/databases/$(database)/documents/trial_entitlements/$(request.auth.uid)).data.deviceId
+          == deviceId
+        && getAfter(/databases/$(database)/documents/trial_entitlements/$(request.auth.uid)).data.startedAt
+          == request.time;
 
       allow update, delete: if false;
     }
