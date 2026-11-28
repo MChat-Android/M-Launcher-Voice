@@ -71,6 +71,18 @@ try {
     });
   });
 
+  await allow("akun dapat menulis jam tepercaya dengan timestamp server", setDoc(doc(alice, "trial_clock/alice"), {
+    serverTime: serverTimestamp()
+  }));
+  await allow("akun dapat memperbarui jam tepercaya miliknya", setDoc(doc(alice, "trial_clock/alice"), {
+    serverTime: serverTimestamp()
+  }));
+  await deny("akun lain tidak dapat membaca jam tepercaya", getDoc(doc(bob, "trial_clock/alice")));
+  await deny("akun tidak dapat mengatur jam tepercaya memakai waktu buatan", setDoc(doc(alice, "trial_clock/alice"), {
+    serverTime: Timestamp.fromMillis(Date.now() + 86400000)
+  }));
+  await deny("akun tidak dapat menghapus jam tepercaya", deleteDoc(doc(alice, "trial_clock/alice")));
+
   const trialDeviceId = "device_1234567890123456";
   await allow("pengguna dapat memeriksa Android ID yang belum diklaim", getDoc(doc(alice, "trial_devices/" + trialDeviceId)));
   const trialBatch = writeBatch(alice);
