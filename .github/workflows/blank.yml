@@ -1250,7 +1250,7 @@ jobs:
                   "🎙   AKTIFKAN WIDGET" to "🎙   ACTIVATE WIDGET",
                   "TINGKATKAN KE VIP" to "UPGRADE TO VIP",
                   "Buka semua aplikasi dengan perintah suara" to "Open all apps with voice commands",
-                  "Mulai Rp15.000 / 7 hari" to "Starting at Rp15,000 / 7 days",
+                  "Mulai Rp29.000 / bulan" to "Starting at Rp29,000 / month",
                   "LIHAT PAKET VIP" to "VIEW VIP PLANS",
                   "PAKET APLIKASI STANDAR" to "STANDARD APP PACKAGE",
                   "Perintah suara untuk fitur dan aplikasi bawaan ponsel:" to "Voice commands for built-in phone features and apps:",
@@ -1839,7 +1839,7 @@ jobs:
                                       Text(mAsistenUiText("TINGKATKAN KE VIP", isEnglish), color = if (isVipPlus) premiumGold else Cyan, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp)
                                       Spacer(Modifier.height(5.dp))
                                       Text(mAsistenUiText("Buka semua aplikasi dengan perintah suara", isEnglish), color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                                      Text(mAsistenUiText("Mulai Rp15.000 / 7 hari", isEnglish), color = Muted, fontSize = 11.sp)
+                                      Text(mAsistenUiText("Mulai Rp29.000 / bulan", isEnglish), color = Muted, fontSize = 11.sp)
                                   }
                                   Text(mAsistenUiText("VIP", isEnglish), color = if (isVipPlus) premiumGold else Cyan, fontSize = 25.sp, fontWeight = FontWeight.ExtraBold)
                               }
