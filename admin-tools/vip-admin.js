@@ -77,6 +77,17 @@ async function main() {
     console.log("Admin claim removed from the configured primary UID.");
     return;
   }
+  if (command === "revoke-unexpected-admin") {
+    const approvedUid = await configuredAdminUid();
+    if (!value || value === approvedUid) throw new Error("Provide a non-primary UID to revoke; the approved primary UID is protected.");
+    const user = await auth.getUser(value);
+    if (user.customClaims?.admin !== true) throw new Error("The supplied UID does not have an admin claim.");
+    const claims = { ...(user.customClaims || {}) };
+    delete claims.admin;
+    await auth.setCustomUserClaims(value, claims);
+    console.log("Unexpected admin claim revoked from UID:", value);
+    return;
+  }
   if (command === "verify" || command === "reject") {
     const requestId = value;
     if (!requestId) throw new Error("Usage: node vip-admin.js verify|reject <payment-request-id> [admin-note]");
@@ -144,6 +155,7 @@ async function main() {
   console.log("  node vip-admin.js audit-admins");
   console.log("  node vip-admin.js set-admin <approved-uid>");
   console.log("  node vip-admin.js remove-admin <approved-uid>");
+  console.log("  node vip-admin.js revoke-unexpected-admin <other-uid>");
   console.log("  node vip-admin.js verify <request-id> [note]");
   console.log("  node vip-admin.js reject <request-id> [note]");
   process.exitCode = 2;
