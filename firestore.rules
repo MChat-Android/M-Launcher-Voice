@@ -110,6 +110,13 @@ service cloud.firestore {
             'testMode', 'testPaymentRequestId'
           ])
           && request.resource.data.membershipStatus in ['ACTIVE', 'FREE']
+          && (request.resource.data.membershipStatus != 'ACTIVE'
+            || ((request.resource.data.membershipPlan == 'VIP Permanen'
+                && request.resource.data.expiresAt == null
+                && request.resource.data.startedAt is timestamp)
+              || (request.resource.data.membershipPlan == 'VIP Bulanan (30 hari)'
+                && request.resource.data.expiresAt is timestamp
+                && request.resource.data.startedAt is timestamp)))
           && request.resource.data.updatedAt == request.time
           && (!('testMode' in request.resource.data)
             || request.resource.data.testMode == true)
