@@ -7254,6 +7254,21 @@ jobs:
           SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
         run: gradle assembleRelease --no-daemon
 
+      - name: Verify no privileged credentials in APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="app/build/outputs/apk/release/app-release.apk"
+          test -s "$APK"
+          if unzip -l "$APK" | grep -Ei '(service-account[^/]*\.json|firebase-adminsdk[^/]*\.json|\.jks$|\.keystore$)' >/dev/null; then
+            echo "Privileged credential file detected inside APK."
+            exit 1
+          fi
+          if unzip -p "$APK" | strings | grep -Ei -- '-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----' >/dev/null; then
+            echo "Private key material detected inside APK."
+            exit 1
+          fi
+
       - name: Verify APK Signature
         run: |
           APK="app/build/outputs/apk/release/app-release.apk"
