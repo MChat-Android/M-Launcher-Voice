@@ -416,6 +416,13 @@ jobs:
               private const val KEY_EXPIRES_ELAPSED = "expires_elapsed"
               private const val KEY_VERIFIED_BOOT = "verified_boot"
               private const val OFFLINE_GRACE_MS = 30L * 24L * 60L * 60L * 1000L
+              private val saveGenerations = java.util.concurrent.ConcurrentHashMap<String, java.util.concurrent.atomic.AtomicLong>()
+
+              private fun nextSaveGeneration(uid: String): Long =
+                  saveGenerations.computeIfAbsent(uid) { java.util.concurrent.atomic.AtomicLong(0L) }.incrementAndGet()
+
+              private fun isCurrentSaveGeneration(uid: String, generation: Long): Boolean =
+                  saveGenerations[uid]?.get() == generation
 
               private fun currentBootCount(context: android.content.Context): Int {
                   if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.N) return -1
@@ -437,9 +444,12 @@ jobs:
                   expiresAt: Long = 0L,
                   admin: Boolean = false
               ) {
+                  val generation = nextSaveGeneration(uid)
                   if (active && !admin && expiresAt > 0L) {
                       MAsistenTrustedClock.fetch(uid) { trustedNowMillis ->
-                          saveInternal(context, uid, active, expiresAt, admin, trustedNowMillis)
+                          if (isCurrentSaveGeneration(uid, generation)) {
+                              saveInternal(context, uid, active, expiresAt, admin, trustedNowMillis)
+                          }
                       }
                   } else {
                       saveInternal(context, uid, active, expiresAt, admin, 0L)
@@ -493,6 +503,11 @@ jobs:
               }
 
               fun clear(context: android.content.Context, uid: String? = null) {
+                  if (uid == null) {
+                      saveGenerations.values.forEach { it.incrementAndGet() }
+                  } else {
+                      saveGenerations[uid]?.incrementAndGet()
+                  }
                   val prefs = context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
                   if (uid == null || prefs.getString(KEY_UID, null) == uid) {
                       val wasActive = prefs.getBoolean(KEY_ACTIVE, false)
