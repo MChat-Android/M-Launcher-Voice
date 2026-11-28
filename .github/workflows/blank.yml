@@ -5371,96 +5371,21 @@ jobs:
                       return
                   }
 
-                  // Perintah WhatsApp diproses sebelum aturan umum "pesan" agar
-                  // tidak dialihkan ke SMS. Isi pesan disiapkan, tidak dikirim otomatis.
-                  val waRequest = Regex(
-                      "(?i)^(?:tolong\\s+)?(?:kirim|buat|tulis)(?:kan)?\\s+(?:pesan\\s+)?(?:whatsapp|wa)\\s+(?:ke|kepada)\\s+(.+?)(?:\\s+(?:dengan pesan|isi pesan|isi|bilang|katakan)\\s+)(.+)$"
-                  ).find(command.trim())
-                  val waRecipient = waRequest?.groupValues?.get(1)?.trim()?.trim(',', '.', ' ')
-                  val waBody = waRequest?.groupValues?.get(2)?.trim()
+                  // WhatsApp hanya dibuka sebagai aplikasi. M Asisten versi ini
+                  // tidak menyiapkan pesan, memilih kontak, atau mengirim pesan.
                   val requestsWhatsApp = text.contains("whatsapp") ||
                       Regex("\\bwa\\b").containsMatchIn(text)
-                  val requestsWhatsAppMessage = requestsWhatsApp && (
-                      text.contains("kirim") || text.contains("pesan") ||
-                      text.contains("chat") || text.contains("message") ||
-                      text.contains("balas") || text.contains("tulis")
-                  )
-                  if (requestsWhatsAppMessage) {
-                      if (!vipMode) {
-                          showMessage("Mengirim pesan melalui WhatsApp tersedia di paket VIP+.")
-                          return
-                      }
-                      if (waRecipient.isNullOrBlank()) {
-                          if (openAppByName("WhatsApp")) {
-                              showMessage("WhatsApp dibuka. Sebutkan nama atau nomor kontak dan isi pesan.")
-                          } else {
-                              showMessage("WhatsApp tidak ditemukan.")
-                          }
-                          return
-                      }
-                      val recipientNumber = waRecipient
-                          .replace(Regex("[^+0-9]"), "")
-                          .let { if (it.startsWith("+")) it.substring(1) else it }
-                      val hasPhoneNumber = recipientNumber.count { it.isDigit() } in 8..15 &&
-                          waRecipient.all { it.isDigit() || it in "+ ()-." }
-                      try {
-                          if (hasPhoneNumber) {
-                              val url = if (!waBody.isNullOrBlank()) {
-                                  "https://wa.me/$recipientNumber?text=" + Uri.encode(waBody)
-                              } else {
-                                  "https://wa.me/$recipientNumber"
-                              }
-                              launchIntent(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-                              showMessage(
-                                  if (waBody.isNullOrBlank())
-                                      "Membuka chat WhatsApp untuk nomor tersebut."
-                                  else
-                                      "Chat WhatsApp dibuka dengan nomor dan isi pesan yang sudah disiapkan. Periksa lalu tekan Kirim."
-                              )
-                          } else if (!waBody.isNullOrBlank()) {
-                              // Tanpa izin membaca kontak, WhatsApp menampilkan pemilih tujuan.
-                              // Teks sudah terisi; pengguna memilih kontak lalu menekan Kirim.
-                              val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                  type = "text/plain"
-                                  setPackage("com.whatsapp")
-                                  putExtra(Intent.EXTRA_TEXT, waBody)
-                              }
-                              launchIntent(shareIntent)
-                              showMessage("Pilih kontak WhatsApp yang dimaksud. Isi pesan sudah disiapkan; periksa sebelum mengirim.")
-                          } else if (openAppByName("WhatsApp")) {
-                              showMessage("WhatsApp dibuka. Pilih kontak yang ingin dihubungi.")
-                          } else {
-                              showMessage("WhatsApp tidak ditemukan.")
-                          }
-                      } catch (_: Exception) {
-                          showMessage("WhatsApp tidak dapat dibuka. Pastikan aplikasinya terpasang.")
-                      }
-                      return
-                  }
-
-                  // SMS disiapkan sebagai draf. Tidak dikirim otomatis tanpa pemeriksaan pengguna.
-                  val smsDraftMatch = Regex(
-                      "(?i)^(?:tolong\\s+)?(?:kirim|buat)\\s+(?:sms|pesan)\\s+(?:ke|kepada)\\s+(\\+?[0-9][0-9\\s().-]{6,}[0-9])\\s+(?:isi|dengan pesan|pesan)\\s+(.+)$"
-                  ).find(command.trim())
-                  if (smsDraftMatch != null) {
-                      val recipient = smsDraftMatch.groupValues[1].replace(Regex("[^+0-9]"), "")
-                      val messageBody = smsDraftMatch.groupValues[2].trim()
-                      val digitCount = recipient.count { it.isDigit() }
-                      if (digitCount in 8..15 && messageBody.isNotBlank()) {
-                          val smsIntent = Intent(
-                              Intent.ACTION_SENDTO,
-                              Uri.parse("smsto:$recipient")
-                          ).apply {
-                              putExtra("sms_body", messageBody)
-                          }
-                          launchIntent(smsIntent)
-                          showMessage("Membuka aplikasi pesan dengan draf SMS. Periksa nomor dan isi pesan sebelum mengirim.")
+                  if (requestsWhatsApp) {
+                      if (openAppByName("WhatsApp")) {
+                          showMessage("WhatsApp dibuka. Aktivitas di dalam aplikasi dilakukan secara manual.")
                       } else {
-                          showMessage("Nomor atau isi SMS belum lengkap. Ucapkan: kirim SMS ke nomor, isi pesan.")
+                          showMessage("WhatsApp tidak ditemukan. Pastikan aplikasinya terpasang.")
                       }
                       return
                   }
 
+                  // Perintah "pesan" hanya membuka aplikasi pesan bawaan.
+                  // Tidak membuat draf SMS atau mengirim pesan.
                   if (text == "pesan" ||
                       text.contains("messages") ||
                       text.contains("message") ||
