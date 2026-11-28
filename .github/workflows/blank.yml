@@ -28,11 +28,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if git log --all --name-only --pretty=format: | grep -Eiq '(^|/)(service-account[^/]*\.json|[^/]*firebase-adminsdk[^/]*\.json|[^/]*\.(jks|keystore)|\.env$)'; then
+          if git log --all --name-only --pretty=format: | grep -Ei '(^|/)(service-account[^/]*\.json|[^/]*firebase-adminsdk[^/]*\.json|[^/]*\.(jks|keystore)|\.env$)' >/dev/null; then
             echo "Private credential file path detected in repository history."
             exit 1
           fi
-          if git log --all -p -- . | grep -Eiq -- '-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----|"private_key"[[:space:]]*:[[:space:]]*"-----BEGIN'; then
+          if git log --all -p -- . | grep -Ei -- '-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----|"private_key"[[:space:]]*:[[:space:]]*"-----BEGIN' >/dev/null; then
             echo "Private key material detected in repository history."
             exit 1
           fi
