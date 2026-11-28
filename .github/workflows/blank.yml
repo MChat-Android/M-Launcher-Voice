@@ -21,7 +21,10 @@ jobs:
       - name: Validate VIP admin tool
         run: node --check admin-tools/vip-admin.js
       - name: Enforce VIP offline entitlement cache limit
-        run: grep -F 'private const val OFFLINE_GRACE_MS = 72L * 60L * 60L * 1000L' .github/workflows/blank.yml
+        run: |
+          grep -F 'private const val OFFLINE_GRACE_MS = 72L * 60L * 60L * 1000L' .github/workflows/blank.yml
+          grep -F 'private const val KEY_EXPIRES_ELAPSED = "expires_elapsed"' .github/workflows/blank.yml
+          grep -F 'elapsedNow < expiresElapsed' .github/workflows/blank.yml
 
       - name: Audit admin dependencies
         run: |
