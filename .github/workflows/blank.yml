@@ -154,9 +154,20 @@ jobs:
 
               implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
               implementation("com.google.android.gms:play-services-auth:21.3.0")
-              implementation("com.google.android.gms:play-services-ads:24.9.0")
+              implementation("com.google.android.gms:play-services-ads-identifier:18.0.1")
               implementation("com.google.firebase:firebase-auth")
               implementation("com.google.firebase:firebase-firestore")
+
+              // InMobi Rewarded Video SDK and its documented Android dependencies.
+              implementation("com.inmobi.monetization:inmobi-ads-kotlin:11.5.1")
+              implementation("androidx.media3:media3-exoplayer:1.4.1")
+              implementation("com.squareup.okhttp3:okhttp:3.14.9")
+              implementation("com.squareup.okio:okio:3.7.0")
+              implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.1")
+              implementation("androidx.core:core-ktx:1.5.0")
+              implementation("org.jetbrains.kotlin:kotlin-stdlib:2.2.0")
+              implementation("androidx.browser:browser:1.8.0")
+              implementation("com.squareup.picasso:picasso:2.8")
           }
           EOF
 
@@ -175,6 +186,7 @@ jobs:
               <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
               <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
               <uses-permission android:name="com.android.alarm.permission.SET_ALARM"/>
+              <uses-permission android:name="com.google.android.gms.permission.AD_ID"/>
 
               <uses-feature
                   android:name="android.hardware.camera.flash"
@@ -234,11 +246,8 @@ jobs:
                   android:label="M Asisten"
                   android:icon="@mipmap/ic_launcher"
                   android:roundIcon="@mipmap/ic_launcher"
-                  android:allowBackup="false">
-
-                  <meta-data
-                      android:name="com.google.android.gms.ads.APPLICATION_ID"
-                      android:value="ca-app-pub-3940256099942544~3347511713"/>
+                  android:allowBackup="false"
+                  android:hardwareAccelerated="true">
 
                   <activity
                       android:name=".MainActivity"
@@ -296,13 +305,12 @@ jobs:
           import com.google.android.gms.auth.api.signin.GoogleSignIn
           import com.google.android.gms.auth.api.signin.GoogleSignInOptions
           import com.google.android.gms.common.api.ApiException
-          import com.google.android.gms.ads.AdError
-          import com.google.android.gms.ads.AdRequest
-          import com.google.android.gms.ads.FullScreenContentCallback
-          import com.google.android.gms.ads.LoadAdError
-          import com.google.android.gms.ads.MobileAds
-          import com.google.android.gms.ads.interstitial.InterstitialAd
-          import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
+          import com.inmobi.ads.AdMetaInfo
+          import com.inmobi.ads.InMobiAdRequestStatus
+          import com.inmobi.ads.InMobiInterstitial
+          import com.inmobi.ads.listeners.InterstitialAdEventListener
+          import com.inmobi.sdk.InMobiSdk
+          import com.inmobi.sdk.SdkInitializationListener
           import com.google.firebase.auth.FirebaseAuth
           import com.google.firebase.auth.GoogleAuthProvider
           import com.google.firebase.firestore.FieldValue
@@ -339,7 +347,8 @@ jobs:
           private val Blue = Color(0xFF397BFF)
           private val Muted = Color(0xFF9DB2C9)
 
-          private const val TEST_INTERSTITIAL_AD_UNIT_ID = "ca-app-pub-3940256099942544/1033173712"
+          private const val INMOBI_ACCOUNT_ID = "a162a10a28e14268a94f7a8020097463"
+          private const val INMOBI_WIDGET_REWARDED_PLACEMENT_ID = 10000901040L
 
           object MAsistenTrial {
               const val DURATION_MS = 72L * 60L * 60L * 1000L
@@ -612,10 +621,13 @@ jobs:
               private var googleAccountEmail by mutableStateOf("")
               private var vipMembershipStatus by mutableStateOf("BELUM AKTIF")
               private var isAdminAccount by mutableStateOf(false)
-              private var interstitialAd: InterstitialAd? = null
-              private var isAdLoading = false
+              private var inmobiRewardedAd: InMobiInterstitial? = null
+              private var isInMobiInitialized = false
+              private var isInMobiAdLoading = false
               private var standardActivationPending = false
               private var standardWidgetStarter: (() -> Unit)? = null
+              private var standardRewardUnlocked = false
+              private var standardAdDismissed = false
 
               private val voiceMessageReceiver = object : android.content.BroadcastReceiver() {
                   override fun onReceive(context: android.content.Context?, intent: Intent?) {
@@ -894,9 +906,7 @@ jobs:
 
               override fun onCreate(savedInstanceState: Bundle?) {
                   super.onCreate(savedInstanceState)
-                  MobileAds.initialize(this) {
-                      runOnUiThread { loadStandardInterstitial() }
-                  }
+                  initializeInMobiAds()
 
                   FirebaseAuth.getInstance().currentUser?.let { user ->
                       isAuthenticated = true
@@ -939,70 +949,146 @@ jobs:
                   }
               }
 
-              private fun loadStandardInterstitial() {
-                  if (isAdLoading || interstitialAd != null || isFinishing) return
-                  isAdLoading = true
-                  InterstitialAd.load(
-                      this,
-                      TEST_INTERSTITIAL_AD_UNIT_ID,
-                      AdRequest.Builder().build(),
-                      object : InterstitialAdLoadCallback() {
-                          override fun onAdLoaded(ad: InterstitialAd) {
-                              isAdLoading = false
-                              interstitialAd = ad
-                              if (standardActivationPending) showLoadedStandardInterstitial()
+              private fun initializeInMobiAds() {
+                  try {
+                      InMobiSdk.setLogLevel(InMobiSdk.LogLevel.DEBUG)
+                      InMobiSdk.init(
+                          this,
+                          INMOBI_ACCOUNT_ID,
+                          null,
+                          object : SdkInitializationListener {
+                              override fun onInitializationComplete(error: Error?) {
+                                  runOnUiThread {
+                                      if (error == null) {
+                                          isInMobiInitialized = true
+                                          loadStandardRewardedAd()
+                                      } else {
+                                          isInMobiInitialized = false
+                                          message = "Layanan iklan belum siap. Periksa koneksi lalu coba lagi."
+                                          if (standardActivationPending) failStandardActivation()
+                                      }
+                                  }
+                              }
                           }
+                      )
+                  } catch (_: Exception) {
+                      isInMobiInitialized = false
+                      message = "Layanan iklan belum dapat dijalankan. Widget belum diaktifkan."
+                  }
+              }
 
-                          override fun onAdFailedToLoad(error: LoadAdError) {
-                              isAdLoading = false
-                              interstitialAd = null
-                              if (standardActivationPending) completeStandardActivation()
+              private fun loadStandardRewardedAd() {
+                  if (!isInMobiInitialized || isInMobiAdLoading || inmobiRewardedAd != null || isFinishing) return
+                  isInMobiAdLoading = true
+                  try {
+                      val ad = InMobiInterstitial(
+                          this,
+                          INMOBI_WIDGET_REWARDED_PLACEMENT_ID,
+                          object : InterstitialAdEventListener() {
+                              override fun onAdLoadSucceeded(ad: InMobiInterstitial, info: AdMetaInfo) {
+                                  runOnUiThread {
+                                      isInMobiAdLoading = false
+                                      inmobiRewardedAd = ad
+                                      if (standardActivationPending) showLoadedStandardRewardedAd()
+                                  }
+                              }
+
+                              override fun onAdLoadFailed(ad: InMobiInterstitial, status: InMobiAdRequestStatus) {
+                                  runOnUiThread {
+                                      isInMobiAdLoading = false
+                                      inmobiRewardedAd = null
+                                      if (standardActivationPending) failStandardActivation()
+                                  }
+                              }
+
+                              override fun onAdDisplayFailed(ad: InMobiInterstitial) {
+                                  runOnUiThread {
+                                      inmobiRewardedAd = null
+                                      if (standardActivationPending) failStandardActivation()
+                                      loadStandardRewardedAd()
+                                  }
+                              }
+
+                              override fun onRewardsUnlocked(ad: InMobiInterstitial, rewards: Map<Any, Any>) {
+                                  runOnUiThread {
+                                      standardRewardUnlocked = true
+                                      if (standardAdDismissed) completeStandardActivation()
+                                  }
+                              }
+
+                              override fun onAdDismissed(ad: InMobiInterstitial) {
+                                  runOnUiThread {
+                                      inmobiRewardedAd = null
+                                      standardAdDismissed = true
+                                      if (standardRewardUnlocked) {
+                                          completeStandardActivation()
+                                      } else if (standardActivationPending) {
+                                          failStandardActivation()
+                                      }
+                                      loadStandardRewardedAd()
+                                  }
+                              }
                           }
-                      }
-                  )
+                      )
+                      inmobiRewardedAd = ad
+                      ad.load()
+                  } catch (_: Exception) {
+                      isInMobiAdLoading = false
+                      inmobiRewardedAd = null
+                      if (standardActivationPending) failStandardActivation()
+                  }
               }
 
               private fun showStandardAdThen(activateWidget: () -> Unit) {
                   if (standardActivationPending) return
                   standardActivationPending = true
+                  standardRewardUnlocked = false
+                  standardAdDismissed = false
                   standardWidgetStarter = activateWidget
-                  message = "Menyiapkan iklan sebelum widget diaktifkan..."
-                  if (interstitialAd != null) {
-                      showLoadedStandardInterstitial()
-                  } else if (!isAdLoading) {
-                      loadStandardInterstitial()
+                  message = "Menyiapkan video iklan sebelum widget diaktifkan..."
+                  if (!isInMobiInitialized) {
+                      failStandardActivation()
+                      message = "Iklan belum siap. Periksa koneksi internet lalu coba lagi."
+                      return
+                  }
+                  val ad = inmobiRewardedAd
+                  if (ad != null && ad.isReady()) {
+                      showLoadedStandardRewardedAd()
+                  } else if (!isInMobiAdLoading) {
+                      inmobiRewardedAd = null
+                      loadStandardRewardedAd()
                   }
               }
 
-              private fun showLoadedStandardInterstitial() {
-                  val ad = interstitialAd
-                  if (ad == null) {
-                      if (!isAdLoading) loadStandardInterstitial()
+              private fun showLoadedStandardRewardedAd() {
+                  val ad = inmobiRewardedAd
+                  if (ad == null || !ad.isReady()) {
+                      if (!isInMobiAdLoading) loadStandardRewardedAd()
                       return
                   }
-                  interstitialAd = null
-                  ad.fullScreenContentCallback = object : FullScreenContentCallback() {
-                      override fun onAdDismissedFullScreenContent() {
-                          completeStandardActivation()
-                          loadStandardInterstitial()
-                      }
-
-                      override fun onAdFailedToShowFullScreenContent(error: AdError) {
-                          completeStandardActivation()
-                          loadStandardInterstitial()
-                      }
-                  }
                   try {
-                      ad.show(this)
+                      ad.show()
                   } catch (_: Exception) {
-                      completeStandardActivation()
-                      loadStandardInterstitial()
+                      inmobiRewardedAd = null
+                      failStandardActivation()
+                      loadStandardRewardedAd()
                   }
+              }
+
+              private fun failStandardActivation() {
+                  if (!standardActivationPending) return
+                  standardActivationPending = false
+                  standardWidgetStarter = null
+                  standardRewardUnlocked = false
+                  standardAdDismissed = false
+                  message = "Iklan belum selesai atau tidak tersedia. Widget belum diaktifkan; silakan coba lagi."
               }
 
               private fun completeStandardActivation() {
-                  if (!standardActivationPending) return
+                  if (!standardActivationPending || !standardRewardUnlocked || !standardAdDismissed) return
                   standardActivationPending = false
+                  standardRewardUnlocked = false
+                  standardAdDismissed = false
                   val startWidget = standardWidgetStarter
                   standardWidgetStarter = null
                   startWidget?.invoke()
