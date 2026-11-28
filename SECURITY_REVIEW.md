@@ -24,7 +24,7 @@ This document tracks the security work for the Android app and its Firebase/admi
 
 ## Security limitations that remain
 
-1. **Firebase App Check is not integrated/enforced yet.** Before public release, choose and test an App Check provider compatible with the actual distribution channel. Play Integrity enforcement may behave differently for APKs distributed directly through Netlify than for Play Store installs; do not enable enforcement until both legitimate installs and blocked tampered clients have been tested.
+1. **Firebase App Check is not integrated/enforced yet.** The built-in Play Integrity provider supports apps distributed through Google Play and outside Google Play. For a Netlify-only APK, Firebase documents an off-Play configuration: do not require `PLAY_RECOGNIZED` or `LICENSED`, but require device integrity. This still requires linking the Firebase Cloud project through the app entry in Play Console, registering the APK signing certificate SHA-256 in Firebase App Check, adding the Android provider SDK, and testing real installs before enabling Firestore enforcement. Do not enforce until both legitimate off-Play installs and tampered clients have been tested.
 2. **Trial device binding is not hardware-proof.** Android ID can change after a factory reset and can be spoofed on rooted or modified devices. Firestore prevents ordinary account/device reuse, but a determined modified client may bypass local checks without App Check and server-side abuse controls.
 3. **Offline revocation has a grace window.** A paid VIP cached while online can remain available offline for up to 30 days, unless its own paid expiry arrives sooner. An administrator's early revocation cannot reach a device that stays offline.
 4. **Firestore rules deployment is separate.** Passing emulator tests does not publish rules to Firebase. The production Firebase project must be checked to ensure the deployed rules exactly match this repository.
@@ -35,11 +35,12 @@ This document tracks the security work for the Android app and its Firebase/admi
 ## Required checks before public release
 
 - [ ] Latest `security/hardening` commit has a green security job and signed APK build.
-- [ ] Admin and CI dependency audits report zero known vulnerabilities at the selected threshold.
+- [ ] Admin and CI test-tool dependency audits report zero known vulnerabilities at the moderate-or-higher threshold.
+- [ ] Verify the Firebase Android SDK BoM and Google Services plugin are on current supported stable versions.
 - [ ] All Firestore emulator tests pass.
 - [ ] Run `node vip-admin.js audit-admins` from the trusted admin environment and confirm only the approved primary UID has `admin: true`.
 - [ ] Publish and independently review the Firestore rules in Firebase Console.
-- [ ] Configure and test Firebase App Check for the chosen distribution channel.
+- [ ] Link the Firebase project to Play Integrity in Play Console, register the signing SHA-256, integrate App Check Play Integrity, and test the Netlify/off-Play settings before enforcing Firestore App Check.
 - [ ] Test normal, expired, renewed, permanent, revoked, and offline VIP states on real devices.
 - [ ] Test Trial reuse after reinstall, account change, and device reset; document the expected limits.
 - [ ] Verify no service-account JSON, signing key, or private key is present in Git history or release artifacts.
