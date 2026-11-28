@@ -384,8 +384,8 @@ jobs:
                       MAsistenNotifications.post(
                           context,
                           4201,
-                          "VIP+ berhasil diaktifkan",
-                          "Paket VIP+ Anda sudah aktif. Selamat menggunakan fitur VIP+ M Asisten."
+                          "VIP berhasil diaktifkan",
+                          "Paket VIP Anda sudah aktif. Selamat menggunakan fitur VIP M Asisten."
                       )
                   }
                   prefs.edit()
@@ -415,8 +415,8 @@ jobs:
                           MAsistenNotifications.post(
                               context,
                               4202,
-                              "Masa VIP+ telah berakhir",
-                              "Akses VIP+ tidak lagi aktif. Anda dapat memeriksa atau memperpanjang paket di M Asisten."
+                              "Masa VIP telah berakhir",
+                              "Akses VIP tidak lagi aktif. Anda dapat memeriksa atau memperpanjang paket di M Asisten."
                           )
                       }
                   }
@@ -527,11 +527,11 @@ jobs:
                   if (expiresAt <= System.currentTimeMillis()) return
                   val alarms = context.getSystemService(android.content.Context.ALARM_SERVICE) as android.app.AlarmManager
                   val moments = longArrayOf(expiresAt - 3L * DAY_MS, expiresAt - DAY_MS, expiresAt)
-                  val titles = arrayOf("VIP+ akan berakhir", "VIP+ berakhir besok", "Masa VIP+ berakhir")
+                  val titles = arrayOf("VIP akan berakhir", "VIP berakhir besok", "Masa VIP berakhir")
                   val messages = arrayOf(
-                      "Masa VIP+ Anda tersisa sekitar 3 hari.",
-                      "Masa VIP+ Anda akan berakhir dalam sekitar 24 jam.",
-                      "Masa VIP+ Anda telah mencapai tanggal berakhir. Periksa status paket di M Asisten."
+                      "Masa VIP Anda tersisa sekitar 3 hari.",
+                      "Masa VIP Anda akan berakhir dalam sekitar 24 jam.",
+                      "Masa VIP Anda telah mencapai tanggal berakhir. Periksa status paket di M Asisten."
                   )
                   for (i in moments.indices) {
                       if (moments[i] <= System.currentTimeMillis()) continue
@@ -583,8 +583,8 @@ jobs:
                       !prefs.getBoolean("active", false) ||
                       prefs.getLong("expires_at", 0L) != expiresAt
                   ) return
-                  val title = intent.getStringExtra("title") ?: "Informasi VIP+"
-                  val message = intent.getStringExtra("message") ?: "Periksa status VIP+ Anda di M Asisten."
+                  val title = intent.getStringExtra("title") ?: "Informasi VIP"
+                  val message = intent.getStringExtra("message") ?: "Periksa status VIP Anda di M Asisten."
                   val notificationId = when {
                       title.contains("akan berakhir") -> 4103
                       title.contains("besok") -> 4104
@@ -1178,7 +1178,7 @@ jobs:
                   "Masuk dengan akun Google untuk melanjutkan ke beranda M Asisten." to "Sign in with your Google account to continue to the M Asisten home screen.",
                   "Menghubungkan akun..." to "Connecting account...",
                   "Masuk dengan Google" to "Continue with Google",
-                  "Dengan masuk, Anda dapat menggunakan paket Standar dan mengelola keanggotaan VIP+." to "Sign in to use the Standard plan and manage your VIP+ membership.",
+                  "Dengan masuk, Anda dapat menggunakan paket Standar dan mengelola keanggotaan VIP." to "Sign in to use the Standard plan and manage your VIP membership.",
                   "Ketentuan Layanan  •  Kebijakan Privasi" to "Terms of Service  •  Privacy Policy",
                   "DIBUAT DI INDONESIA" to "MADE IN INDONESIA",
                   "Semua jadi lebih mudah." to "Everything made easier.",
@@ -1226,8 +1226,8 @@ jobs:
                   "Nama pemilik rekening terdaftar: Muhamad Soleh" to "Registered account holder: Muhamad Soleh",
                   "BUKTI PEMBAYARAN" to "PAYMENT PROOF",
                   "Siapkan bukti transfer yang jelas. Fitur lampiran langsung belum tersedia, jadi kirimkan foto atau PDF bukti transfer ke email resmi admin m.suara.pintar@gmail.com setelah mengirim konfirmasi pembayaran di aplikasi." to "Prepare a clear transfer receipt. Direct attachments are not yet supported in the app, so email a photo or PDF of the receipt to the official admin address m.suara.pintar@gmail.com after submitting your payment confirmation in the app.",
-                  "INFORMASI AKTIVASI VIP+" to "VIP+ ACTIVATION INFORMATION",
-                  "Setelah bukti pembayaran dikirim ke email resmi dan konfirmasi pembayaran diajukan di aplikasi, admin akan memeriksa pembayaran Anda. Jika bukti dan pembayaran dinyatakan valid, VIP+ akan diaktifkan paling lambat 1 x 24 jam setelah hasil pemeriksaan admin menyatakan pembayaran valid. Jika belum aktif setelah batas waktu tersebut, hubungi m.suara.pintar@gmail.com." to "After emailing your payment receipt to the official address and submitting the payment confirmation in the app, the admin will review your payment. If the receipt and payment are confirmed valid, VIP+ will be activated within a maximum of 24 hours after the admin confirms the payment is valid. If it is not active after that period, contact m.suara.pintar@gmail.com.",
+                  "INFORMASI AKTIVASI VIP" to "VIP ACTIVATION INFORMATION",
+                  "Setelah bukti pembayaran dikirim ke email resmi dan konfirmasi pembayaran diajukan di aplikasi, admin akan memeriksa pembayaran Anda. Jika bukti dan pembayaran dinyatakan valid, VIP akan diaktifkan paling lambat 1 x 24 jam setelah hasil pemeriksaan admin menyatakan pembayaran valid. Jika belum aktif setelah batas waktu tersebut, hubungi m.suara.pintar@gmail.com." to "After emailing your payment receipt to the official address and submitting the payment confirmation in the app, the admin will review your payment. If the receipt and payment are confirmed valid, VIP+ will be activated within a maximum of 24 hours after the admin confirms the payment is valid. If it is not active after that period, contact m.suara.pintar@gmail.com.",
                   "Nama pengirim sesuai rekening" to "Sender name as shown on bank account",
                   "Nomor referensi transfer (opsional)" to "Transfer reference number (optional)",
                   "KIRIM KONFIRMASI TRANSFER" to "SUBMIT TRANSFER CONFIRMATION",
@@ -1334,7 +1334,7 @@ jobs:
                       }
                       Spacer(Modifier.height(22.dp))
                       Text(
-                          "Dengan masuk, Anda dapat menggunakan paket Standar dan mengelola keanggotaan VIP+.",
+                          "Dengan masuk, Anda dapat menggunakan paket Standar dan mengelola keanggotaan VIP.",
                           color = Color(0xFF8298B1),
                           fontSize = 12.sp,
                           textAlign = TextAlign.Center,
@@ -1433,7 +1433,7 @@ jobs:
                                                   "VERIFIED" -> MAsistenNotifications.post(
                                                       notificationContext, 4401,
                                                       "Pembayaran terverifikasi",
-                                                      "Pembayaran $plan telah diverifikasi. Periksa status paket VIP+ Anda."
+                                                      "Pembayaran $plan telah diverifikasi. Periksa status paket VIP Anda."
                                                   )
                                                   "REJECTED" -> MAsistenNotifications.post(
                                                       notificationContext, 4402,
@@ -1927,11 +1927,11 @@ jobs:
                       val privacySections = listOf(
                           "1. Tentang M Asisten" to "M Asisten adalah aplikasi asisten suara untuk membantu menjalankan perintah dan membuka fitur atau aplikasi pada perangkat Android. Kebijakan ini berlaku untuk penggunaan aplikasi M Asisten. Dengan menggunakan fitur aplikasi, Anda memahami pemrosesan data sebagaimana dijelaskan di bawah. Fitur tertentu memerlukan izin perangkat dan koneksi internet.",
                           "2. Data yang diproses" to "Data yang dapat diproses meliputi: (a) data akun Google seperti ID pengguna Firebase, nama tampilan, dan alamat email; (b) data keanggotaan seperti status VIP, paket, masa berlaku, dan waktu pembaruan; (c) data permintaan pembayaran VIP+ seperti nama pengirim, paket, nominal, referensi transfer jika diisi, status permintaan, dan waktu pengajuan/verifikasi; (d) nama profil dan preferensi yang disimpan secara lokal; serta (e) informasi teknis yang dapat diproses oleh sistem Android, Firebase, Google Play Services, dan Google Mobile Ads sesuai fungsi masing-masing. M Asisten tidak meminta PIN, kata sandi bank, atau kode OTP.",
-                          "3. Mikrofon dan pengenalan suara" to "Izin mikrofon digunakan untuk mengenali perintah suara. Pada mode Standar, pengenalan suara dimulai ketika Anda mengaktifkan widget atau fitur suara. Pada mode VIP+, ketika layanan standby suara diaktifkan, aplikasi dapat terus menunggu kata pemicu “Hallo M” di latar belakang agar dapat menerima perintah berikutnya. Layanan ini menggunakan pengenalan suara pada perangkat Android melalui layanan pengenalan suara luring yang tersedia di perangkat. Aplikasi M Asisten tidak mengirim rekaman suara mentah ke server M Asisten atau menyimpan rekaman suara sebagai arsip. Ketersediaan pemrosesan sepenuhnya luring bergantung pada versi Android, layanan pengenalan suara, dan paket bahasa yang terpasang. Jika layanan pengenalan suara perangkat tidak sepenuhnya luring, pemrosesan oleh penyedia layanan tersebut mengikuti kebijakan penyedianya. Standby VIP+ memerlukan notifikasi layanan aktif, dapat meningkatkan penggunaan baterai, dan dapat dihentikan oleh sistem Android atau pengaturan baterai perangkat.",
+                          "3. Mikrofon dan pengenalan suara" to "Izin mikrofon digunakan untuk mengenali perintah suara. Pada mode Standar, pengenalan suara dimulai ketika Anda mengaktifkan widget atau fitur suara. Pada mode VIP, ketika layanan standby suara diaktifkan, aplikasi dapat terus menunggu kata pemicu “Hallo M” di latar belakang agar dapat menerima perintah berikutnya. Layanan ini menggunakan pengenalan suara pada perangkat Android melalui layanan pengenalan suara luring yang tersedia di perangkat. Aplikasi M Asisten tidak mengirim rekaman suara mentah ke server M Asisten atau menyimpan rekaman suara sebagai arsip. Ketersediaan pemrosesan sepenuhnya luring bergantung pada versi Android, layanan pengenalan suara, dan paket bahasa yang terpasang. Jika layanan pengenalan suara perangkat tidak sepenuhnya luring, pemrosesan oleh penyedia layanan tersebut mengikuti kebijakan penyedianya. Standby VIP+ memerlukan notifikasi layanan aktif, dapat meningkatkan penggunaan baterai, dan dapat dihentikan oleh sistem Android atau pengaturan baterai perangkat.",
                           "4. Aplikasi terpasang dan perintah membuka aplikasi" to "Untuk menampilkan daftar aplikasi dan menemukan aplikasi yang Anda sebutkan melalui perintah suara, M Asisten membaca nama aplikasi dan informasi komponen peluncur yang tersedia pada perangkat. Pencarian ini dilakukan di perangkat untuk menampilkan atau membuka aplikasi yang dipilih. Informasi daftar aplikasi tersebut tidak dikirim sebagai daftar ke Firebase oleh fitur launcher. Aplikasi tujuan dibuka melalui mekanisme Android; setelah dibuka, penggunaan dan pengumpulan data oleh aplikasi tujuan mengikuti kebijakan privasi masing-masing pengembang.",
-                          "5. Izin perangkat" to "Izin mikrofon digunakan untuk perintah suara dan standby VIP+. Izin kamera digunakan untuk mengendalikan lampu kilat sebagai senter, bukan untuk mengambil foto atau video melalui fitur senter. Izin tampil di atas aplikasi lain digunakan untuk menampilkan widget mengambang. Layanan latar depan dan notifikasi digunakan untuk menjaga layanan suara tetap terlihat ketika aktif. Izin Wake Lock membantu perangkat tetap aktif selama standby suara berjalan dan dapat menambah konsumsi baterai. Izin internet dan status jaringan digunakan untuk login, pemeriksaan keanggotaan, pengiriman permintaan VIP+, serta layanan Google yang diperlukan. Izin perubahan pengaturan sistem hanya digunakan ketika Anda meminta fungsi yang memerlukan perubahan pengaturan, seperti kecerahan layar. Izin alarm digunakan untuk fungsi alarm jika tersedia dan diminta. Anda dapat mengelola atau mencabut izin melalui Pengaturan Android; pencabutan izin dapat membuat fitur terkait tidak berfungsi.",
-                          "6. Akun Google, Firebase, dan keanggotaan VIP+" to "Jika Anda memilih masuk dengan Google, M Asisten menggunakan Google Sign-In dan Firebase Authentication untuk mengautentikasi akun. Aplikasi dapat menyimpan ID pengguna, nama tampilan, alamat email, penyedia login, serta waktu login/pembaruan pada layanan Firebase. Data keanggotaan seperti status aktif, paket, masa berlaku, dan informasi pemeriksaan admin diproses melalui Cloud Firestore agar status VIP+ dapat ditampilkan dan diverifikasi. Sebagian status keanggotaan dapat disimpan sementara di perangkat untuk mendukung pemeriksaan akses saat koneksi tidak tersedia. Cache lokal terikat pada akun dan dibatasi oleh masa berlaku atau batas verifikasi yang diterapkan aplikasi.",
-                          "7. Pembayaran VIP+ dan pembagian data" to "Pembayaran VIP+ pada versi ini dilakukan melalui transfer manual SeaBank dan diperiksa oleh admin. Saat Anda mengirim konfirmasi, aplikasi mengirim ID akun, nama dan email akun yang tersedia, paket yang dipilih, nominal, metode pembayaran, nama pengirim, referensi transfer jika diisi, serta status dan waktu permintaan ke Cloud Firestore. Admin yang berwenang dapat melihat data yang diperlukan untuk mencocokkan mutasi dan memutuskan verifikasi atau penolakan. Aplikasi tidak memproses nomor kartu, PIN, kata sandi bank, atau OTP dan saat ini tidak menyediakan unggahan bukti transfer. Jangan mengirim data rahasia perbankan melalui kolom konfirmasi.",
+                          "5. Izin perangkat" to "Izin mikrofon digunakan untuk perintah suara dan standby VIP. Izin kamera digunakan untuk mengendalikan lampu kilat sebagai senter, bukan untuk mengambil foto atau video melalui fitur senter. Izin tampil di atas aplikasi lain digunakan untuk menampilkan widget mengambang. Layanan latar depan dan notifikasi digunakan untuk menjaga layanan suara tetap terlihat ketika aktif. Izin Wake Lock membantu perangkat tetap aktif selama standby suara berjalan dan dapat menambah konsumsi baterai. Izin internet dan status jaringan digunakan untuk login, pemeriksaan keanggotaan, pengiriman permintaan VIP+, serta layanan Google yang diperlukan. Izin perubahan pengaturan sistem hanya digunakan ketika Anda meminta fungsi yang memerlukan perubahan pengaturan, seperti kecerahan layar. Izin alarm digunakan untuk fungsi alarm jika tersedia dan diminta. Anda dapat mengelola atau mencabut izin melalui Pengaturan Android; pencabutan izin dapat membuat fitur terkait tidak berfungsi.",
+                          "6. Akun Google, Firebase, dan keanggotaan VIP" to "Jika Anda memilih masuk dengan Google, M Asisten menggunakan Google Sign-In dan Firebase Authentication untuk mengautentikasi akun. Aplikasi dapat menyimpan ID pengguna, nama tampilan, alamat email, penyedia login, serta waktu login/pembaruan pada layanan Firebase. Data keanggotaan seperti status aktif, paket, masa berlaku, dan informasi pemeriksaan admin diproses melalui Cloud Firestore agar status VIP+ dapat ditampilkan dan diverifikasi. Sebagian status keanggotaan dapat disimpan sementara di perangkat untuk mendukung pemeriksaan akses saat koneksi tidak tersedia. Cache lokal terikat pada akun dan dibatasi oleh masa berlaku atau batas verifikasi yang diterapkan aplikasi.",
+                          "7. Pembayaran VIP dan pembagian data" to "Pembayaran VIP pada versi ini dilakukan melalui transfer manual SeaBank dan diperiksa oleh admin. Saat Anda mengirim konfirmasi, aplikasi mengirim ID akun, nama dan email akun yang tersedia, paket yang dipilih, nominal, metode pembayaran, nama pengirim, referensi transfer jika diisi, serta status dan waktu permintaan ke Cloud Firestore. Admin yang berwenang dapat melihat data yang diperlukan untuk mencocokkan mutasi dan memutuskan verifikasi atau penolakan. Aplikasi tidak memproses nomor kartu, PIN, kata sandi bank, atau OTP dan saat ini tidak menyediakan unggahan bukti transfer. Jangan mengirim data rahasia perbankan melalui kolom konfirmasi.",
                           "8. Iklan dan layanan pihak ketiga" to "Kode aplikasi menyertakan Google Mobile Ads SDK. Versi saat ini menggunakan ID aplikasi dan unit iklan pengujian milik Google untuk pengembangan/pengujian, bukan ID iklan produksi milik M Asisten. SDK atau layanan Google dapat memproses informasi perangkat, diagnostik, interaksi iklan, atau pengenal yang diizinkan sistem untuk menyediakan dan mengukur layanan sesuai konfigurasi serta kebijakan Google. Google Sign-In, Firebase Authentication, dan Cloud Firestore juga memproses data yang diperlukan untuk fungsi akun dan keanggotaan. Data dapat diproses oleh penyedia layanan tersebut sesuai ketentuan privasi mereka. M Asisten tidak menjual data pribadi pengguna.",
                           "9. Penyimpanan, keamanan, dan masa retensi" to "Pengaturan tertentu dan cache keanggotaan disimpan secara lokal pada perangkat. Data akun, keanggotaan, dan permintaan pembayaran yang diperlukan untuk layanan disimpan pada layanan Firebase yang digunakan aplikasi. Data dikirim melalui koneksi layanan yang disediakan Google/Firebase; akses ke data dibatasi oleh autentikasi dan aturan keamanan layanan. Tidak ada sistem elektronik yang dapat dijamin 100% bebas risiko, sehingga pengguna tetap perlu menjaga keamanan perangkat dan akun Google. Data disimpan selama diperlukan untuk menyediakan layanan, memeriksa transaksi, menjaga keamanan, dan memenuhi kewajiban yang berlaku. Jangka retensi khusus untuk arsip transaksi dan penghapusan data akan ditetapkan dan diumumkan sebelum layanan dirilis secara publik.",
                           "10. Hak pengguna dan penghapusan data" to "Anda dapat berhenti menggunakan fitur suara, menonaktifkan widget, keluar dari akun Google melalui aplikasi, atau mencabut izin perangkat melalui Pengaturan Android. Keluar dari akun tidak sama dengan menghapus data akun di server. Mekanisme permintaan penghapusan akun dan data secara menyeluruh, termasuk jalur dari luar aplikasi, belum tersedia pada versi pengembangan ini dan harus diselesaikan sebelum rilis publik apabila pembuatan akun tetap disediakan. Permintaan penghapusan nantinya akan mencakup data akun dan data terkait pada layanan Firebase, dengan pengecualian terbatas jika penyimpanan diwajibkan untuk keamanan, pencegahan penyalahgunaan, atau kewajiban hukum. Jangan menganggap data server telah terhapus hanya dengan menghapus aplikasi dari perangkat.",
@@ -1944,11 +1944,11 @@ jobs:
                       val englishPrivacySections = listOf(
                           "1. About M Asisten" to "M Asisten is a voice assistant application that helps users execute commands and open features or apps on Android devices. This policy applies to the use of the M Asisten application. By using the app features, you acknowledge the data processing described below. Certain features require device permissions and an internet connection.",
                           "2. Data We Process" to "The data that may be processed includes: (a) Google account data such as Firebase user ID, display name, and email address; (b) membership data such as VIP status, plan, expiration date, and update time; (c) VIP+ payment request data such as sender name, selected plan, amount, transfer reference if provided, request status, and submission or verification time; (d) profile names and preferences stored locally; and (e) technical information that may be processed by Android, Firebase, Google Play Services, and Google Mobile Ads according to their respective functions. M Asisten does not ask for your bank PIN, password, or one-time password (OTP).",
-                          "3. Microphone and Voice Recognition" to "Microphone permission is used to recognize voice commands. In Standard mode, voice recognition starts when you activate the floating widget or voice feature. In VIP+ mode, when voice standby is enabled, the app may continuously wait for the wake phrase “Hallo M” in the background so it can receive the next command. This feature uses Android device voice recognition through the offline speech recognition service available on the device. M Asisten does not send raw voice recordings to M Asisten servers or store voice recordings as an archive. Fully offline processing depends on the Android version, speech recognition service, and language packs installed on the device. If the device speech recognition service is not fully offline, processing by that service provider is governed by its own policy. VIP+ standby requires an active service notification, may increase battery usage, and may be stopped by Android or the device battery settings.",
+                          "3. Microphone and Voice Recognition" to "Microphone permission is used to recognize voice commands. In Standard mode, voice recognition starts when you activate the floating widget or voice feature. In VIP mode, when voice standby is enabled, the app may continuously wait for the wake phrase “Hallo M” in the background so it can receive the next command. This feature uses Android device voice recognition through the offline speech recognition service available on the device. M Asisten does not send raw voice recordings to M Asisten servers or store voice recordings as an archive. Fully offline processing depends on the Android version, speech recognition service, and language packs installed on the device. If the device speech recognition service is not fully offline, processing by that service provider is governed by its own policy. VIP+ standby requires an active service notification, may increase battery usage, and may be stopped by Android or the device battery settings.",
                           "4. Installed Apps and App Launch Commands" to "To display the app list and find an app mentioned in a voice command, M Asisten reads app names and launcher component information available on the device. This search takes place on the device to display or open the selected app. The launcher feature does not send the app list to Firebase. Target apps are opened through Android mechanisms; after an app is opened, its use and data collection are governed by that app developer’s own privacy policy.",
-                          "5. Device Permissions" to "Microphone permission is used for voice commands and VIP+ standby. Camera permission is used to control the flash as a flashlight, not to take photos or videos through the flashlight feature. Display-over-other-apps permission is used to show the floating widget. Foreground service and notification permissions are used to keep the voice service visible while active. Wake Lock permission helps keep the device awake while voice standby is running and may increase battery consumption. Internet and network-state permissions are used for sign-in, membership checks, VIP+ requests, and required Google services. Permission to modify system settings is used only when you request a function that requires a settings change, such as screen brightness. Alarm permission is used for alarm functions when available and requested. You can manage or revoke permissions in Android Settings; revoking a permission may cause the related feature to stop working.",
-                          "6. Google Account, Firebase, and VIP+ Membership" to "If you choose to sign in with Google, M Asisten uses Google Sign-In and Firebase Authentication to authenticate your account. The app may store your user ID, display name, email address, sign-in provider, and sign-in or update time through Firebase services. Membership data such as active status, plan, expiration date, and administrator verification information is processed through Cloud Firestore so VIP+ status can be displayed and verified. Some membership status information may be temporarily stored on the device to support access checks when a connection is unavailable. The local cache is tied to your account and limited by the expiration date or verification limits enforced by the app.",
-                          "7. VIP+ Payments and Data Sharing" to "In this version, VIP+ payments are made by manual SeaBank bank transfer and reviewed by an administrator. When you submit a payment confirmation, the app sends your account ID, available account name and email, selected plan, amount, payment method, sender name, transfer reference if provided, and request status and time to Cloud Firestore. Authorized administrators can view the information needed to match the transfer with bank transaction records and decide whether to approve or reject the request. The app does not process card numbers, bank PINs, bank passwords, or OTPs, and it currently does not provide an in-app payment receipt upload feature. Do not submit confidential banking information in the confirmation fields.",
+                          "5. Device Permissions" to "Microphone permission is used for voice commands and VIP standby. Camera permission is used to control the flash as a flashlight, not to take photos or videos through the flashlight feature. Display-over-other-apps permission is used to show the floating widget. Foreground service and notification permissions are used to keep the voice service visible while active. Wake Lock permission helps keep the device awake while voice standby is running and may increase battery consumption. Internet and network-state permissions are used for sign-in, membership checks, VIP+ requests, and required Google services. Permission to modify system settings is used only when you request a function that requires a settings change, such as screen brightness. Alarm permission is used for alarm functions when available and requested. You can manage or revoke permissions in Android Settings; revoking a permission may cause the related feature to stop working.",
+                          "6. Google Account, Firebase, and VIP Membership" to "If you choose to sign in with Google, M Asisten uses Google Sign-In and Firebase Authentication to authenticate your account. The app may store your user ID, display name, email address, sign-in provider, and sign-in or update time through Firebase services. Membership data such as active status, plan, expiration date, and administrator verification information is processed through Cloud Firestore so VIP+ status can be displayed and verified. Some membership status information may be temporarily stored on the device to support access checks when a connection is unavailable. The local cache is tied to your account and limited by the expiration date or verification limits enforced by the app.",
+                          "7. VIP Payments and Data Sharing" to "In this version, VIP payments are made by manual SeaBank bank transfer and reviewed by an administrator. When you submit a payment confirmation, the app sends your account ID, available account name and email, selected plan, amount, payment method, sender name, transfer reference if provided, and request status and time to Cloud Firestore. Authorized administrators can view the information needed to match the transfer with bank transaction records and decide whether to approve or reject the request. The app does not process card numbers, bank PINs, bank passwords, or OTPs, and it currently does not provide an in-app payment receipt upload feature. Do not submit confidential banking information in the confirmation fields.",
                           "8. Advertising and Third-Party Services" to "The application code includes the Google Mobile Ads SDK. The current version uses Google test app and ad unit IDs for development and testing, not M Asisten production advertising IDs. The SDK or Google services may process device information, diagnostics, ad interactions, or identifiers permitted by the system to provide and measure services in accordance with their configuration and Google policies. Google Sign-In, Firebase Authentication, and Cloud Firestore also process data required for account and membership features. Data may be processed by these service providers under their respective privacy terms. M Asisten does not sell users’ personal data.",
                           "9. Storage, Security, and Retention" to "Certain settings and membership cache data are stored locally on your device. Account, membership, and payment request data required to provide the service are stored in the Firebase services used by the app. Data is transmitted through connections provided by Google and Firebase; access is restricted through authentication and service security rules. No electronic system can be guaranteed to be 100% risk-free, so users should protect their devices and Google accounts. Data is retained for as long as necessary to provide the service, review transactions, maintain security, and meet applicable obligations. Specific retention periods for transaction records and data deletion procedures will be established and announced before public release.",
                           "10. User Rights and Data Deletion" to "You can stop using voice features, disable the floating widget, sign out of your Google account through the app, or revoke device permissions in Android Settings. Signing out is not the same as deleting account data from the server. A complete account and data deletion request process, including a method available outside the app, is not yet available in this development version and must be completed before public release if account creation remains available. Future deletion requests will cover account data and related data in Firebase services, subject to limited exceptions where retention is required for security, abuse prevention, or legal obligations. Do not assume server data has been deleted simply by uninstalling the app.",
@@ -2497,11 +2497,11 @@ jobs:
                                       shape = RoundedCornerShape(12.dp)
                                   ) {
                                       Column(Modifier.fillMaxWidth().padding(12.dp)) {
-                                          Text(mAsistenUiText("INFORMASI AKTIVASI VIP+", isEnglish), color = Cyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                          Text(mAsistenUiText("INFORMASI AKTIVASI VIP", isEnglish), color = Cyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                           Spacer(Modifier.height(5.dp))
                                           Text(
                                               mAsistenUiText(
-                                                  "Setelah bukti pembayaran dikirim ke email resmi dan konfirmasi pembayaran diajukan di aplikasi, admin akan memeriksa pembayaran Anda. Jika bukti dan pembayaran dinyatakan valid, VIP+ akan diaktifkan paling lambat 1 x 24 jam setelah hasil pemeriksaan admin menyatakan pembayaran valid. Jika belum aktif setelah batas waktu tersebut, hubungi m.suara.pintar@gmail.com.",
+                                                  "Setelah bukti pembayaran dikirim ke email resmi dan konfirmasi pembayaran diajukan di aplikasi, admin akan memeriksa pembayaran Anda. Jika bukti dan pembayaran dinyatakan valid, VIP akan diaktifkan paling lambat 1 x 24 jam setelah hasil pemeriksaan admin menyatakan pembayaran valid. Jika belum aktif setelah batas waktu tersebut, hubungi m.suara.pintar@gmail.com.",
                                                   isEnglish
                                               ),
                                               color = Color.White,
@@ -3036,7 +3036,7 @@ jobs:
                       vipGreetingPending = false
                       textToSpeech?.stop()
                       releaseVipWakeLock()
-                      showMessage("Mode siaga VIP+ berhenti otomatis setelah 10 menit tanpa perintah. Ketuk widget untuk mengaktifkan kembali.", speak = false)
+                      showMessage("Mode siaga VIP berhenti otomatis setelah 10 menit tanpa perintah. Ketuk widget untuk mengaktifkan kembali.", speak = false)
                   }
                   vipIdleTimeoutRunnable = timeout
                   handler.postDelayed(timeout, vipIdleTimeoutMs)
@@ -3136,8 +3136,8 @@ jobs:
               private fun createNotification() {
                   MAsistenNotifications.createChannels(this)
                   val notification = Notification.Builder(this, MAsistenNotifications.SERVICE_CHANNEL)
-                      .setContentTitle(if (vipMode) "M Asisten VIP+ aktif" else "M Asisten aktif")
-                      .setContentText(if (vipMode) "Mode siaga suara VIP+ sedang berjalan" else "Widget mikrofon sedang berjalan")
+                      .setContentTitle(if (vipMode) "M Asisten VIP aktif" else "M Asisten aktif")
+                      .setContentText(if (vipMode) "Mode siaga suara VIP sedang berjalan" else "Widget mikrofon sedang berjalan")
                       .setSmallIcon(android.R.drawable.ic_btn_speak_now)
                       .setOngoing(true)
                       .build()
@@ -3169,7 +3169,7 @@ jobs:
                   }
 
                   micButton = TextView(this).apply {
-                      text = if (vipMode) "VIP+" else "🎤"
+                      text = if (vipMode) "VIP" else "🎤"
                       textSize = if (vipMode) 13f else 25f
                       typeface = if (vipMode) Typeface.create("sans-serif-black", Typeface.BOLD)
                           else Typeface.DEFAULT
@@ -3721,7 +3721,7 @@ jobs:
                                       if (targetLanguage == null) {
                                           listening = false
                                           showMessage(
-                                              "Paket suara offline untuk bahasa perangkat dan Bahasa Inggris belum tersedia. VIP+ akan memeriksa kembali otomatis.",
+                                              "Paket suara offline untuk bahasa perangkat dan Bahasa Inggris belum tersedia. VIP akan memeriksa kembali otomatis.",
                                               speak = false
                                           )
                                           if (vipMode) resumeVipWakeWordListening(60_000L)
@@ -3743,7 +3743,7 @@ jobs:
                                           hasLanguage(support.pendingOnDeviceLanguages, Locale.forLanguageTag(targetLanguage).language) -> {
                                               listening = false
                                               showMessage(
-                                                  "Paket bahasa offline sedang disiapkan Android. VIP+ akan mencoba kembali otomatis.",
+                                                  "Paket bahasa offline sedang disiapkan Android. VIP akan mencoba kembali otomatis.",
                                                   speak = false
                                               )
                                               if (vipMode) resumeVipWakeWordListening(30_000L)
@@ -3751,7 +3751,7 @@ jobs:
                                           else -> {
                                               listening = false
                                               showMessage(
-                                                  "Paket bahasa offline belum terpasang. Hubungkan internet untuk mengunduhnya; VIP+ akan memeriksa kembali otomatis.",
+                                                  "Paket bahasa offline belum terpasang. Hubungkan internet untuk mengunduhnya; VIP akan memeriksa kembali otomatis.",
                                                   speak = false
                                               )
                                               try {
@@ -3814,7 +3814,7 @@ jobs:
                       "Memproses suara..." to "Processing speech...",
                       "Hallo M terdeteksi. Mode perintah suara aktif." to "Hallo M detected. Voice command mode is active.",
                       "Perintah tidak dikenali. Menunggu panggilan Hallo M..." to "Command not recognized. Waiting for the Hallo M wake word...",
-                      "Mode siaga VIP+ berhenti otomatis setelah 10 menit tanpa perintah. Ketuk widget untuk mengaktifkan kembali." to "VIP+ standby stops automatically after 10 minutes without a command. Tap the widget to reactivate it.",
+                      "Mode siaga VIP berhenti otomatis setelah 10 menit tanpa perintah. Ketuk widget untuk mengaktifkan kembali." to "VIP standby stops automatically after 10 minutes without a command. Tap the widget to reactivate it.",
                       "Izin mikrofon diperlukan agar mode siaga VIP dapat berjalan." to "Microphone permission is required for VIP standby mode.",
                       "Pengenalan suara offline memerlukan Android 12 atau lebih baru pada versi aplikasi ini." to "Offline speech recognition requires Android 12 or later in this app version.",
                       "Pengenalan suara offline tidak tersedia. Periksa dukungan layanan suara offline dan paket Bahasa Indonesia di perangkat." to "Offline speech recognition is unavailable. Check offline speech support and the language pack on your device.",
