@@ -52,7 +52,7 @@ jobs:
       - name: Test Firestore Security Rules
         run: |
           npm install --prefix security-tests --no-audit --no-fund
-          # Tooling is ephemeral CI-only; production/admin dependencies are audited separately.
+          npm audit --prefix security-tests --audit-level=moderate
           security-tests/node_modules/.bin/firebase emulators:exec --only firestore --project demo-m-launcher-voice "node security-tests/firestore-rules.test.mjs"
 
   build:
