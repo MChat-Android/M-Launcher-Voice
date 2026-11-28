@@ -14,13 +14,15 @@ This document tracks the security work for the Android app and its Firebase/admi
 - Firestore rules restrict VIP entitlement writes to trusted admin custom claims and restrict Trial creation to server timestamps plus an atomic account/device claim.
 - Firestore emulator tests cover Trial, VIP membership, payment requests, admin operations, and backup ownership.
 - Admin CLI is bound to the one UID configured by `M_ASISTEN_ADMIN_UID`; `audit-admins` lists all custom-claim admins and `revoke-unexpected-admin` can remove an unexpected claim.
-- Admin dependency audit uses a patched `uuid@11.1.1` override. CI regenerates the admin lockfile before installing and fails on moderate-or-higher audit findings.
+- Admin and CI test-tool dependency trees use patched transitive overrides. CI regenerates the admin lockfile before installing and fails on moderate-or-higher audit findings for both dependency sets.
 - CI checks for accidentally tracked service-account keys, keystores, and environment secret files.
 - GitHub Actions are pinned to full commit SHAs rather than floating major-version tags.
 - Android backup is disabled, cleartext traffic is explicitly disabled, and the boot receiver is not exported.
 - Offline VIP expiry for time-based packages uses monotonic elapsed time, preventing a simple device-clock rollback from extending the cached entitlement.
 - Cached admin claims no longer grant admin-only privileges offline.
 - Monthly renewals extend from the existing future expiry; a monthly purchase cannot overwrite a permanent membership.
+- Active VIP records are checked for consistent plan/expiry data; a permanent plan must have no expiry timestamp.
+- Firebase Android dependencies use BoM 34.19.0 and Google Services plugin 4.6.0. BoM 35.2.0 was tested but requires Firebase Auth minSdk 24, so the app stays on the newest compatible line without dropping Android API 23.
 
 ## Security limitations that remain
 
@@ -36,7 +38,7 @@ This document tracks the security work for the Android app and its Firebase/admi
 
 - [ ] Latest `security/hardening` commit has a green security job and signed APK build.
 - [ ] Admin and CI test-tool dependency audits report zero known vulnerabilities at the moderate-or-higher threshold.
-- [ ] Verify the Firebase Android SDK BoM and Google Services plugin are on current supported stable versions.
+- [ ] Recheck Firebase Android SDK versions for security updates while preserving minSdk 23, or explicitly approve raising minSdk to 24 after reviewing device compatibility.
 - [ ] All Firestore emulator tests pass.
 - [ ] Run `node vip-admin.js audit-admins` from the trusted admin environment and confirm only the approved primary UID has `admin: true`.
 - [ ] Publish and independently review the Firestore rules in Firebase Console.
