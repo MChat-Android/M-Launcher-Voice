@@ -28,8 +28,7 @@ service cloud.firestore {
     }
 
     function validVipPlan(plan, amount) {
-      return (plan == 'VIP Mingguan (7 hari)' && amount == 15000)
-        || (plan == 'VIP Bulanan (30 hari)' && amount == 50000)
+      return (plan == 'VIP Bulanan (30 hari)' && amount == 29000)
         || (plan == 'VIP Permanen' && amount == 499000);
     }
 
