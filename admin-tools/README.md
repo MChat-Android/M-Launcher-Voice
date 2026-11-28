@@ -1,4 +1,4 @@
-# M Asisten — alat admin VIP+
+# M Asisten — alat admin VIP
 
 Alat ini berjalan di komputer admin tepercaya, **bukan di aplikasi Android**. Firebase Admin SDK memakai kredensial server dan melewati Firestore Security Rules. Jangan pernah memasukkan service-account JSON ke APK, GitHub repository, atau membagikannya kepada pengguna.
 
@@ -35,7 +35,7 @@ Sebelum panel admin di APK dipakai, publikasikan isi file `firestore.rules` ke F
 
 Aturan terbaru mengizinkan akun dengan custom claim `admin: true` membaca permintaan pembayaran dan profil VIP pelanggan. Pengguna biasa tetap hanya dapat membaca profilnya sendiri dan tidak dapat mengaktifkan VIP atau mengubah status pembayaran.
 
-Panel admin sudah tersedia di aplikasi pada menu VIP+ setelah token akun memuat custom claim admin. Panel menampilkan paket, nominal, nama pengirim, email, referensi transfer, dan waktu pengajuan. Verifikasi tetap wajib didahului pemeriksaan mutasi SeaBank secara manual.
+Panel admin sudah tersedia di aplikasi pada menu VIP setelah token akun memuat custom claim admin. Panel menampilkan paket, nominal, nama pengirim, email, referensi transfer, dan waktu pengajuan. Verifikasi tetap wajib didahului pemeriksaan mutasi SeaBank secara manual.
 
 ## Jadikan akun sebagai admin
 
@@ -64,7 +64,7 @@ export M_ASISTEN_ADMIN_UID="UID_ADMIN_FIREBASE"
 node vip-admin.js verify ID_DOKUMEN_PERMINTAAN "Transfer cocok dengan mutasi SeaBank"
 ```
 
-Skrip memeriksa status harus `PENDING_REVIEW`, memvalidasi pasangan paket/nominal, lalu dalam satu transaksi mengubah permintaan menjadi `VERIFIED` dan mengaktifkan membership. Masa aktif dihitung sejak verifikasi: 7, 30, atau 365 hari; Lifetime tidak memiliki tanggal kedaluwarsa.
+Skrip memeriksa status harus `PENDING_REVIEW`, memvalidasi pasangan paket/nominal, lalu dalam satu transaksi mengubah permintaan menjadi `VERIFIED` dan mengaktifkan membership. Masa aktif dihitung sejak verifikasi: 30 hari untuk VIP Bulanan; VIP Permanen tidak memiliki tanggal kedaluwarsa.
 
 Jika pembayaran tidak cocok:
 
