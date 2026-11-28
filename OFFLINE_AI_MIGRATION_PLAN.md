@@ -21,7 +21,7 @@ Commit yang diaudit: e24a72863111c3c64ec7af60a860ce3c96ea5a1a
 4. Logika perintah saat ini berupa pencocokan/perintah Kotlin melalui `executeCommand()`. Audit tidak menemukan runtime LLM lokal, model AI lokal, tokenizer, atau integrasi LiteRT-LM/llama.cpp. Dengan demikian, AI percakapan offline belum diimplementasikan.
 5. Firebase Authentication dan Cloud Firestore digunakan untuk Google sign-in, profil, status VIP, permintaan pembayaran, serta validasi akses aplikasi/widget. Sejumlah pemeriksaan VIP secara eksplisit menggunakan `Source.SERVER` dan `getIdToken(true)`; akibatnya, validasi VIP dan pemulihan mode VIP saat ini membutuhkan internet.
 6. Workflow mengaktifkan Firebase hanya jika secret `GOOGLE_SERVICES_JSON_BASE64` tersedia. Firebase bukan mesin AI, tetapi masih menjadi ketergantungan akun/keanggotaan.
-7. Dokumen integrasi pembayaran menyatakan belum ada payment gateway otomatis yang dipilih atau diaktifkan. Alur yang ada adalah permintaan pembayaran dan pemeriksaan admin. Harga yang tertulis di Firestore Rules saat audit: mingguan Rp15.000, bulanan Rp50.000, tahunan Rp250.000, Lifetime Rp500.000. Harga ini perlu keputusan bisnis terpisah sebelum diubah.
+7. Dokumen integrasi pembayaran menyatakan belum ada payment gateway otomatis yang dipilih atau diaktifkan. Alur yang ada adalah permintaan pembayaran dan pemeriksaan admin. Paket aktif saat ini hanya VIP Bulanan Rp29.000 per 30 hari (harga normal Rp60.000) dan VIP Permanen Rp499.000 (harga normal Rp720.000). Paket mingguan dan tahunan sudah tidak ditawarkan.
 8. Belum ditemukan URL endpoint AI atau API key AI di source workflow yang diaudit. Ini bukan bukti bahwa seluruh komponen aplikasi bebas jaringan; Firebase tetap digunakan untuk fungsi akun dan lisensi.
 
 ## Arsitektur target
