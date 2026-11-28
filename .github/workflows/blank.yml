@@ -172,6 +172,7 @@ jobs:
               <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE"/>
               <uses-permission android:name="android.permission.WAKE_LOCK"/>
               <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+              <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
               <uses-permission android:name="com.android.alarm.permission.SET_ALARM"/>
 
               <uses-feature
@@ -258,6 +259,20 @@ jobs:
                       android:name=".FloatingVoiceService"
                       android:exported="false"
                       android:foregroundServiceType="microphone"/>
+
+                  <receiver
+                      android:name=".VipNotificationReceiver"
+                      android:enabled="true"
+                      android:exported="false"/>
+
+                  <receiver
+                      android:name=".VipNotificationBootReceiver"
+                      android:enabled="true"
+                      android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                      </intent-filter>
+                  </receiver>
               </application>
           </manifest>
           EOF
@@ -358,8 +373,18 @@ jobs:
                   expiresAt: Long = 0L,
                   admin: Boolean = false
               ) {
-                  context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
-                      .edit()
+                  val prefs = context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
+                  val previousUid = prefs.getString(KEY_UID, null)
+                  val previousState = prefs.getString("last_notified_state", null)
+                  if (previousUid == uid && previousState == "INACTIVE" && active) {
+                      MAsistenNotifications.post(
+                          context,
+                          4201,
+                          "VIP+ berhasil diaktifkan",
+                          "Paket VIP+ Anda sudah aktif. Selamat menggunakan fitur VIP+ M Asisten."
+                      )
+                  }
+                  prefs.edit()
                       .putString(KEY_UID, uid)
                       .putBoolean(KEY_ACTIVE, active)
                       .putBoolean(KEY_ADMIN, admin)
@@ -367,13 +392,29 @@ jobs:
                       .putLong(KEY_VERIFIED_AT, System.currentTimeMillis())
                       .putLong(KEY_VERIFIED_ELAPSED, android.os.SystemClock.elapsedRealtime())
                       .putInt(KEY_VERIFIED_BOOT, currentBootCount(context))
+                      .putString("last_notified_state", if (active) "ACTIVE" else "INACTIVE")
                       .apply()
+                  if (active && !admin && expiresAt > 0L) {
+                      VipNotificationScheduler.schedule(context, uid, expiresAt)
+                  } else {
+                      VipNotificationScheduler.cancel(context)
+                  }
               }
 
               fun clear(context: android.content.Context, uid: String? = null) {
                   val prefs = context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
                   if (uid == null || prefs.getString(KEY_UID, null) == uid) {
-                      prefs.edit().clear().apply()
+                      val wasActive = prefs.getBoolean(KEY_ACTIVE, false)
+                      prefs.edit().clear().putString("last_notified_state", "INACTIVE").apply()
+                      VipNotificationScheduler.cancel(context)
+                      if (wasActive) {
+                          MAsistenNotifications.post(
+                              context,
+                              4202,
+                              "Masa VIP+ telah berakhir",
+                              "Akses VIP+ tidak lagi aktif. Anda dapat memeriksa atau memperpanjang paket di M Asisten."
+                          )
+                      }
                   }
               }
 
@@ -414,6 +455,146 @@ jobs:
               fun expiry(context: android.content.Context, uid: String): Long {
                   val prefs = context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
                   return if (prefs.getString(KEY_UID, null) == uid) prefs.getLong(KEY_EXPIRES_AT, 0L) else 0L
+              }
+          }
+
+          object MAsistenNotifications {
+              const val UPDATE_CHANNEL = "m_asisten_updates"
+              const val SERVICE_CHANNEL = "m_asisten_service"
+
+              fun createChannels(context: android.content.Context) {
+                  if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.O) return
+                  val manager = context.getSystemService(android.app.NotificationManager::class.java)
+                  manager.createNotificationChannel(
+                      android.app.NotificationChannel(
+                          UPDATE_CHANNEL,
+                          "Pemberitahuan M Asisten",
+                          android.app.NotificationManager.IMPORTANCE_DEFAULT
+                      ).apply {
+                          description = "Informasi paket VIP, pembayaran, dan pengingat masa berlaku"
+                      }
+                  )
+                  manager.createNotificationChannel(
+                      android.app.NotificationChannel(
+                          SERVICE_CHANNEL,
+                          "Layanan widget M Asisten",
+                          android.app.NotificationManager.IMPORTANCE_LOW
+                      ).apply {
+                          description = "Status layanan widget mikrofon yang sedang berjalan"
+                          setShowBadge(false)
+                      }
+                  )
+              }
+
+              fun post(context: android.content.Context, id: Int, title: String, body: String) {
+                  createChannels(context)
+                  val manager = context.getSystemService(android.app.NotificationManager::class.java)
+                  if (!manager.areNotificationsEnabled()) return
+                  if (android.os.Build.VERSION.SDK_INT >= 33 &&
+                      context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                  ) return
+                  val openApp = Intent(context, MainActivity::class.java).apply {
+                      flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                  }
+                  val pendingFlags = android.app.PendingIntent.FLAG_UPDATE_CURRENT or
+                      if (android.os.Build.VERSION.SDK_INT >= 23) android.app.PendingIntent.FLAG_IMMUTABLE else 0
+                  val pending = android.app.PendingIntent.getActivity(context, id, openApp, pendingFlags)
+                  val notification = android.app.Notification.Builder(context, UPDATE_CHANNEL)
+                      .setSmallIcon(android.R.drawable.ic_dialog_info)
+                      .setContentTitle(title)
+                      .setContentText(body)
+                      .setStyle(android.app.Notification.BigTextStyle().bigText(body))
+                      .setContentIntent(pending)
+                      .setAutoCancel(true)
+                      .build()
+                  manager.notify(id, notification)
+              }
+          }
+
+          object VipNotificationScheduler {
+              private const val PREFS = "vip_entitlement_cache"
+              private const val KEY_UID = "uid"
+              private const val KEY_EXPIRES_AT = "expires_at"
+              private const val DAY_MS = 24L * 60L * 60L * 1000L
+              private val requestCodes = intArrayOf(4100, 4101, 4102)
+
+              fun schedule(context: android.content.Context, uid: String, expiresAt: Long) {
+                  cancel(context)
+                  if (expiresAt <= System.currentTimeMillis()) return
+                  val alarms = context.getSystemService(android.content.Context.ALARM_SERVICE) as android.app.AlarmManager
+                  val moments = longArrayOf(expiresAt - 3L * DAY_MS, expiresAt - DAY_MS, expiresAt)
+                  val titles = arrayOf("VIP+ akan berakhir", "VIP+ berakhir besok", "Masa VIP+ berakhir")
+                  val messages = arrayOf(
+                      "Masa VIP+ Anda tersisa sekitar 3 hari.",
+                      "Masa VIP+ Anda akan berakhir dalam sekitar 24 jam.",
+                      "Masa VIP+ Anda telah mencapai tanggal berakhir. Periksa status paket di M Asisten."
+                  )
+                  for (i in moments.indices) {
+                      if (moments[i] <= System.currentTimeMillis()) continue
+                      val alarmIntent = Intent(context, VipNotificationReceiver::class.java).apply {
+                          action = "com.m.launchervoice.VIP_EXPIRY_$i"
+                          putExtra("uid", uid)
+                          putExtra("expiresAt", expiresAt)
+                          putExtra("title", titles[i])
+                          putExtra("message", messages[i])
+                      }
+                      val flags = android.app.PendingIntent.FLAG_UPDATE_CURRENT or
+                          if (android.os.Build.VERSION.SDK_INT >= 23) android.app.PendingIntent.FLAG_IMMUTABLE else 0
+                      val pending = android.app.PendingIntent.getBroadcast(context, requestCodes[i], alarmIntent, flags)
+                      alarms.setAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP, moments[i], pending)
+                  }
+              }
+
+              fun cancel(context: android.content.Context) {
+                  val alarms = context.getSystemService(android.content.Context.ALARM_SERVICE) as android.app.AlarmManager
+                  for (i in requestCodes.indices) {
+                      val alarmIntent = Intent(context, VipNotificationReceiver::class.java).apply {
+                          action = "com.m.launchervoice.VIP_EXPIRY_$i"
+                      }
+                      val flags = android.app.PendingIntent.FLAG_NO_CREATE or
+                          if (android.os.Build.VERSION.SDK_INT >= 23) android.app.PendingIntent.FLAG_IMMUTABLE else 0
+                      val pending = android.app.PendingIntent.getBroadcast(context, requestCodes[i], alarmIntent, flags)
+                      if (pending != null) {
+                          alarms.cancel(pending)
+                          pending.cancel()
+                      }
+                  }
+              }
+
+              fun restoreAfterBoot(context: android.content.Context) {
+                  val prefs = context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
+                  val uid = prefs.getString(KEY_UID, null) ?: return
+                  if (!prefs.getBoolean("active", false)) return
+                  val expiresAt = prefs.getLong(KEY_EXPIRES_AT, 0L)
+                  if (expiresAt > System.currentTimeMillis()) schedule(context, uid, expiresAt)
+              }
+          }
+
+          class VipNotificationReceiver : android.content.BroadcastReceiver() {
+              override fun onReceive(context: android.content.Context, intent: Intent) {
+                  val uid = intent.getStringExtra("uid") ?: return
+                  val expiresAt = intent.getLongExtra("expiresAt", 0L)
+                  val prefs = context.getSharedPreferences("vip_entitlement_cache", android.content.Context.MODE_PRIVATE)
+                  if (prefs.getString("uid", null) != uid ||
+                      !prefs.getBoolean("active", false) ||
+                      prefs.getLong("expires_at", 0L) != expiresAt
+                  ) return
+                  val title = intent.getStringExtra("title") ?: "Informasi VIP+"
+                  val message = intent.getStringExtra("message") ?: "Periksa status VIP+ Anda di M Asisten."
+                  val notificationId = when {
+                      title.contains("akan berakhir") -> 4103
+                      title.contains("besok") -> 4104
+                      else -> 4105
+                  }
+                  MAsistenNotifications.post(context, notificationId, title, message)
+              }
+          }
+
+          class VipNotificationBootReceiver : android.content.BroadcastReceiver() {
+              override fun onReceive(context: android.content.Context, intent: Intent) {
+                  if (intent.action == android.content.Intent.ACTION_BOOT_COMPLETED) {
+                      VipNotificationScheduler.restoreAfterBoot(context)
+                  }
               }
           }
 
@@ -1108,6 +1289,67 @@ jobs:
               val Cyan = Color(0xFF35D6E8)
               val Muted = Color(0xFF9DB2C9)
               val isVipPlus = vipMembershipStatus.startsWith("VIP+ AKTIF")
+              val notificationContext = LocalContext.current
+
+              // Pantau perubahan status VIP dan pembayaran akun ini selama beranda terbuka.
+              DisposableEffect(googleAccountEmail) {
+                  val currentUser = FirebaseAuth.getInstance().currentUser
+                  if (currentUser == null) {
+                      onDispose { }
+                  } else {
+                      val uid = currentUser.uid
+                      var firstMemberSnapshot = true
+                      var firstPaymentSnapshot = true
+                      val db = FirebaseFirestore.getInstance()
+                      val memberListener = db.collection("vip_members").document(uid)
+                          .addSnapshotListener { snapshot, error ->
+                              if (error == null && snapshot != null && !snapshot.metadata.isFromCache) {
+                                  val expiresAt = snapshot.getTimestamp("expiresAt")?.toDate()?.time ?: 0L
+                                  val active = snapshot.getString("membershipStatus") == "ACTIVE" &&
+                                      (expiresAt == 0L || expiresAt > System.currentTimeMillis())
+                                  if (active) {
+                                      VipEntitlementCache.save(notificationContext, uid, true, expiresAt, false)
+                                  } else {
+                                      VipEntitlementCache.clear(notificationContext, uid)
+                                  }
+                                  firstMemberSnapshot = false
+                              }
+                          }
+                      val paymentListener = db.collection("vip_payment_requests")
+                          .whereEqualTo("uid", uid)
+                          .limit(30)
+                          .addSnapshotListener { snapshot, error ->
+                              if (error == null && snapshot != null) {
+                                  if (firstPaymentSnapshot) {
+                                      firstPaymentSnapshot = false
+                                  } else {
+                                      snapshot.documentChanges.forEach { change ->
+                                          if (change.type == com.google.firebase.firestore.DocumentChange.Type.MODIFIED) {
+                                              val status = change.document.getString("status").orEmpty()
+                                              val plan = change.document.getString("plan").orEmpty().replace("VIP+", "VIP")
+                                              when (status) {
+                                                  "VERIFIED" -> MAsistenNotifications.post(
+                                                      notificationContext, 4401,
+                                                      "Pembayaran terverifikasi",
+                                                      "Pembayaran $plan telah diverifikasi. Periksa status paket VIP+ Anda."
+                                                  )
+                                                  "REJECTED" -> MAsistenNotifications.post(
+                                                      notificationContext, 4402,
+                                                      "Konfirmasi pembayaran ditolak",
+                                                      "Konfirmasi $plan ditolak. Buka riwayat transaksi untuk melihat status terbaru."
+                                                  )
+                                              }
+                                          }
+                                      }
+                                  }
+                              }
+                          }
+                      onDispose {
+                          memberListener.remove()
+                          paymentListener.remove()
+                      }
+                  }
+              }
 
               // Pantau perubahan administrasi hanya selama sesi admin aktif.
               // Snapshot pertama menjadi baseline dan tidak memunculkan notifikasi palsu.
@@ -2220,6 +2462,12 @@ jobs:
                                                   .addOnSuccessListener {
                                                       paymentSubmitting = false
                                                       paymentSubmitMessage = "Konfirmasi berhasil dikirim. Status: MENUNGGU VERIFIKASI ADMIN. VIP belum aktif."
+                                                      MAsistenNotifications.post(
+                                                          notificationContext,
+                                                          4400,
+                                                          "Konfirmasi pembayaran terkirim",
+                                                          "Konfirmasi transfer Anda sudah diterima dan menunggu pemeriksaan admin. VIP belum aktif."
+                                                      )
                                                       payerName = ""
                                                       transferReference = ""
                                                   }
@@ -2684,22 +2932,10 @@ jobs:
               }
 
               private fun createNotification() {
-                  val channelId = "m_launcher_voice_channel"
-
-                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                      val channel = NotificationChannel(
-                          channelId,
-                          "M Asisten",
-                          NotificationManager.IMPORTANCE_LOW
-                      )
-                      val manager =
-                          getSystemService(NotificationManager::class.java)
-                      manager.createNotificationChannel(channel)
-                  }
-
-                  val notification = Notification.Builder(this, channelId)
-                      .setContentTitle("M Asisten aktif")
-                      .setContentText("Widget mikrofon sedang berjalan")
+                  MAsistenNotifications.createChannels(this)
+                  val notification = Notification.Builder(this, MAsistenNotifications.SERVICE_CHANNEL)
+                      .setContentTitle(if (vipMode) "M Asisten VIP+ aktif" else "M Asisten aktif")
+                      .setContentText(if (vipMode) "Mode siaga suara VIP+ sedang berjalan" else "Widget mikrofon sedang berjalan")
                       .setSmallIcon(android.R.drawable.ic_btn_speak_now)
                       .setOngoing(true)
                       .build()
