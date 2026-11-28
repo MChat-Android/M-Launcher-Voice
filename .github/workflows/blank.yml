@@ -5371,22 +5371,69 @@ jobs:
                       return
                   }
 
-                  // WhatsApp harus diperiksa sebelum aturan umum "pesan" agar tidak
-                  // salah diarahkan ke aplikasi SMS. Akses aplikasi tetap mengikuti VIP+.
+                  // Perintah WhatsApp diproses sebelum aturan umum "pesan" agar
+                  // tidak dialihkan ke SMS. Isi pesan disiapkan, tidak dikirim otomatis.
+                  val waRequest = Regex(
+                      "(?i)^(?:tolong\\s+)?(?:kirim|buat|tulis)(?:kan)?\\s+(?:pesan\\s+)?(?:whatsapp|wa)\\s+(?:ke|kepada)\\s+(.+?)(?:\\s+(?:dengan pesan|isi pesan|isi|bilang|katakan)\\s+)(.+)$"
+                  ).find(command.trim())
+                  val waRecipient = waRequest?.groupValues?.get(1)?.trim()?.trim(',', '.', ' ')
+                  val waBody = waRequest?.groupValues?.get(2)?.trim()
                   val requestsWhatsApp = text.contains("whatsapp") ||
                       Regex("\\bwa\\b").containsMatchIn(text)
                   val requestsWhatsAppMessage = requestsWhatsApp && (
-                      text.contains("kirim") ||
-                      text.contains("pesan") ||
-                      text.contains("chat") ||
-                      text.contains("message") ||
-                      text.contains("balas")
+                      text.contains("kirim") || text.contains("pesan") ||
+                      text.contains("chat") || text.contains("message") ||
+                      text.contains("balas") || text.contains("tulis")
                   )
                   if (requestsWhatsAppMessage) {
-                      if (openAppByName("WhatsApp")) {
-                          showMessage("Membuka WhatsApp. Lanjutkan percakapan di aplikasi WhatsApp.")
-                      } else {
-                          showMessage("WhatsApp tidak ditemukan atau fitur ini memerlukan akses VIP+.")
+                      if (!vipMode) {
+                          showMessage("Mengirim pesan melalui WhatsApp tersedia di paket VIP+.")
+                          return
+                      }
+                      if (waRecipient.isNullOrBlank()) {
+                          if (openAppByName("WhatsApp")) {
+                              showMessage("WhatsApp dibuka. Sebutkan nama atau nomor kontak dan isi pesan.")
+                          } else {
+                              showMessage("WhatsApp tidak ditemukan.")
+                          }
+                          return
+                      }
+                      val recipientNumber = waRecipient
+                          .replace(Regex("[^+0-9]"), "")
+                          .let { if (it.startsWith("+")) it.substring(1) else it }
+                      val hasPhoneNumber = recipientNumber.count { it.isDigit() } in 8..15 &&
+                          waRecipient.all { it.isDigit() || it in "+ ()-." }
+                      try {
+                          if (hasPhoneNumber) {
+                              val url = if (!waBody.isNullOrBlank()) {
+                                  "https://wa.me/$recipientNumber?text=" + Uri.encode(waBody)
+                              } else {
+                                  "https://wa.me/$recipientNumber"
+                              }
+                              launchIntent(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                              showMessage(
+                                  if (waBody.isNullOrBlank())
+                                      "Membuka chat WhatsApp untuk nomor tersebut."
+                                  else
+                                      "Chat WhatsApp dibuka dengan nomor dan isi pesan yang sudah disiapkan. Periksa lalu tekan Kirim."
+                              )
+                          } else if (!waBody.isNullOrBlank()) {
+                              // Tanpa izin membaca kontak, WhatsApp menampilkan pemilih tujuan.
+                              // Teks sudah terisi; pengguna memilih kontak lalu menekan Kirim.
+                              val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                  type = "text/plain"
+                                  setPackage("com.whatsapp")
+                                  putExtra(Intent.EXTRA_TEXT, waBody)
+                              }
+                              launchIntent(shareIntent)
+                              showMessage("Pilih kontak WhatsApp yang dimaksud. Isi pesan sudah disiapkan; periksa sebelum mengirim.")
+                          } else if (openAppByName("WhatsApp")) {
+                              showMessage("WhatsApp dibuka. Pilih kontak yang ingin dihubungi.")
+                          } else {
+                              showMessage("WhatsApp tidak ditemukan.")
+                          }
+                      } catch (_: Exception) {
+                          showMessage("WhatsApp tidak dapat dibuka. Pastikan aplikasinya terpasang.")
                       }
                       return
                   }
