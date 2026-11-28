@@ -2815,6 +2815,10 @@ jobs:
               }
 
               private fun enableDragging() {
+              val density = resources.displayMetrics.density
+              val closeSizePx = (56f * density).toInt()
+              val dismissRadiusPx = 58f * density
+
               val closeTarget = TextView(this).apply {
               text = "✕"
               textSize = 28f
@@ -2825,8 +2829,8 @@ jobs:
               }
 
               val closeParams = WindowManager.LayoutParams(
-              68,
-              68,
+              closeSizePx,
+              closeSizePx,
               if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
               WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
               else
@@ -2903,11 +2907,15 @@ jobs:
                 val widgetX = layoutParams.x + container.width / 2
                 val widgetY = layoutParams.y + container.height / 2
                 val targetX = metrics.widthPixels / 2
-                val targetY = metrics.heightPixels - closeParams.y - 34
+                val targetY = metrics.heightPixels - closeParams.y - closeSizePx / 2
+                val distanceToCloseTarget = kotlin.math.hypot(
+                    (widgetX - targetX).toDouble(),
+                    (widgetY - targetY).toDouble()
+                )
 
-                val dismiss = moved &&
-                    kotlin.math.abs(widgetX - targetX) < 90 &&
-                    kotlin.math.abs(widgetY - targetY) < 90
+                // Area hapus berbentuk lingkaran, lebih luas daripada tombol X.
+                // Widget tidak perlu tepat berada di tengah tanda X.
+                val dismiss = moved && distanceToCloseTarget <= dismissRadiusPx
 
                 hideTarget()
 
