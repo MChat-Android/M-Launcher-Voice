@@ -14,9 +14,9 @@ const db = admin.firestore();
 const auth = admin.auth();
 
 const PLANS = {
-  "VIP+ Mingguan (7 hari)": { amount: 15000, days: 7 },
-  "VIP+ Bulanan (30 hari)": { amount: 50000, days: 30 },
-  "VIP+ Permanen": { amount: 499000, legacyAmounts: [750000], days: null }
+  "VIP Mingguan (7 hari)": { amount: 15000, days: 7 },
+  "VIP Bulanan (30 hari)": { amount: 50000, days: 30 },
+  "VIP Permanen": { amount: 499000, days: null }
 };
 
 async function main() {
