@@ -2332,6 +2332,8 @@ jobs:
           import android.hardware.camera2.CameraCharacteristics
           import android.hardware.camera2.CameraManager
           import android.media.AudioManager
+          import android.media.AudioDeviceCallback
+          import android.media.AudioDeviceInfo
           import android.os.Build
           import android.os.Handler
           import android.os.IBinder
@@ -2381,6 +2383,8 @@ jobs:
               private var vipWakeLock: android.os.PowerManager.WakeLock? = null
               private val vipIdleTimeoutMs = 10 * 60 * 1000L
               private var vipIdleTimeoutRunnable: Runnable? = null
+              private var audioDeviceCallback: AudioDeviceCallback? = null
+              private var audioRouteRestartRunnable: Runnable? = null
 
               private lateinit var layoutParams: WindowManager.LayoutParams
 
@@ -2388,6 +2392,58 @@ jobs:
 
               override fun onCreate() {
                   super.onCreate()
+                  registerAudioDeviceMonitoring()
+              }
+
+              // Android sendiri memilih mikrofon dan keluaran headset yang aktif.
+              // Saat perangkat kabel/Bluetooth/USB berubah, sesi pengenalan suara
+              // dibuka ulang agar SpeechRecognizer mengambil rute audio terbaru.
+              private fun registerAudioDeviceMonitoring() {
+                  if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || audioDeviceCallback != null) return
+                  try {
+                      val audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
+                      val callback = object : AudioDeviceCallback() {
+                          override fun onAudioDevicesAdded(addedDevices: Array<out AudioDeviceInfo>) {
+                              scheduleAudioRouteRefresh()
+                          }
+
+                          override fun onAudioDevicesRemoved(removedDevices: Array<out AudioDeviceInfo>) {
+                              scheduleAudioRouteRefresh()
+                          }
+                      }
+                      audioDeviceCallback = callback
+                      audioManager.registerAudioDeviceCallback(callback, handler)
+                  } catch (_: Exception) {
+                      audioDeviceCallback = null
+                  }
+              }
+
+              private fun scheduleAudioRouteRefresh() {
+                  if (!serviceInitialized) return
+                  audioRouteRestartRunnable?.let { handler.removeCallbacks(it) }
+                  val refresh = Runnable {
+                      if (!serviceInitialized || !listening) return@Runnable
+                      // Simpan status wake-word/perintah yang sedang ditunggu.
+                      // Jangan mengubah mode Standard/VIP atau status keanggotaan.
+                      listening = false
+                      try { speechRecognizer?.cancel() } catch (_: Exception) {}
+                      try { speechRecognizer?.destroy() } catch (_: Exception) {}
+                      speechRecognizer = null
+                      startVoiceRecognition()
+                  }
+                  audioRouteRestartRunnable = refresh
+                  handler.postDelayed(refresh, 900L)
+              }
+
+              private fun unregisterAudioDeviceMonitoring() {
+                  audioRouteRestartRunnable?.let { handler.removeCallbacks(it) }
+                  audioRouteRestartRunnable = null
+                  val callback = audioDeviceCallback ?: return
+                  try {
+                      val audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
+                      audioManager.unregisterAudioDeviceCallback(callback)
+                  } catch (_: Exception) {}
+                  audioDeviceCallback = null
               }
 
               override fun onStartCommand(
@@ -2538,6 +2594,7 @@ jobs:
               }
 
               private fun stopCurrentMode() {
+                  unregisterAudioDeviceMonitoring()
                   vipIdleTimeoutRunnable?.let { handler.removeCallbacks(it) }
                   vipIdleTimeoutRunnable = null
                   releaseVipWakeLock()
