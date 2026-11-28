@@ -22,6 +22,19 @@ jobs:
       - name: Validate VIP admin tool
         run: node --check admin-tools/vip-admin.js
 
+      - name: Verify no private credentials are tracked
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git ls-files | grep -E '(^|/)(service-account[^/]*\.json|[^/]*firebase-adminsdk[^/]*\.json|[^/]*\.(jks|keystore)|\.env$)'; then
+            echo "Private credential file detected in Git."
+            exit 1
+          fi
+          if git grep -n -E -- '-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----|"private_key"[[:space:]]*:[[:space:]]*"-----BEGIN' -- .; then
+            echo "Private key material detected in tracked files."
+            exit 1
+          fi
+
       - name: Resolve patched admin dependencies
         run: |
           # Rebuild the lock from exact direct dependencies and the patched uuid override.
