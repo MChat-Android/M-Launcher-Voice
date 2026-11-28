@@ -19,7 +19,8 @@
 - Catatan Trial dan klaim Android ID dibuat dalam satu batch dengan timestamp server. Aturan menolak penggunaan ulang akun/perangkat.
 - Alat admin memeriksa custom claim admin dan memverifikasi permintaan dalam transaksi Firestore; kredensial service account tidak boleh dimasukkan ke APK atau repository.
 - Cache akses VIP/admin offline telah diperketat dari 30 hari menjadi 72 jam pada commit `a551337446ea484975a0d85303d078c3695e2599`.
-- CI diberi pemeriksaan statis agar batas cache offline 72 jam tidak berubah tanpa sengaja pada commit `26d138e5ae693bc164c42d0c999913e128da85ec`.
+- Batas kedaluwarsa cache juga memakai jam monotonik Android (`elapsedRealtime`), bukan hanya jam kalender perangkat, pada commit `dd78df17942f80dab2343f02a8a5e41d1e51e77f`.
+- CI memeriksa batas 72 jam dan keberadaan pemeriksaan kedaluwarsa monotonik pada commit `caa81bc8694f1ad23d52fc3fb5c24f03f362001a`.
 
 ## Hasil CI yang sudah terkonfirmasi
 Pada commit dasar `6e534e92b87af6fab294880dc69c28c9dd2a5b1d`, GitHub Actions run #403 menyelesaikan:
@@ -30,7 +31,7 @@ Pada commit dasar `6e534e92b87af6fab294880dc69c28c9dd2a5b1d`, GitHub Actions run
 - Verifikasi tanda tangan APK: skema v1 dan v2 valid.
 - Artefak `M-Asisten-APK` berhasil diunggah.
 
-Catatan: hasil di atas adalah baseline sebelum perubahan batas cache offline 72 jam dan penambahan pemeriksaan CI. Kedua perubahan tersebut memicu pipeline baru; status akhirnya harus dikonfirmasi dari run terbaru, bukan diasumsikan dari run #403.
+Catatan: hasil di atas adalah baseline sebelum perubahan cache offline 72 jam, pemeriksaan waktu monotonik, dan penambahan pemeriksaan CI. Perubahan tersebut memicu pipeline baru; status akhirnya harus dikonfirmasi dari run terbaru, bukan diasumsikan dari run #403.
 
 ## Batasan dan risiko tersisa
 1. Android ID bukan identitas perangkat yang tidak dapat diubah. Reset perangkat, profil pengguna, atau modifikasi sistem dapat mengubahnya; pembatasan perangkat Trial adalah pencegah penyalahgunaan, bukan jaminan anti-fraud mutlak.
