@@ -138,8 +138,11 @@ service cloud.firestore {
     }
 
     match /trial_devices/{deviceId} {
-      // Dokumen hanya berisi ID perangkat dan waktu server, tanpa data akun.
-      allow read: if request.auth != null && resource.data.deviceId == deviceId;
+      // Izinkan pemeriksaan ID yang belum diklaim tanpa membuka daftar perangkat.
+      allow get: if request.auth != null
+        && (!exists(/databases/$(database)/documents/trial_devices/$(deviceId))
+          || resource.data.deviceId == deviceId);
+      allow list: if false;
 
       allow create: if request.auth != null
         && request.resource.data.keys().hasOnly(['deviceId', 'startedAt'])
