@@ -364,7 +364,7 @@ jobs:
               }
           }
 
-          // Hak VIP+ yang sudah diverifikasi disimpan agar tetap tersedia tanpa internet.
+          // Hak VIP yang sudah diverifikasi disimpan agar tetap tersedia tanpa internet.
           // Cache terikat ke UID dan tidak boleh melewati masa berlaku membership.
           object VipEntitlementCache {
               private const val PREFS = "vip_entitlement_cache"
@@ -735,7 +735,7 @@ jobs:
                           isAdminAccount = token.claims["admin"] == true
                           if (isAdminAccount) {
                               VipEntitlementCache.save(this, user.uid, true, 0L, true)
-                              vipMembershipStatus = "VIP+ AKTIF • ADMIN"
+                              vipMembershipStatus = "VIP AKTIF • ADMIN"
                           }
                       }
                       .addOnFailureListener { isAdminAccount = false }
@@ -754,9 +754,9 @@ jobs:
                           val admin = token.claims["admin"] == true
                           isAdminAccount = admin
                           if (admin) {
-                              // Hak VIP+ admin berasal dari Custom Claims, tidak dari dokumen pembayaran.
+                              // Hak VIP admin berasal dari Custom Claims, tidak dari dokumen pembayaran.
                               VipEntitlementCache.save(this, uid, true, 0L, true)
-                              vipMembershipStatus = "VIP+ AKTIF • ADMIN"
+                              vipMembershipStatus = "VIP AKTIF • ADMIN"
                           } else {
                               loadRegularVipMembership(uid)
                           }
@@ -777,7 +777,7 @@ jobs:
                               (expiresAt == 0L || expiresAt > System.currentTimeMillis())
                           VipEntitlementCache.save(this, uid, active, expiresAt, false)
                           if (active) {
-                              vipMembershipStatus = "VIP+ AKTIF"
+                              vipMembershipStatus = "VIP AKTIF"
                           } else {
                               resolveTrialEntitlement(uid, false) { trialActive, _ ->
                                   vipMembershipStatus = if (trialActive) "TRIAL AKTIF" else "PAKET STANDAR"
@@ -786,7 +786,7 @@ jobs:
                       }
                       .addOnFailureListener {
                           val cached = VipEntitlementCache.isActive(this, uid)
-                          vipMembershipStatus = if (cached) "VIP+ AKTIF • OFFLINE" else "PAKET STANDAR"
+                          vipMembershipStatus = if (cached) "VIP AKTIF • OFFLINE" else "PAKET STANDAR"
                       }
               }
 
@@ -1176,7 +1176,7 @@ jobs:
                           val admin = token.claims["admin"] == true
                           isAdminAccount = admin
                           if (admin) {
-                              vipMembershipStatus = "VIP+ AKTIF • ADMIN"
+                              vipMembershipStatus = "VIP AKTIF • ADMIN"
                               activateVerifiedVip(true, 0L, true)
                           } else {
                               FirebaseFirestore.getInstance()
@@ -1188,7 +1188,7 @@ jobs:
                                       val active = member.getString("membershipStatus") == "ACTIVE" &&
                                           (expiresAt == 0L || expiresAt > System.currentTimeMillis())
                                       if (active) {
-                                          vipMembershipStatus = "VIP+ AKTIF"
+                                          vipMembershipStatus = "VIP AKTIF"
                                           activateVerifiedVip(true, expiresAt, false)
                                       } else {
                                           VipEntitlementCache.clear(this, userUid)
@@ -1431,7 +1431,7 @@ jobs:
               val Panel = Color(0xFF111F32)
               val Cyan = Color(0xFF35D6E8)
               val Muted = Color(0xFF9DB2C9)
-              val isVipPlus = vipMembershipStatus.startsWith("VIP+ AKTIF") ||
+              val isVipPlus = vipMembershipStatus.startsWith("VIP AKTIF") ||
                   vipMembershipStatus.startsWith("TRIAL AKTIF")
               val notificationContext = LocalContext.current
 
@@ -2878,7 +2878,7 @@ jobs:
                       ?: preferences.getString("active_mode", MODE_STANDARD)
                       ?: MODE_STANDARD
 
-                  // Jangan pulihkan mode VIP+ hanya dari preferensi lokal.
+                  // Jangan pulihkan mode VIP hanya dari preferensi lokal.
                   // Setiap aktivasi dan pemulihan service wajib diverifikasi ke Firestore server.
                   val verificationId = ++modeVerificationRequest
                   if (requestedMode != MODE_VIP) {
@@ -2892,7 +2892,7 @@ jobs:
                       return START_STICKY
                   }
 
-                  // Service memverifikasi klaim admin langsung ke Firebase sebelum mengaktifkan mode VIP+.
+                  // Service memverifikasi klaim admin langsung ke Firebase sebelum mengaktifkan mode VIP.
                   user.getIdToken(true)
                       .addOnSuccessListener { token ->
                           if (verificationId != modeVerificationRequest) return@addOnSuccessListener
@@ -3008,7 +3008,7 @@ jobs:
                   handler.postDelayed(expiryCheck, (expiresAt - System.currentTimeMillis()).coerceAtLeast(0L))
               }
 
-              // Mode Standar dan VIP+ memakai siklus hidup terpisah.
+              // Mode Standar dan VIP memakai siklus hidup terpisah.
               // Saat paket berubah, seluruh komponen mode lama dihentikan dahulu.
               private fun configureMode(enableVip: Boolean) {
                   if (serviceInitialized && vipMode == enableVip) return
@@ -3213,7 +3213,7 @@ jobs:
                   windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
 
                   // Widget Standar tetap memakai mikrofon biru.
-                  // Widget VIP memakai tulisan VIP+ dengan bingkai emas khusus.
+                  // Widget VIP memakai tulisan VIP dengan bingkai emas khusus.
                   container = FrameLayout(this).apply {
                       setPadding(0, 0, 0, 0)
                       background = null
@@ -3481,7 +3481,7 @@ jobs:
 
               private fun handleWidgetTap() {
                   if (vipMode) {
-                      // Ketukan mengaktifkan kembali standby VIP+ dan mengulang hitung 5 menit.
+                      // Ketukan mengaktifkan kembali standby VIP dan mengulang hitung 5 menit.
                       acquireVipWakeLock()
                       scheduleVipIdleTimeout()
                       // Pulihkan recognizer, termasuk setelah standby otomatis berhenti.
@@ -3640,7 +3640,7 @@ jobs:
                                   )
                                   if (vipMode && error != SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS) {
                                       // SpeechRecognizer menutup sesi setelah timeout atau hasil tertentu.
-                                      // VIP+ selalu membuat sesi baru agar kata pemicu tetap dipantau.
+                                      // VIP selalu membuat sesi baru agar kata pemicu tetap dipantau.
                                       awaitingWakeWord = true
                                       showMessage("Menunggu panggilan Hallo M...", speak = false)
                                       val retryDelay = when {
@@ -3694,7 +3694,7 @@ jobs:
                                   } else {
                                       showMessage("Perintah tidak dikenali. Menunggu panggilan Hallo M...", speak = false)
                                   }
-                                  // Setelah satu perintah VIP+ selesai, selalu kembali ke mode wake-word,
+                                  // Setelah satu perintah VIP selesai, selalu kembali ke mode wake-word,
                                   // termasuk saat aplikasi tujuan dibuka ketika perangkat sedang offline.
                                   if (vipMode) resumeVipWakeWordListening(2200L)
                               }
@@ -6557,7 +6557,7 @@ jobs:
 
                   if (target.isNotBlank()) {
                       // Alias ucapan umum dipetakan ke label aplikasi; pencarian tetap
-                      // menggunakan PackageManager dan tetap melewati pembatas VIP+.
+                      // menggunakan PackageManager dan tetap melewati pembatas VIP.
                       val appAliases = mapOf(
                           "wa" to arrayOf("WhatsApp"),
                           "w a" to arrayOf("WhatsApp"),
@@ -6596,7 +6596,7 @@ jobs:
               }
 
               // Menemukan aplikasi yang benar-benar dapat dibuka pada perangkat.
-              // Mode Standar hanya menampilkan aplikasi sistem; VIP+ menampilkan seluruh
+              // Mode Standar hanya menampilkan aplikasi sistem; VIP menampilkan seluruh
               // aplikasi launcher yang terlihat oleh Android Package Visibility.
               private fun showAvailableApps() {
                   try {
@@ -6835,7 +6835,7 @@ jobs:
                   }
               }
 
-              // Setelah aplikasi tujuan dibuka, VIP+ kembali menunggu kata pemicu secara otomatis.
+              // Setelah aplikasi tujuan dibuka, VIP kembali menunggu kata pemicu secara otomatis.
               // Service foreground tetap menjadi pemilik siklus pengenalan suara.
               private var wakeWordRestartRunnable: Runnable? = null
 
