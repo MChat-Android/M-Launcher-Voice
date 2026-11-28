@@ -121,6 +121,16 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Jam tepercaya: klien hanya dapat menyimpan timestamp yang ditetapkan server.
+    // Dipakai untuk menghitung kedaluwarsa Trial tanpa mempercayai jam perangkat.
+    match /trial_clock/{userId} {
+      allow read: if signedInAs(userId);
+      allow create, update: if signedInAs(userId)
+        && request.resource.data.keys().hasOnly(['serverTime'])
+        && request.resource.data.serverTime == request.time;
+      allow delete: if false;
+    }
+
     // Trial hanya dapat dibuat sekali per akun dan sekali per Android ID.
     // Waktu mulai wajib berasal dari server; dokumen tidak dapat diubah atau dihapus.
     match /trial_entitlements/{userId} {
