@@ -7295,14 +7295,23 @@ jobs:
           set -euo pipefail
           APK="app/build/outputs/apk/release/app-release.apk"
           test -s "$APK"
-          if unzip -l "$APK" | grep -Ei '(service-account[^/]*\.json|firebase-adminsdk[^/]*\.json|\.jks$|\.keystore$)' >/dev/null; then
+          ENTRIES="$(unzip -Z1 "$APK")"
+          if printf '%s\n' "$ENTRIES" | grep -Ei '(service-account[^/]*\.json|firebase-adminsdk[^/]*\.json|\.jks$|\.keystore$|\.pem$|\.p12$|\.pfx$)' >/dev/null; then
             echo "Privileged credential file detected inside APK."
             exit 1
           fi
-          if unzip -p "$APK" | strings | grep -Ei -- '-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----' >/dev/null; then
-            echo "Private key material detected inside APK."
-            exit 1
-          fi
+          # PEM parser strings can legitimately exist in compiled DEX code. Inspect
+          # packaged data/resources instead, where an accidentally bundled key would live.
+          while IFS= read -r entry; do
+            case "$entry" in
+              assets/*|res/raw/*|*.json)
+                if unzip -p "$APK" "$entry" | grep -aE -- '-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----' >/dev/null; then
+                  echo "Private key material detected in APK data resource: $entry"
+                  exit 1
+                fi
+                ;;
+            esac
+          done < <(printf '%s\n' "$ENTRIES")
 
       - name: Verify APK Signature
         run: |
