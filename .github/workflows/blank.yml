@@ -810,7 +810,7 @@ jobs:
                           val status = snap.getString("membershipStatus") ?: "FREE"
                           val expiresAt = snap.getTimestamp("expiresAt")?.toDate()?.time ?: 0L
                           val active = status == "ACTIVE" &&
-                              ((expiresAt == 0L && snap.getString("membershipPlan") == "VIP Permanen") || expiresAt > System.currentTimeMillis())
+                              (if (snap.getString("membershipPlan") == "VIP Permanen") expiresAt == 0L else expiresAt > System.currentTimeMillis())
                           VipEntitlementCache.save(this, uid, active, expiresAt, false)
                           if (active) {
                               vipMembershipStatus = "VIP AKTIF"
@@ -1233,7 +1233,7 @@ jobs:
                                   .addOnSuccessListener { member ->
                                       val expiresAt = member.getTimestamp("expiresAt")?.toDate()?.time ?: 0L
                                       val active = member.getString("membershipStatus") == "ACTIVE" &&
-                                          ((expiresAt == 0L && member.getString("membershipPlan") == "VIP Permanen") || expiresAt > System.currentTimeMillis())
+                                          (if (member.getString("membershipPlan") == "VIP Permanen") expiresAt == 0L else expiresAt > System.currentTimeMillis())
                                       if (active) {
                                           vipMembershipStatus = "VIP AKTIF"
                                           activateVerifiedVip(true, expiresAt, false)
@@ -1507,7 +1507,7 @@ jobs:
                               if (error == null && snapshot != null && !snapshot.metadata.isFromCache) {
                                   val expiresAt = snapshot.getTimestamp("expiresAt")?.toDate()?.time ?: 0L
                                   val active = snapshot.getString("membershipStatus") == "ACTIVE" &&
-                                      ((expiresAt == 0L && snapshot.getString("membershipPlan") == "VIP Permanen") || expiresAt > System.currentTimeMillis())
+                                      (if (snapshot.getString("membershipPlan") == "VIP Permanen") expiresAt == 0L else expiresAt > System.currentTimeMillis())
                                   if (active) {
                                       VipEntitlementCache.save(notificationContext, uid, true, expiresAt, false)
                                   } else {
@@ -2995,7 +2995,7 @@ jobs:
                           if (verificationId != modeVerificationRequest) return@addOnSuccessListener
                           val expiresAt = member.getTimestamp("expiresAt")?.toDate()?.time ?: 0L
                           val vipActive = member.getString("membershipStatus") == "ACTIVE" &&
-                              ((expiresAt == 0L && member.getString("membershipPlan") == "VIP Permanen") || expiresAt > System.currentTimeMillis())
+                              (if (member.getString("membershipPlan") == "VIP Permanen") expiresAt == 0L else expiresAt > System.currentTimeMillis())
                           if (vipActive) {
                               trialListener?.remove()
                               trialListener = null
@@ -3251,7 +3251,7 @@ jobs:
 
                           val expiresAt = snapshot.getTimestamp("expiresAt")?.toDate()?.time ?: 0L
                           val vipStillActive = snapshot.getString("membershipStatus") == "ACTIVE" &&
-                              ((expiresAt == 0L && snapshot.getString("membershipPlan") == "VIP Permanen") || expiresAt > System.currentTimeMillis())
+                              (if (snapshot.getString("membershipPlan") == "VIP Permanen") expiresAt == 0L else expiresAt > System.currentTimeMillis())
                           if (vipStillActive) {
                               trialListener?.remove()
                               trialListener = null
@@ -6974,7 +6974,7 @@ jobs:
                           .addOnSuccessListener { member ->
                               val expiresAt = member.getTimestamp("expiresAt")?.toDate()?.time ?: 0L
                               val vipActive = member.getString("membershipStatus") == "ACTIVE" &&
-                                  ((expiresAt == 0L && member.getString("membershipPlan") == "VIP Permanen") || expiresAt > System.currentTimeMillis())
+                                  (if (member.getString("membershipPlan") == "VIP Permanen") expiresAt == 0L else expiresAt > System.currentTimeMillis())
                               VipEntitlementCache.save(this, user.uid, vipActive, expiresAt, false)
                               if (vipActive) openVipTarget()
                               else showMessage("Aplikasi ini khusus VIP. Aktifkan VIP untuk membukanya.")
