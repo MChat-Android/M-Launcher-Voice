@@ -1273,7 +1273,7 @@ jobs:
                   "PANEL ADMIN VIP" to "VIP ADMIN PANEL",
                   "Cocokkan pembayaran dengan mutasi SeaBank secara manual sebelum verifikasi." to "Manually match the payment with the SeaBank transaction record before approval.",
                   "SIMULASI MASA AKTIF VIP" to "VIP MEMBERSHIP PERIOD SIMULATION",
-                  "Uji hitungan 3 paket secara lokal. Tidak membuat transaksi, tidak mengubah Firestore, dan tidak mengaktifkan akun." to "Test the duration calculations for 3 plans locally. This does not create a transaction, change Firestore, or activate an account.",
+                  "Uji hitungan 2 paket secara lokal. Tidak membuat transaksi, tidak mengubah Firestore, dan tidak mengaktifkan akun." to "Test the duration calculations for 3 plans locally. This does not create a transaction, change Firestore, or activate an account.",
                   "UJI HITUNG SEMUA PAKET" to "TEST ALL PLAN CALCULATIONS",
                   "VERIFIKASI" to "APPROVE",
                   "TOLAK" to "REJECT",
@@ -2179,13 +2179,12 @@ jobs:
                                               ) {
                                                   Column(Modifier.padding(10.dp)) {
                                                       Text(mAsistenUiText("SIMULASI MASA AKTIF VIP", isEnglish), color = Cyan, fontWeight = FontWeight.Bold, fontSize = 11.sp)
-                                                      Text(mAsistenUiText("Uji hitungan 3 paket secara lokal. Tidak membuat transaksi, tidak mengubah Firestore, dan tidak mengaktifkan akun.", isEnglish), color = Muted, fontSize = 10.sp, lineHeight = 15.sp)
+                                                      Text(mAsistenUiText("Uji hitungan 2 paket secara lokal. Tidak membuat transaksi, tidak mengubah Firestore, dan tidak mengaktifkan akun.", isEnglish), color = Muted, fontSize = 10.sp, lineHeight = 15.sp)
                                                       OutlinedButton(
                                                           onClick = {
                                                               val nowMillis = System.currentTimeMillis()
                                                               val formatter = java.text.SimpleDateFormat("dd MMM yyyy, HH:mm", java.util.Locale("id", "ID"))
                                                               val packages = listOf(
-                                                                  "VIP Mingguan • 7 hari" to 7,
                                                                   "VIP Bulanan • 30 hari" to 30,
                                                                   "VIP Permanen" to -1
                                                               )
@@ -2267,9 +2266,8 @@ jobs:
                                                                       check(!transferReference.equals("test", ignoreCase = true)) { "Referensi TEST tidak boleh diverifikasi sebagai pembayaran asli." }
                                                                       val amount = req.getLong("amountIdr") ?: 0L
                                                                       val days = when (plan) {
-                                                                          "VIP Mingguan (7 hari)" -> if (amount == 15000L) 7 else 0
-                                                                          "VIP Bulanan (30 hari)" -> if (amount == 50000L) 30 else 0
-                                                                          "VIP Permanen" -> if (amount == 499000L || amount == 750000L) -1 else 0
+                                                                          "VIP Bulanan (30 hari)" -> if (amount == 29000L) 30 else 0
+                                                                          "VIP Permanen" -> if (amount == 499000L) -1 else 0
                                                                           else -> 0
                                                                       }
                                                                       check(days != 0) { "Paket dan nominal tidak cocok." }
@@ -2312,16 +2310,16 @@ jobs:
                                                                           val uid = req.getString("uid") ?: error("UID pelanggan tidak valid.")
                                                                           val plan = req.getString("plan") ?: error("Paket tidak valid.")
                                                                           val amount = req.getLong("amountIdr") ?: 0L
-                                                                          check(plan == "VIP Mingguan (7 hari)" && amount == 15000L) { "Simulasi ini khusus paket Mingguan Rp15.000." }
+                                                                          check(plan == "VIP Bulanan (30 hari)" && amount == 29000L) { "Simulasi ini khusus paket Bulanan Rp29.000." }
                                                                           val memberRef = db.collection("vip_members").document(uid)
                                                                           check(tx.get(memberRef).exists()) { "Profil pelanggan belum ada." }
                                                                           val now = com.google.firebase.Timestamp.now()
-                                                                          val expires = com.google.firebase.Timestamp(java.util.Date(now.toDate().time + 7L * 86400000L))
-                                                                          tx.update(memberRef, mapOf("membershipStatus" to "ACTIVE", "membershipPlan" to "VIP Mingguan (7 hari)", "startedAt" to now, "expiresAt" to expires, "testMode" to true, "testPaymentRequestId" to id, "updatedAt" to com.google.firebase.firestore.FieldValue.serverTimestamp()))
+                                                                          val expires = com.google.firebase.Timestamp(java.util.Date(now.toDate().time + 30L * 86400000L))
+                                                                          tx.update(memberRef, mapOf("membershipStatus" to "ACTIVE", "membershipPlan" to "VIP Bulanan (30 hari)", "startedAt" to now, "expiresAt" to expires, "testMode" to true, "testPaymentRequestId" to id, "updatedAt" to com.google.firebase.firestore.FieldValue.serverTimestamp()))
                                                                           null
                                                                       }.addOnSuccessListener {
                                                                           adminBusy = false
-                                                                          adminMessage = "SIMULASI BERHASIL: akun VIP uji aktif 7 hari. Permintaan pembayaran tetap MENUNGGU VERIFIKASI."
+                                                                          adminMessage = "SIMULASI BERHASIL: akun VIP uji aktif 30 hari. Permintaan pembayaran tetap MENUNGGU VERIFIKASI."
                                                                       }.addOnFailureListener { e ->
                                                                           adminBusy = false
                                                                           adminMessage = "Simulasi gagal: ${e.localizedMessage}"
@@ -2481,9 +2479,8 @@ jobs:
                                   Text(mAsistenUiText("PILIHAN PAKET", isEnglish), color = Cyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                   Spacer(Modifier.height(7.dp))
                                   listOf(
-                                      Triple("VIP Mingguan (7 hari)", "Rp20.000", "Rp15.000" to "PROMO 25%"),
-                                      Triple("VIP Bulanan (30 hari)", "Rp70.000", "Rp50.000" to "PROMO 29%"),
-                                      Triple("VIP Permanen", "Rp699.000", "Rp499.000" to "PROMO 29%")
+                                      Triple("VIP Bulanan (30 hari)", "Rp60.000", "Rp29.000" to "👑 ✨ DISKON 52%"),
+                                      Triple("VIP Permanen", "Rp720.000", "Rp499.000" to "👑 ✨ DISKON 31%")
                                   ).forEach { (plan, originalPrice, promo) ->
                                       val (promoPrice, promoLabel) = promo
                                       Card(
@@ -2626,8 +2623,7 @@ jobs:
                                               // Abaikan ketukan berulang saat permintaan sedang dikirim.
                                           } else {
                                               val amount = when (selectedVipPlan) {
-                                                  "VIP Mingguan (7 hari)" -> 15000
-                                                  "VIP Bulanan (30 hari)" -> 50000
+                                                  "VIP Bulanan (30 hari)" -> 29000
                                                   "VIP Permanen" -> 499000
                                                   else -> 499000
                                               }
