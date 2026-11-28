@@ -238,7 +238,7 @@ jobs:
 
                   <meta-data
                       android:name="com.google.android.gms.ads.APPLICATION_ID"
-                      android:value="ca-app-pub-3940256099942544~3347511713"/>
+                      android:value="ca-app-pub-7565089304214703~5812877997"/>
 
                   <activity
                       android:name=".MainActivity"
@@ -301,8 +301,8 @@ jobs:
           import com.google.android.gms.ads.FullScreenContentCallback
           import com.google.android.gms.ads.LoadAdError
           import com.google.android.gms.ads.MobileAds
-          import com.google.android.gms.ads.interstitial.InterstitialAd
-          import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
+          import com.google.android.gms.ads.rewarded.RewardedAd
+          import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
           import com.google.firebase.auth.FirebaseAuth
           import com.google.firebase.auth.GoogleAuthProvider
           import com.google.firebase.firestore.FieldValue
@@ -339,7 +339,9 @@ jobs:
           private val Blue = Color(0xFF397BFF)
           private val Muted = Color(0xFF9DB2C9)
 
-          private const val TEST_INTERSTITIAL_AD_UNIT_ID = "ca-app-pub-3940256099942544/1033173712"
+          // Gunakan unit iklan uji resmi selama pengembangan. Ganti ke ID produksi
+          // ca-app-pub-7565089304214703/2556159267 hanya setelah pengujian selesai dan aplikasi siap dipublikasikan.
+          private const val REWARDED_AD_UNIT_ID = "ca-app-pub-3940256099942544/5224354917"
 
           object MAsistenTrial {
               const val DURATION_MS = 72L * 60L * 60L * 1000L
@@ -612,9 +614,10 @@ jobs:
               private var googleAccountEmail by mutableStateOf("")
               private var vipMembershipStatus by mutableStateOf("BELUM AKTIF")
               private var isAdminAccount by mutableStateOf(false)
-              private var interstitialAd: InterstitialAd? = null
+              private var rewardedAd: RewardedAd? = null
               private var isAdLoading = false
               private var standardActivationPending = false
+              private var standardRewardEarned = false
               private var standardWidgetStarter: (() -> Unit)? = null
 
               private val voiceMessageReceiver = object : android.content.BroadcastReceiver() {
@@ -895,7 +898,7 @@ jobs:
               override fun onCreate(savedInstanceState: Bundle?) {
                   super.onCreate(savedInstanceState)
                   MobileAds.initialize(this) {
-                      runOnUiThread { loadStandardInterstitial() }
+                      runOnUiThread { loadStandardRewardedAd() }
                   }
 
                   FirebaseAuth.getInstance().currentUser?.let { user ->
@@ -939,24 +942,26 @@ jobs:
                   }
               }
 
-              private fun loadStandardInterstitial() {
-                  if (isAdLoading || interstitialAd != null || isFinishing) return
+              private fun loadStandardRewardedAd() {
+                  if (isAdLoading || rewardedAd != null || isFinishing) return
                   isAdLoading = true
-                  InterstitialAd.load(
+                  RewardedAd.load(
                       this,
-                      TEST_INTERSTITIAL_AD_UNIT_ID,
+                      REWARDED_AD_UNIT_ID,
                       AdRequest.Builder().build(),
-                      object : InterstitialAdLoadCallback() {
-                          override fun onAdLoaded(ad: InterstitialAd) {
+                      object : RewardedAdLoadCallback() {
+                          override fun onAdLoaded(ad: RewardedAd) {
                               isAdLoading = false
-                              interstitialAd = ad
-                              if (standardActivationPending) showLoadedStandardInterstitial()
+                              rewardedAd = ad
+                              if (standardActivationPending) showLoadedStandardRewardedAd()
                           }
 
                           override fun onAdFailedToLoad(error: LoadAdError) {
                               isAdLoading = false
-                              interstitialAd = null
-                              if (standardActivationPending) completeStandardActivation()
+                              rewardedAd = null
+                              if (standardActivationPending) {
+                                  failStandardActivation("Iklan belum tersedia. Widget belum diaktifkan. Coba lagi beberapa saat.")
+                              }
                           }
                       }
                   )
@@ -965,47 +970,66 @@ jobs:
               private fun showStandardAdThen(activateWidget: () -> Unit) {
                   if (standardActivationPending) return
                   standardActivationPending = true
+                  standardRewardEarned = false
                   standardWidgetStarter = activateWidget
-                  message = "Menyiapkan iklan sebelum widget diaktifkan..."
-                  if (interstitialAd != null) {
-                      showLoadedStandardInterstitial()
+                  message = "Menyiapkan iklan Rewarded sebelum widget diaktifkan..."
+                  if (rewardedAd != null) {
+                      showLoadedStandardRewardedAd()
                   } else if (!isAdLoading) {
-                      loadStandardInterstitial()
+                      loadStandardRewardedAd()
                   }
               }
 
-              private fun showLoadedStandardInterstitial() {
-                  val ad = interstitialAd
+              private fun showLoadedStandardRewardedAd() {
+                  val ad = rewardedAd
                   if (ad == null) {
-                      if (!isAdLoading) loadStandardInterstitial()
+                      if (!isAdLoading) loadStandardRewardedAd()
                       return
                   }
-                  interstitialAd = null
+                  rewardedAd = null
+                  standardRewardEarned = false
                   ad.fullScreenContentCallback = object : FullScreenContentCallback() {
                       override fun onAdDismissedFullScreenContent() {
-                          completeStandardActivation()
-                          loadStandardInterstitial()
+                          if (standardRewardEarned) {
+                              completeStandardActivation()
+                          } else {
+                              failStandardActivation("Iklan belum selesai. Widget tidak diaktifkan.")
+                          }
+                          loadStandardRewardedAd()
                       }
 
                       override fun onAdFailedToShowFullScreenContent(error: AdError) {
-                          completeStandardActivation()
-                          loadStandardInterstitial()
+                          failStandardActivation("Iklan gagal ditampilkan. Widget tidak diaktifkan.")
+                          loadStandardRewardedAd()
                       }
                   }
                   try {
-                      ad.show(this)
+                      ad.show(this) {
+                          // Reward callback wajib diterima sebelum widget boleh aktif.
+                          standardRewardEarned = true
+                          message = "Reward diterima. Menyelesaikan aktivasi widget..."
+                      }
                   } catch (_: Exception) {
-                      completeStandardActivation()
-                      loadStandardInterstitial()
+                      failStandardActivation("Iklan tidak dapat ditampilkan. Widget tidak diaktifkan.")
+                      loadStandardRewardedAd()
                   }
               }
 
               private fun completeStandardActivation() {
-                  if (!standardActivationPending) return
+                  if (!standardActivationPending || !standardRewardEarned) return
                   standardActivationPending = false
+                  standardRewardEarned = false
                   val startWidget = standardWidgetStarter
                   standardWidgetStarter = null
                   startWidget?.invoke()
+              }
+
+              private fun failStandardActivation(reason: String) {
+                  if (!standardActivationPending) return
+                  standardActivationPending = false
+                  standardRewardEarned = false
+                  standardWidgetStarter = null
+                  message = reason
               }
 
               private fun startWidgetService(mode: String) {
