@@ -2327,7 +2327,7 @@ jobs:
                                                                   },
                                                                   enabled = !adminBusy,
                                                                   modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
-                                                              ) { Text(mAsistenUiText("SIMULASI AKTIFKAN VIP 7 HARI (BUKAN PEMBAYARAN)", isEnglish), fontSize = 9.sp) }
+                                                              ) { Text(mAsistenUiText("SIMULASI AKTIFKAN VIP 30 HARI (BUKAN PEMBAYARAN)", isEnglish), fontSize = 9.sp) }
                                                           }
                                                       }
                                                   }
