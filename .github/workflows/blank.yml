@@ -2777,7 +2777,7 @@ jobs:
               private var listening = false
               private var awaitingWakeWord = true
               private var vipWakeLock: android.os.PowerManager.WakeLock? = null
-              private val vipIdleTimeoutMs = 10 * 60 * 1000L
+              private val vipIdleTimeoutMs = 5 * 60 * 1000L
               private var vipIdleTimeoutRunnable: Runnable? = null
               private var audioDeviceCallback: AudioDeviceCallback? = null
               private var audioRouteRestartRunnable: Runnable? = null
@@ -3047,7 +3047,7 @@ jobs:
                   vipWakeLock = null
               }
 
-              // Widget tetap tampil setelah 10 menit, tetapi sesi mikrofon dan wake lock dihentikan.
+              // Widget tetap tampil setelah 5 menit tanpa perintah, tetapi sesi mikrofon dan wake lock dihentikan.
               private fun scheduleVipIdleTimeout() {
                   if (!vipMode || !serviceInitialized) return
                   vipIdleTimeoutRunnable?.let { handler.removeCallbacks(it) }
@@ -3061,7 +3061,7 @@ jobs:
                       vipGreetingPending = false
                       textToSpeech?.stop()
                       releaseVipWakeLock()
-                      showMessage("Mode siaga VIP berhenti otomatis setelah 10 menit tanpa perintah. Ketuk widget untuk mengaktifkan kembali.", speak = false)
+                      showMessage("Mode siaga VIP berhenti otomatis setelah 5 menit tanpa perintah. Ketuk widget untuk mengaktifkan kembali.", speak = false)
                   }
                   vipIdleTimeoutRunnable = timeout
                   handler.postDelayed(timeout, vipIdleTimeoutMs)
@@ -3456,7 +3456,7 @@ jobs:
 
               private fun handleWidgetTap() {
                   if (vipMode) {
-                      // Ketukan mengaktifkan kembali standby VIP+ dan mengulang hitung 10 menit.
+                      // Ketukan mengaktifkan kembali standby VIP+ dan mengulang hitung 5 menit.
                       acquireVipWakeLock()
                       scheduleVipIdleTimeout()
                       // Pulihkan recognizer, termasuk setelah standby otomatis berhenti.
@@ -3839,7 +3839,7 @@ jobs:
                       "Memproses suara..." to "Processing speech...",
                       "Hallo M terdeteksi. Mode perintah suara aktif." to "Hallo M detected. Voice command mode is active.",
                       "Perintah tidak dikenali. Menunggu panggilan Hallo M..." to "Command not recognized. Waiting for the Hallo M wake word...",
-                      "Mode siaga VIP berhenti otomatis setelah 10 menit tanpa perintah. Ketuk widget untuk mengaktifkan kembali." to "VIP standby stops automatically after 10 minutes without a command. Tap the widget to reactivate it.",
+                      "Mode siaga VIP berhenti otomatis setelah 5 menit tanpa perintah. Ketuk widget untuk mengaktifkan kembali." to "VIP standby stops automatically after 5 minutes without a command. Tap the widget to reactivate it.",
                       "Izin mikrofon diperlukan agar mode siaga VIP dapat berjalan." to "Microphone permission is required for VIP standby mode.",
                       "Pengenalan suara offline memerlukan Android 12 atau lebih baru pada versi aplikasi ini." to "Offline speech recognition requires Android 12 or later in this app version.",
                       "Pengenalan suara offline tidak tersedia. Periksa dukungan layanan suara offline dan paket Bahasa Indonesia di perangkat." to "Offline speech recognition is unavailable. Check offline speech support and the language pack on your device.",
