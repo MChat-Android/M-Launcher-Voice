@@ -21,10 +21,14 @@ jobs:
       - name: Validate VIP admin tool
         run: node --check admin-tools/vip-admin.js
 
-      - name: Audit admin dependencies
+      - name: Resolve patched admin dependencies
         run: |
-          npm ci --prefix admin-tools
-          npm audit --prefix admin-tools --audit-level=high
+          # Rebuild the lock from exact direct dependencies and the patched uuid override.
+          npm install --package-lock-only --ignore-scripts --prefix admin-tools
+          npm ci --ignore-scripts --prefix admin-tools
+
+      - name: Audit admin dependencies
+        run: npm audit --prefix admin-tools --audit-level=moderate
 
       - name: Setup Node.js for Firestore rules tests
         uses: actions/setup-node@v4
@@ -374,6 +378,7 @@ jobs:
               private const val KEY_EXPIRES_AT = "expires_at"
               private const val KEY_VERIFIED_AT = "verified_at"
               private const val KEY_VERIFIED_ELAPSED = "verified_elapsed"
+              private const val KEY_EXPIRES_ELAPSED = "expires_elapsed"
               private const val KEY_VERIFIED_BOOT = "verified_boot"
               private const val OFFLINE_GRACE_MS = 30L * 24L * 60L * 60L * 1000L
 
@@ -408,13 +413,19 @@ jobs:
                           "Paket VIP Anda sudah aktif. Selamat menggunakan fitur VIP M Asisten."
                       )
                   }
+                  val verifiedWallTime = System.currentTimeMillis()
+                  val verifiedElapsed = android.os.SystemClock.elapsedRealtime()
+                  val expiresElapsed = if (expiresAt > 0L) {
+                      verifiedElapsed + (expiresAt - verifiedWallTime).coerceAtLeast(0L)
+                  } else 0L
                   prefs.edit()
                       .putString(KEY_UID, uid)
                       .putBoolean(KEY_ACTIVE, active)
                       .putBoolean(KEY_ADMIN, admin)
                       .putLong(KEY_EXPIRES_AT, expiresAt)
-                      .putLong(KEY_VERIFIED_AT, System.currentTimeMillis())
-                      .putLong(KEY_VERIFIED_ELAPSED, android.os.SystemClock.elapsedRealtime())
+                      .putLong(KEY_VERIFIED_AT, verifiedWallTime)
+                      .putLong(KEY_VERIFIED_ELAPSED, verifiedElapsed)
+                      .putLong(KEY_EXPIRES_ELAPSED, expiresElapsed)
                       .putInt(KEY_VERIFIED_BOOT, currentBootCount(context))
                       .putString("last_notified_state", if (active) "ACTIVE" else "INACTIVE")
                       .apply()
@@ -464,16 +475,24 @@ jobs:
                   val elapsedSinceVerification = elapsedNow - verifiedElapsed
                   val verifiedAt = prefs.getLong(KEY_VERIFIED_AT, 0L)
                   val expiresAt = prefs.getLong(KEY_EXPIRES_AT, 0L)
-                  val cacheLimit = if (expiresAt > 0L) expiresAt else verifiedAt + OFFLINE_GRACE_MS
+                  val expiresElapsed = prefs.getLong(KEY_EXPIRES_ELAPSED, 0L)
+                  val notExpired = if (expiresAt > 0L) {
+                      // Masa berlaku dihitung memakai jam monotonic agar memundurkan jam
+                      // perangkat tidak dapat memperpanjang akses VIP offline.
+                      expiresElapsed > 0L && elapsedNow < expiresElapsed
+                  } else {
+                      // VIP permanen tetap dibatasi grace offline sejak verifikasi terakhir.
+                      true
+                  }
                   return verifiedAt > 0L &&
                       elapsedSinceVerification <= OFFLINE_GRACE_MS &&
-                      (expiresAt <= 0L || System.currentTimeMillis() < cacheLimit)
+                      notExpired
               }
 
               fun isAdmin(context: android.content.Context, uid: String): Boolean {
-                  val prefs = context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
-                  return prefs.getString(KEY_UID, null) == uid &&
-                      prefs.getBoolean(KEY_ADMIN, false) && isActive(context, uid)
+                  // Custom Claims admin harus diverifikasi secara online pada sesi ini.
+                  // Cache offline tidak boleh mempertahankan hak administrasi setelah pencabutan.
+                  return false
               }
 
               fun expiry(context: android.content.Context, uid: String): Long {
@@ -1277,7 +1296,7 @@ jobs:
                   "UJI HITUNG SEMUA PAKET" to "TEST ALL PLAN CALCULATIONS",
                   "VERIFIKASI" to "APPROVE",
                   "TOLAK" to "REJECT",
-                  "SIMULASI AKTIFKAN VIP 7 HARI (BUKAN PEMBAYARAN)" to "SIMULATE 7-DAY VIP ACTIVATION (NOT A PAYMENT)",
+                  "SIMULASI AKTIFKAN VIP 30 HARI (BUKAN PEMBAYARAN)" to "SIMULATE 30-DAY VIP ACTIVATION (NOT A PAYMENT)",
                   "STATUS KEANGGOTAAN" to "MEMBERSHIP STATUS",
                   "G   LANJUTKAN DENGAN GOOGLE" to "G   CONTINUE WITH GOOGLE",
                   "KELUAR AKUN" to "SIGN OUT",
@@ -2272,10 +2291,22 @@ jobs:
                                                                       }
                                                                       check(days != 0) { "Paket dan nominal tidak cocok." }
                                                                       val memberRef = db.collection("vip_members").document(uid)
-                                                                      check(tx.get(memberRef).exists()) { "Profil pelanggan belum ada." }
+                                                                      val member = tx.get(memberRef)
+                                                                      check(member.exists()) { "Profil pelanggan belum ada." }
                                                                       val now = com.google.firebase.Timestamp.now()
-                                                                      val expires = if (days < 0) null else com.google.firebase.Timestamp(java.util.Date(now.toDate().time + days.toLong() * 86400000L))
-                                                                      tx.update(memberRef, mapOf("membershipStatus" to "ACTIVE", "membershipPlan" to plan, "startedAt" to now, "expiresAt" to expires, "verifiedPaymentRequestId" to id, "updatedAt" to com.google.firebase.firestore.FieldValue.serverTimestamp()))
+                                                                      val nowMillis = now.toDate().time
+                                                                      val currentExpiry = member.getTimestamp("expiresAt")?.toDate()?.time ?: 0L
+                                                                      val currentActive = member.getString("membershipStatus") == "ACTIVE" &&
+                                                                          (currentExpiry == 0L || currentExpiry > nowMillis)
+                                                                      check(!(days > 0 && currentActive && currentExpiry == 0L)) {
+                                                                          "Akun sudah VIP Permanen. Paket bulanan tidak boleh menggantikan akses permanen."
+                                                                      }
+                                                                      val effectiveStart = if (days > 0 && currentActive && currentExpiry > nowMillis) {
+                                                                          com.google.firebase.Timestamp(java.util.Date(currentExpiry))
+                                                                      } else now
+                                                                      val expires = if (days < 0) null else com.google.firebase.Timestamp(java.util.Date(effectiveStart.toDate().time + days.toLong() * 86400000L))
+                                                                      val startedAt = if (currentActive) member.getTimestamp("startedAt") ?: now else now
+                                                                      tx.update(memberRef, mapOf("membershipStatus" to "ACTIVE", "membershipPlan" to plan, "startedAt" to startedAt, "expiresAt" to expires, "verifiedPaymentRequestId" to id, "updatedAt" to com.google.firebase.firestore.FieldValue.serverTimestamp()))
                                                                       tx.update(reqRef, mapOf("status" to "VERIFIED", "adminUid" to operator.uid, "reviewedAt" to com.google.firebase.firestore.FieldValue.serverTimestamp(), "adminNote" to "Pembayaran diverifikasi oleh admin."))
                                                                       null
                                                                   }.addOnSuccessListener { adminBusy = false; adminItems = adminItems.filterNot { it.first == id }; adminMessage = "VIP berhasil diaktifkan." }
@@ -2312,7 +2343,9 @@ jobs:
                                                                           val amount = req.getLong("amountIdr") ?: 0L
                                                                           check(plan == "VIP Bulanan (30 hari)" && amount == 29000L) { "Simulasi ini khusus paket Bulanan Rp29.000." }
                                                                           val memberRef = db.collection("vip_members").document(uid)
-                                                                          check(tx.get(memberRef).exists()) { "Profil pelanggan belum ada." }
+                                                                          val member = tx.get(memberRef)
+                                                                          check(member.exists()) { "Profil pelanggan belum ada." }
+                                                                          check(member.getString("membershipStatus") != "ACTIVE") { "Simulasi tidak boleh menimpa paket VIP aktif." }
                                                                           val now = com.google.firebase.Timestamp.now()
                                                                           val expires = com.google.firebase.Timestamp(java.util.Date(now.toDate().time + 30L * 86400000L))
                                                                           tx.update(memberRef, mapOf("membershipStatus" to "ACTIVE", "membershipPlan" to "VIP Bulanan (30 hari)", "startedAt" to now, "expiresAt" to expires, "testMode" to true, "testPaymentRequestId" to id, "updatedAt" to com.google.firebase.firestore.FieldValue.serverTimestamp()))
