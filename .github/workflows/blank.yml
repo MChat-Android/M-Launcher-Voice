@@ -1427,7 +1427,7 @@ jobs:
           ) {
               val isEnglish = Locale.getDefault().language.equals("en", ignoreCase = true)
               var showVipPlus by remember { mutableStateOf(false) }
-              var selectedVipPlan by remember { mutableStateOf("VIP+ Bulanan (30 hari)") }
+              var selectedVipPlan by remember { mutableStateOf("VIP Bulanan (30 hari)") }
               var payerName by remember { mutableStateOf("") }
               var transferReference by remember { mutableStateOf("") }
               var paymentSubmitting by remember { mutableStateOf(false) }
@@ -1491,7 +1491,7 @@ jobs:
                                       snapshot.documentChanges.forEach { change ->
                                           if (change.type == com.google.firebase.firestore.DocumentChange.Type.MODIFIED) {
                                               val status = change.document.getString("status").orEmpty()
-                                              val plan = change.document.getString("plan").orEmpty().replace("VIP+", "VIP")
+                                              val plan = change.document.getString("plan").orEmpty().replace("VIP", "VIP")
                                               when (status) {
                                                   "VERIFIED" -> MAsistenNotifications.post(
                                                       notificationContext, 4401,
@@ -2194,7 +2194,7 @@ jobs:
                                                                   append(formatter.format(java.util.Date(nowMillis)))
                                                                   packages.forEach { (label, days) ->
                                                                       append("\\n")
-                                                                      append(label.replace("VIP+", "VIP"))
+                                                                      append(label.replace("VIP", "VIP"))
                                                                       append(": ")
                                                                       if (days < 0) {
                                                                           append("Tidak kedaluwarsa")
@@ -2222,7 +2222,7 @@ jobs:
                                                           .whereEqualTo("status", "PENDING_REVIEW").get()
                                                           .addOnSuccessListener { snap ->
                                                               adminItems = snap.documents.map { d ->
-                                                                  val plan = (d.getString("plan") ?: "Paket?").replace("VIP+", "VIP")
+                                                                  val plan = (d.getString("plan") ?: "Paket?").replace("VIP", "VIP")
                                                                   val payer = d.getString("payerName") ?: "?"
                                                                   val email = d.getString("email") ?: "?"
                                                                   val amount = d.getLong("amountIdr") ?: 0L
@@ -2249,7 +2249,7 @@ jobs:
                           ),
                           colors = CardDefaults.cardColors(containerColor = Panel)) {
                                                       Column(Modifier.padding(8.dp)) {
-                                                          Text(info.replace("VIP+", "VIP"), color = Color.White, fontSize = 10.sp)
+                                                          Text(info.replace("VIP", "VIP"), color = Color.White, fontSize = 10.sp)
                                                           Text(mAsistenUiText("ID: $id", isEnglish), color = Muted, fontSize = 8.sp)
                                                           Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                                               Button(onClick = {
@@ -2267,9 +2267,9 @@ jobs:
                                                                       check(!transferReference.equals("test", ignoreCase = true)) { "Referensi TEST tidak boleh diverifikasi sebagai pembayaran asli." }
                                                                       val amount = req.getLong("amountIdr") ?: 0L
                                                                       val days = when (plan) {
-                                                                          "VIP+ Mingguan (7 hari)" -> if (amount == 15000L) 7 else 0
-                                                                          "VIP+ Bulanan (30 hari)" -> if (amount == 50000L) 30 else 0
-                                                                          "VIP+ Permanen" -> if (amount == 499000L || amount == 750000L) -1 else 0
+                                                                          "VIP Mingguan (7 hari)" -> if (amount == 15000L) 7 else 0
+                                                                          "VIP Bulanan (30 hari)" -> if (amount == 50000L) 30 else 0
+                                                                          "VIP Permanen" -> if (amount == 499000L || amount == 750000L) -1 else 0
                                                                           else -> 0
                                                                       }
                                                                       check(days != 0) { "Paket dan nominal tidak cocok." }
@@ -2312,12 +2312,12 @@ jobs:
                                                                           val uid = req.getString("uid") ?: error("UID pelanggan tidak valid.")
                                                                           val plan = req.getString("plan") ?: error("Paket tidak valid.")
                                                                           val amount = req.getLong("amountIdr") ?: 0L
-                                                                          check(plan == "VIP+ Mingguan (7 hari)" && amount == 15000L) { "Simulasi ini khusus paket Mingguan Rp15.000." }
+                                                                          check(plan == "VIP Mingguan (7 hari)" && amount == 15000L) { "Simulasi ini khusus paket Mingguan Rp15.000." }
                                                                           val memberRef = db.collection("vip_members").document(uid)
                                                                           check(tx.get(memberRef).exists()) { "Profil pelanggan belum ada." }
                                                                           val now = com.google.firebase.Timestamp.now()
                                                                           val expires = com.google.firebase.Timestamp(java.util.Date(now.toDate().time + 7L * 86400000L))
-                                                                          tx.update(memberRef, mapOf("membershipStatus" to "ACTIVE", "membershipPlan" to "VIP+ Mingguan (7 hari)", "startedAt" to now, "expiresAt" to expires, "testMode" to true, "testPaymentRequestId" to id, "updatedAt" to com.google.firebase.firestore.FieldValue.serverTimestamp()))
+                                                                          tx.update(memberRef, mapOf("membershipStatus" to "ACTIVE", "membershipPlan" to "VIP Mingguan (7 hari)", "startedAt" to now, "expiresAt" to expires, "testMode" to true, "testPaymentRequestId" to id, "updatedAt" to com.google.firebase.firestore.FieldValue.serverTimestamp()))
                                                                           null
                                                                       }.addOnSuccessListener {
                                                                           adminBusy = false
@@ -2435,10 +2435,10 @@ jobs:
                                           Column {
                                               Text(mAsistenUiText("STATUS KEANGGOTAAN", isEnglish), color = Muted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                                               Spacer(Modifier.height(3.dp))
-                                              Text(if (googleAccountEmail.isBlank()) "Hubungkan akun Google untuk memulai" else googleAccountName + " • " + vipMembershipStatus.replace("VIP+", "VIP"), color = Color.White, fontSize = 11.sp)
+                                              Text(if (googleAccountEmail.isBlank()) "Hubungkan akun Google untuk memulai" else googleAccountName + " • " + vipMembershipStatus.replace("VIP", "VIP"), color = Color.White, fontSize = 11.sp)
                                           }
                                           Spacer(Modifier.weight(1f))
-                                          Text(vipMembershipStatus.replace("VIP+", "VIP"), color = Cyan, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
+                                          Text(vipMembershipStatus.replace("VIP", "VIP"), color = Cyan, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
                                       }
                                   }
                                   Spacer(Modifier.height(10.dp))
@@ -2481,9 +2481,9 @@ jobs:
                                   Text(mAsistenUiText("PILIHAN PAKET", isEnglish), color = Cyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                   Spacer(Modifier.height(7.dp))
                                   listOf(
-                                      Triple("VIP+ Mingguan (7 hari)", "Rp20.000", "Rp15.000" to "PROMO 25%"),
-                                      Triple("VIP+ Bulanan (30 hari)", "Rp70.000", "Rp50.000" to "PROMO 29%"),
-                                      Triple("VIP+ Permanen", "Rp699.000", "Rp499.000" to "PROMO 29%")
+                                      Triple("VIP Mingguan (7 hari)", "Rp20.000", "Rp15.000" to "PROMO 25%"),
+                                      Triple("VIP Bulanan (30 hari)", "Rp70.000", "Rp50.000" to "PROMO 29%"),
+                                      Triple("VIP Permanen", "Rp699.000", "Rp499.000" to "PROMO 29%")
                                   ).forEach { (plan, originalPrice, promo) ->
                                       val (promoPrice, promoLabel) = promo
                                       Card(
@@ -2505,7 +2505,7 @@ jobs:
                                               modifier = Modifier.fillMaxWidth().padding(12.dp),
                                               verticalAlignment = Alignment.CenterVertically
                                           ) {
-                                              Text(plan.replace("VIP+", "VIP"), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                              Text(plan.replace("VIP", "VIP"), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                               Spacer(Modifier.weight(1f))
                                               Column(horizontalAlignment = Alignment.End) {
                                                   Text(
@@ -2521,7 +2521,7 @@ jobs:
                                       }
                                   }
                                   Spacer(Modifier.height(8.dp))
-                                  Text(if (isEnglish) "Current selection: ${selectedVipPlan.replace("VIP+", "VIP")}" else "Pilihan saat ini: ${selectedVipPlan.replace("VIP+", "VIP")}", color = Color.White, fontSize = 11.sp)
+                                  Text(if (isEnglish) "Current selection: ${selectedVipPlan.replace("VIP", "VIP")}" else "Pilihan saat ini: ${selectedVipPlan.replace("VIP", "VIP")}", color = Color.White, fontSize = 11.sp)
                                   Spacer(Modifier.height(10.dp))
                                   Spacer(Modifier.height(12.dp))
                                   Text(mAsistenUiText("PEMBAYARAN TRANSFER BANK", isEnglish), color = Cyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
@@ -2626,9 +2626,9 @@ jobs:
                                               // Abaikan ketukan berulang saat permintaan sedang dikirim.
                                           } else {
                                               val amount = when (selectedVipPlan) {
-                                                  "VIP+ Mingguan (7 hari)" -> 15000
-                                                  "VIP+ Bulanan (30 hari)" -> 50000
-                                                  "VIP+ Permanen" -> 499000
+                                                  "VIP Mingguan (7 hari)" -> 15000
+                                                  "VIP Bulanan (30 hari)" -> 50000
+                                                  "VIP Permanen" -> 499000
                                                   else -> 499000
                                               }
                                               paymentSubmitting = true
@@ -2712,7 +2712,7 @@ jobs:
                                                                   "REJECTED" -> "DITOLAK"
                                                                   else -> "STATUS TIDAK DIKENAL"
                                                               }
-                                                              "${plan.replace("VIP+", "VIP")} • $status"
+                                                              "${plan.replace("VIP", "VIP")} • $status"
                                                           }
                                                       historyLoading = false
                                                   }
