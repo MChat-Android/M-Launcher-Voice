@@ -121,8 +121,12 @@ async function main() {
       const member = memberSnap.data();
       const nowMillis = now.toMillis();
       const currentExpiry = member.expiresAt?.toMillis?.() ?? 0;
+      const currentPlan = member.membershipPlan || "";
       const currentActive = member.membershipStatus === "ACTIVE" &&
-        (currentExpiry === 0 || currentExpiry > nowMillis);
+        (currentExpiry === 0 ? currentPlan === "VIP Permanen" : currentExpiry > nowMillis);
+      if (member.membershipStatus === "ACTIVE" && currentExpiry === 0 && currentPlan !== "VIP Permanen") {
+        throw new Error("Active VIP record has no expiry but is not marked permanent; review the account before changing it.");
+      }
       if (plan.days !== null && currentActive && currentExpiry === 0) {
         throw new Error("Account already has permanent VIP. Do not replace it with a monthly plan.");
       }
