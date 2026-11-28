@@ -2524,6 +2524,7 @@ jobs:
 
                   vipMode = enableVip
                   serviceInitialized = true
+                  registerAudioDeviceMonitoring()
                   getSharedPreferences("m_widget_mode", MODE_PRIVATE)
                       .edit().putString("active_mode", if (vipMode) MODE_VIP else MODE_STANDARD).apply()
 
