@@ -815,10 +815,20 @@ jobs:
                       val storedDeviceId = snapshot.getString("deviceId").orEmpty()
                       val startedAt = snapshot.getTimestamp("startedAt")?.toDate()?.time ?: 0L
                       val expiresAt = if (startedAt > 0L) startedAt + MAsistenTrial.DURATION_MS else 0L
-                      val active = snapshot.exists() &&
-                          storedDeviceId == deviceId &&
-                          expiresAt > System.currentTimeMillis()
-                      callback(active, expiresAt)
+                      fetchTrustedServerTime(uid) { serverNow ->
+                          callback(serverNow > 0L && snapshot.exists() && storedDeviceId == deviceId && expiresAt > serverNow, expiresAt)
+                      }
+                  }
+
+                  private fun fetchTrustedServerTime(uid: String, callback: (Long) -> Unit) {
+                      val clockRef = FirebaseFirestore.getInstance().collection("trial_clock").document(uid)
+                      clockRef.set(mapOf("serverTime" to FieldValue.serverTimestamp()))
+                          .addOnSuccessListener {
+                              clockRef.get(com.google.firebase.firestore.Source.SERVER)
+                                  .addOnSuccessListener { clock -> callback(clock.getTimestamp("serverTime")?.toDate()?.time ?: 0L) }
+                                  .addOnFailureListener { callback(0L) }
+                          }
+                          .addOnFailureListener { callback(0L) }
                   }
 
                   trialRef.get(com.google.firebase.firestore.Source.SERVER)
@@ -2962,64 +2972,73 @@ jobs:
                       .orEmpty()
               }
 
+              private fun fetchTrustedServerTime(uid: String, callback: (Long) -> Unit) {
+                  val clockRef = FirebaseFirestore.getInstance().collection("trial_clock").document(uid)
+                  clockRef.set(mapOf("serverTime" to FieldValue.serverTimestamp()))
+                      .addOnSuccessListener {
+                          clockRef.get(com.google.firebase.firestore.Source.SERVER)
+                              .addOnSuccessListener { clock -> callback(clock.getTimestamp("serverTime")?.toDate()?.time ?: 0L) }
+                              .addOnFailureListener { callback(0L) }
+                      }
+                      .addOnFailureListener { callback(0L) }
+              }
+
               private fun verifyTrialEntitlement(uid: String, verificationId: Int) {
-                  FirebaseFirestore.getInstance()
-                      .collection("trial_entitlements")
-                      .document(uid)
+                  FirebaseFirestore.getInstance().collection("trial_entitlements").document(uid)
                       .get(com.google.firebase.firestore.Source.SERVER)
                       .addOnSuccessListener { trial ->
                           if (verificationId != modeVerificationRequest) return@addOnSuccessListener
-                          val deviceId = currentTrialDeviceId()
-                          val storedDeviceId = trial.getString("deviceId").orEmpty()
-                          val startedAt = trial.getTimestamp("startedAt")?.toDate()?.time ?: 0L
-                          val expiresAt = if (startedAt > 0L) startedAt + MAsistenTrial.DURATION_MS else 0L
-                          val trialActive = trial.exists() &&
-                              deviceId.isNotBlank() &&
-                              storedDeviceId == deviceId &&
-                              expiresAt > System.currentTimeMillis()
-                          if (trialActive) {
-                              configureMode(true)
-                              watchTrialEntitlement(uid, expiresAt)
-                          } else {
-                              trialListener?.remove()
-                              trialListener = null
-                              trialExpiryRunnable?.let { handler.removeCallbacks(it) }
-                              trialExpiryRunnable = null
-                              configureMode(false)
+                          fetchTrustedServerTime(uid) { serverNow ->
+                              if (verificationId != modeVerificationRequest) return@fetchTrustedServerTime
+                              val deviceId = currentTrialDeviceId()
+                              val storedDeviceId = trial.getString("deviceId").orEmpty()
+                              val startedAt = trial.getTimestamp("startedAt")?.toDate()?.time ?: 0L
+                              val expiresAt = if (startedAt > 0L) startedAt + MAsistenTrial.DURATION_MS else 0L
+                              val trialActive = serverNow > 0L && trial.exists() &&
+                                  deviceId.isNotBlank() && storedDeviceId == deviceId && expiresAt > serverNow
+                              if (trialActive) {
+                                  configureMode(true)
+                                  watchTrialEntitlement(uid, expiresAt)
+                              } else {
+                                  trialListener?.remove()
+                                  trialListener = null
+                                  trialExpiryRunnable?.let { handler.removeCallbacks(it) }
+                                  trialExpiryRunnable = null
+                                  configureMode(false)
+                              }
                           }
                       }
                       .addOnFailureListener {
-                          // A network error is not proof that an already-running trial has expired.
-                          if (verificationId == modeVerificationRequest && !vipMode) {
-                              configureMode(false)
-                          }
+                          if (verificationId == modeVerificationRequest && !vipMode) configureMode(false)
                       }
               }
 
               private fun watchTrialEntitlement(uid: String, expiresAt: Long) {
                   trialListener?.remove()
-                  trialListener = FirebaseFirestore.getInstance()
-                      .collection("trial_entitlements")
-                      .document(uid)
+                  trialListener = FirebaseFirestore.getInstance().collection("trial_entitlements").document(uid)
                       .addSnapshotListener { snapshot, error ->
                           if (error == null && snapshot != null && !snapshot.metadata.isFromCache) {
-                              val deviceId = currentTrialDeviceId()
-                              val storedDeviceId = snapshot.getString("deviceId").orEmpty()
-                              val startedAt = snapshot.getTimestamp("startedAt")?.toDate()?.time ?: 0L
-                              val latestExpiry = if (startedAt > 0L) startedAt + MAsistenTrial.DURATION_MS else 0L
-                              if (!snapshot.exists() || storedDeviceId != deviceId ||
-                                  latestExpiry <= System.currentTimeMillis()) {
-                                  verifyRegularVip(uid, modeVerificationRequest)
+                              fetchTrustedServerTime(uid) { serverNow ->
+                                  val deviceId = currentTrialDeviceId()
+                                  val storedDeviceId = snapshot.getString("deviceId").orEmpty()
+                                  val startedAt = snapshot.getTimestamp("startedAt")?.toDate()?.time ?: 0L
+                                  val latestExpiry = if (startedAt > 0L) startedAt + MAsistenTrial.DURATION_MS else 0L
+                                  if (serverNow <= 0L || !snapshot.exists() || storedDeviceId != deviceId || latestExpiry <= serverNow) {
+                                      verifyRegularVip(uid, modeVerificationRequest)
+                                  }
                               }
                           }
                       }
-
                   trialExpiryRunnable?.let { handler.removeCallbacks(it) }
-                  val expiryCheck = Runnable {
-                      verifyRegularVip(uid, modeVerificationRequest)
+                  fetchTrustedServerTime(uid) { serverNow ->
+                      if (serverNow <= 0L) {
+                          verifyRegularVip(uid, modeVerificationRequest)
+                          return@fetchTrustedServerTime
+                      }
+                      val expiryCheck = Runnable { verifyRegularVip(uid, modeVerificationRequest) }
+                      trialExpiryRunnable = expiryCheck
+                      handler.postDelayed(expiryCheck, (expiresAt - serverNow).coerceAtLeast(0L))
                   }
-                  trialExpiryRunnable = expiryCheck
-                  handler.postDelayed(expiryCheck, (expiresAt - System.currentTimeMillis()).coerceAtLeast(0L))
               }
 
               // Mode Standar dan VIP memakai siklus hidup terpisah.
