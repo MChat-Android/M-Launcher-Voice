@@ -39,19 +39,27 @@ Panel admin sudah tersedia di aplikasi pada menu VIP setelah token akun memuat c
 
 ## Jadikan akun sebagai admin
 
-Pengguna harus sudah masuk ke M Asisten dan akun Firebase Authentication-nya sudah ada. Ambil UID dari Firebase Console → Authentication → Users, lalu:
+Pengguna harus sudah masuk ke M Asisten dan akun Firebase Authentication-nya sudah ada. Ambil UID dari Firebase Console → Authentication → Users. Tetapkan hanya satu UID utama, lalu jalankan:
 
 ```bash
-node vip-admin.js set-admin UID_FIREBASE
+export M_ASISTEN_ADMIN_UID="UID_ADMIN_UTAMA"
+node vip-admin.js audit-admins
+node vip-admin.js set-admin "$M_ASISTEN_ADMIN_UID"
 ```
 
-Setelah claim dipasang, admin perlu keluar-masuk akun atau memperbarui token ID. Jangan memberi claim admin kepada akun pelanggan.
-
-Untuk mencabut hak admin:
+Perintah `audit-admins` memeriksa seluruh halaman daftar pengguna Firebase Authentication dan melaporkan semua UID yang memiliki custom claim admin. Jika ditemukan UID selain UID utama, periksa kepemilikannya lalu cabut dengan:
 
 ```bash
-node vip-admin.js remove-admin UID_FIREBASE
+node vip-admin.js revoke-unexpected-admin UID_LAIN
 ```
+
+Untuk mencabut hak admin dari UID utama:
+
+```bash
+node vip-admin.js remove-admin "$M_ASISTEN_ADMIN_UID"
+```
+
+Jangan pernah memberi custom claim admin kepada akun pelanggan. Setelah claim dipasang atau dicabut, admin harus keluar-masuk akun atau memperbarui token ID.
 
 ## Verifikasi pembayaran
 
