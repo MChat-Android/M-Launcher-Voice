@@ -11,9 +11,9 @@ Audit berdasarkan isi workflow yang benar-benar menghasilkan proyek Android. Dok
 2. **Pengenalan suara diarahkan ke on-device.** Kode menggunakan `SpeechRecognizer.isOnDeviceRecognitionAvailable()` dan `SpeechRecognizer.createOnDeviceSpeechRecognizer()`; tidak membuat fallback ke recognizer cloud. Namun ketersediaan bahasa bergantung pada layanan/paket bahasa yang didukung perangkat.
 3. **Bahasa ASR mengikuti bahasa utama perangkat.** Jika bahasa itu tidak tersedia, implementasi Android 13+ mencoba English; bukan selalu Bahasa Indonesia. Jika paket belum terpasang, aplikasi meminta pengguna menyiapkan/mengunduh paket bahasa melalui layanan Android.
 4. **TTS belum dijamin offline Bahasa Indonesia.** Kode memilih bahasa utama perangkat, lalu fallback ke English (US). Ketersediaan suara dan kemampuan offline bergantung pada mesin TTS dan data suara yang terpasang.
-5. **Firebase masih menjadi layanan online.** Firebase Auth/Firestore dipakai untuk akun, profil, status VIP/VIP+, dan permintaan pembayaran. Karena itu fitur akun/validasi keanggotaan tertentu tidak dapat dianggap offline penuh.
+5. **Firebase masih menjadi layanan online.** Firebase Auth/Firestore dipakai untuk akun, profil, status VIP/VIP, dan permintaan pembayaran. Karena itu fitur akun/validasi keanggotaan tertentu tidak dapat dianggap offline penuh.
 6. **Belum ada kebijakan pemuatan model berdasarkan RAM.** Belum ditemukan pemilih model, deteksi memori untuk inferensi, pengelolaan lifecycle model, atau fallback LLM khusus perangkat RAM 4 GB.
-7. Identitas aplikasi pada manifest yang dihasilkan masih `M Asisten`. Jangan ubah label, nama APK, sistem VIP/VIP+, tampilan, atau alur akun sebagai bagian dari pekerjaan AI tanpa kebutuhan dan pengujian terpisah.
+7. Identitas aplikasi pada manifest yang dihasilkan masih `M Asisten`. Jangan ubah label, nama APK, sistem VIP/VIP, tampilan, atau alur akun sebagai bagian dari pekerjaan AI tanpa kebutuhan dan pengujian terpisah.
 
 ## Implikasi untuk persyaratan RAM 4 GB
 
@@ -30,7 +30,7 @@ RAM 4 GB adalah persyaratan kompatibilitas aplikasi, bukan janji bahwa setiap po
 ### Tahap 1 — Amankan dan rapikan sumber build
 - Pertahankan workflow yang saat ini membangkitkan project melalui heredoc sampai seluruh sumber berhasil diekstrak dan dibandingkan.
 - Ekstrak file sumber yang dihasilkan ke struktur proyek biasa dalam branch kerja terpisah.
-- Bandingkan hasil ekstraksi dengan hasil generator lama; pastikan manifest, resource, versi, signing, Firebase, VIP/VIP+, widget, izin, dan nama APK tidak berubah.
+- Bandingkan hasil ekstraksi dengan hasil generator lama; pastikan manifest, resource, versi, signing, Firebase, VIP/VIP, widget, izin, dan nama APK tidak berubah.
 - Jalankan security checks dan build APK sebelum menggabungkan perubahan.
 
 ### Tahap 2 — Pisahkan mesin perintah dari lapisan suara
