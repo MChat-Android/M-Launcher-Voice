@@ -2,7 +2,7 @@
   "name": "m-asisten-vip-admin-tools",
   "version": "1.0.0",
   "private": true,
-  "description": "Trusted operator tools for verifying M Asisten VIP+ payments",
+  "description": "Trusted operator tools for verifying M Asisten VIP payments",
   "main": "vip-admin.js",
   "scripts": { "help": "node vip-admin.js" },
   "dependencies": { "firebase-admin": "^13.0.2" }
