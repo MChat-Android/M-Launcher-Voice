@@ -65,7 +65,7 @@ try {
       lastLoginAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
       membershipStatus: "ACTIVE",
-      membershipPlan: "VIP+ Bulanan (30 hari)",
+      membershipPlan: "VIP Bulanan (30 hari)",
       startedAt: Timestamp.now(),
       expiresAt: Timestamp.fromMillis(Date.now() + 86400000)
     });
@@ -131,15 +131,15 @@ try {
   });
   await deny("akun tidak dapat mengulang Trial pada perangkat kedua", secondDeviceBatch.commit());
 
-  await allow("anggota dapat membaca status VIP+ miliknya", getDoc(doc(alice, "vip_members/alice")));
-  await deny("anggota tidak dapat membaca status VIP+ pengguna lain", getDoc(doc(bob, "vip_members/alice")));
-  await deny("pengunjung tanpa login tidak dapat membaca profil VIP+", getDoc(doc(guest, "vip_members/alice")));
-  await allow("admin dapat membaca profil VIP+", getDoc(doc(admin, "vip_members/alice")));
-  await deny("pengguna biasa tidak dapat mengubah status VIP+", updateDoc(doc(alice, "vip_members/alice"), {
+  await allow("anggota dapat membaca status VIP miliknya", getDoc(doc(alice, "vip_members/alice")));
+  await deny("anggota tidak dapat membaca status VIP pengguna lain", getDoc(doc(bob, "vip_members/alice")));
+  await deny("pengunjung tanpa login tidak dapat membaca profil VIP", getDoc(doc(guest, "vip_members/alice")));
+  await allow("admin dapat membaca profil VIP", getDoc(doc(admin, "vip_members/alice")));
+  await deny("pengguna biasa tidak dapat mengubah status VIP", updateDoc(doc(alice, "vip_members/alice"), {
     membershipStatus: "FREE",
     updatedAt: serverTimestamp()
   }));
-  await deny("pengguna tidak dapat membuat profil VIP+ aktif sendiri", setDoc(doc(bob, "vip_members/bob"), {
+  await deny("pengguna tidak dapat membuat profil VIP aktif sendiri", setDoc(doc(bob, "vip_members/bob"), {
     uid: "bob",
     email: "bob@example.com",
     displayName: "Bob",
@@ -148,7 +148,7 @@ try {
     updatedAt: serverTimestamp(),
     membershipStatus: "ACTIVE"
   }));
-  await allow("admin dapat mengubah status VIP+ dengan claim admin", updateDoc(doc(admin, "vip_members/alice"), {
+  await allow("admin dapat mengubah status VIP dengan claim admin", updateDoc(doc(admin, "vip_members/alice"), {
     membershipStatus: "FREE",
     updatedAt: serverTimestamp()
   }));
@@ -158,7 +158,7 @@ try {
     uid: "alice",
     email: "alice@example.com",
     displayName: "Alice",
-    plan: "VIP+ Mingguan (7 hari)",
+    plan: "VIP Mingguan (7 hari)",
     amountIdr: 15000,
     paymentMethod: "SEABANK_TRANSFER",
     bankName: "SeaBank",
@@ -176,7 +176,7 @@ try {
     uid: "bob",
     email: "bob@example.com",
     displayName: "Bob",
-    plan: "VIP+ Mingguan (7 hari)",
+    plan: "VIP Mingguan (7 hari)",
     amountIdr: 1,
     paymentMethod: "SEABANK_TRANSFER",
     bankName: "SeaBank",
@@ -205,12 +205,12 @@ try {
   }));
 
   const permanentRequestRef = doc(collection(alice, "vip_payment_requests"));
-  await allow("pengguna dapat mengajukan VIP+ Permanen Rp750.000", setDoc(permanentRequestRef, {
+  await allow("pengguna dapat mengajukan VIP Permanen Rp499.000", setDoc(permanentRequestRef, {
     uid: "alice",
     email: "alice@example.com",
     displayName: "Alice",
-    plan: "VIP+ Permanen",
-    amountIdr: 750000,
+    plan: "VIP Permanen",
+    amountIdr: 499000,
     paymentMethod: "SEABANK_TRANSFER",
     bankName: "SeaBank",
     accountNumber: "901023118338",
@@ -226,7 +226,7 @@ try {
       uid: "bob",
       email: "bob@example.com",
       displayName: "Bob",
-      plan: "VIP+ Permanen",
+      plan: "VIP Permanen",
       amountIdr: 500000,
       paymentMethod: "SEABANK_TRANSFER",
       bankName: "SeaBank",
@@ -241,7 +241,7 @@ try {
   ));
   await allow("admin dapat menyimpan metadata simulasi aktivasi VIP", updateDoc(doc(admin, "vip_members/alice"), {
     membershipStatus: "ACTIVE",
-    membershipPlan: "VIP+ Mingguan (7 hari)",
+    membershipPlan: "VIP Mingguan (7 hari)",
     startedAt: Timestamp.now(),
     expiresAt: Timestamp.fromMillis(Date.now() + 7 * 86400000),
     testMode: true,
