@@ -797,6 +797,17 @@ jobs:
                       .orEmpty()
               }
 
+                  private fun fetchTrustedServerTime(uid: String, callback: (Long) -> Unit) {
+                      val clockRef = FirebaseFirestore.getInstance().collection("trial_clock").document(uid)
+                      clockRef.set(mapOf("serverTime" to FieldValue.serverTimestamp()))
+                          .addOnSuccessListener {
+                              clockRef.get(com.google.firebase.firestore.Source.SERVER)
+                                  .addOnSuccessListener { clock -> callback(clock.getTimestamp("serverTime")?.toDate()?.time ?: 0L) }
+                                  .addOnFailureListener { callback(0L) }
+                          }
+                          .addOnFailureListener { callback(0L) }
+                  }
+
               private fun resolveTrialEntitlement(
                   uid: String,
                   startIfMissing: Boolean,
@@ -818,17 +829,6 @@ jobs:
                       fetchTrustedServerTime(uid) { serverNow ->
                           callback(serverNow > 0L && snapshot.exists() && storedDeviceId == deviceId && expiresAt > serverNow, expiresAt)
                       }
-                  }
-
-                  private fun fetchTrustedServerTime(uid: String, callback: (Long) -> Unit) {
-                      val clockRef = FirebaseFirestore.getInstance().collection("trial_clock").document(uid)
-                      clockRef.set(mapOf("serverTime" to FieldValue.serverTimestamp()))
-                          .addOnSuccessListener {
-                              clockRef.get(com.google.firebase.firestore.Source.SERVER)
-                                  .addOnSuccessListener { clock -> callback(clock.getTimestamp("serverTime")?.toDate()?.time ?: 0L) }
-                                  .addOnFailureListener { callback(0L) }
-                          }
-                          .addOnFailureListener { callback(0L) }
                   }
 
                   trialRef.get(com.google.firebase.firestore.Source.SERVER)
