@@ -3270,10 +3270,8 @@ jobs:
                           watchRegularVipMembership(user.uid)
                       }
                       .addOnFailureListener {
-                          // Klaim admin yang pernah diverifikasi tetap berlaku dalam masa cache offline.
-                          if (!VipEntitlementCache.isAdmin(this, user.uid)) {
-                              watchRegularVipMembership(user.uid)
-                          }
+                          // Hak admin tidak pernah dipertahankan dari cache offline.
+                          watchRegularVipMembership(user.uid)
                       }
               }
 
@@ -3291,13 +3289,13 @@ jobs:
                           val expiresAt = snapshot.getTimestamp("expiresAt")?.toDate()?.time ?: 0L
                           val vipStillActive = snapshot.getString("membershipStatus") == "ACTIVE" &&
                               (if (snapshot.getString("membershipPlan") == "VIP Permanen") expiresAt == 0L else expiresAt > System.currentTimeMillis())
-                          if (vipStillActive) {
+                          if (vipStillActive && !snapshot.metadata.isFromCache) {
                               trialListener?.remove()
                               trialListener = null
                               trialExpiryRunnable?.let { handler.removeCallbacks(it) }
                               trialExpiryRunnable = null
                               VipEntitlementCache.save(this, uid, true, expiresAt, false)
-                          } else if (!snapshot.metadata.isFromCache) {
+                          } else if (!vipStillActive && !snapshot.metadata.isFromCache) {
                               // VIP berakhir: periksa hak Trial 72 jam sebelum kembali ke Standar.
                               VipEntitlementCache.clear(this, uid)
                               handler.post {
