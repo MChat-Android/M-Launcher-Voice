@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - main
+      - inmobi/build-compatibility
 
 permissions:
   contents: read
