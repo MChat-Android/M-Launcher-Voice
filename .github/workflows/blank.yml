@@ -19,6 +19,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
       - name: Validate VIP admin tool
         run: node --check admin-tools/vip-admin.js
 
@@ -26,12 +28,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if git ls-files | grep -E '(^|/)(service-account[^/]*\.json|[^/]*firebase-adminsdk[^/]*\.json|[^/]*\.(jks|keystore)|\.env$)'; then
-            echo "Private credential file detected in Git."
+          if git log --all --name-only --pretty=format: | grep -Eiq '(^|/)(service-account[^/]*\.json|[^/]*firebase-adminsdk[^/]*\.json|[^/]*\.(jks|keystore)|\.env$)'; then
+            echo "Private credential file path detected in repository history."
             exit 1
           fi
-          if git grep -n -E -- '-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----|"private_key"[[:space:]]*:[[:space:]]*"-----BEGIN' -- .; then
-            echo "Private key material detected in tracked files."
+          if git log --all -p -- . | grep -Eiq -- '-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----|"private_key"[[:space:]]*:[[:space:]]*"-----BEGIN'; then
+            echo "Private key material detected in repository history."
             exit 1
           fi
 
