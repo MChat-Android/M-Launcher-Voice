@@ -111,6 +111,10 @@ jobs:
               dependencyLocking {
                   lockAllConfigurations()
               }
+              configurations.configureEach {
+                  // Fixes OSV GHSA-xxph-c9ww-hj94 in the transitive Guava dependency.
+                  resolutionStrategy.force("com.google.guava:guava:33.7.2-android")
+              }
           }
           EOF
 
