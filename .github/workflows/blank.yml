@@ -7193,19 +7193,6 @@ jobs:
             echo "Secret Firebase belum dipasang; build tetap berjalan tanpa konfigurasi Firebase."
           fi
 
-      - name: Resolve Android dependency lockfiles
-        run: |
-          gradle :app:dependencies --configuration releaseRuntimeClasspath --write-locks --no-daemon
-          gradle :app:dependencies --configuration releaseCompileClasspath --write-locks --no-daemon
-          test -s app/gradle.lockfile
-
-      - name: Scan Android and admin dependencies with OSV
-        uses: google/osv-scanner-action/osv-scanner-action@32d3cd482bdadfb38b186c0ad1b031902d55d932 # v2.7.1
-        with:
-          scan-args: |-
-            --lockfile=app/gradle.lockfile
-            --lockfile=admin-tools/package-lock.json
-
       - name: Validate M Asisten Launcher Artwork
         run: |
           set -euo pipefail
@@ -7275,6 +7262,24 @@ jobs:
           printf '%s' "$SIGNING_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/mlauncher-release.jks"
           test -s "$RUNNER_TEMP/mlauncher-release.jks"
           keytool -list -keystore "$RUNNER_TEMP/mlauncher-release.jks" -storepass "$SIGNING_STORE_PASSWORD" -alias "$SIGNING_KEY_ALIAS"
+
+      - name: Resolve Android dependency lockfiles
+        env:
+          SIGNING_STORE_FILE: ${{ runner.temp }}/mlauncher-release.jks
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: |
+          gradle :app:dependencies --configuration releaseRuntimeClasspath --write-locks --no-daemon
+          gradle :app:dependencies --configuration releaseCompileClasspath --write-locks --no-daemon
+          test -s app/gradle.lockfile
+
+      - name: Scan Android and admin dependencies with OSV
+        uses: google/osv-scanner-action/osv-scanner-action@32d3cd482bdadfb38b186c0ad1b031902d55d932 # v2.7.1
+        with:
+          scan-args: |-
+            --lockfile=app/gradle.lockfile
+            --lockfile=admin-tools/package-lock.json
 
       - name: Build Signed Release APK
         env:
