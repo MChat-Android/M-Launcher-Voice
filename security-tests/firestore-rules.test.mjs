@@ -154,12 +154,12 @@ try {
   }));
 
   const requestRef = doc(collection(alice, "vip_payment_requests"));
-  await allow("pengguna dapat mengirim permintaan pembayaran yang valid", setDoc(requestRef, {
+  await allow("pengguna dapat mengirim permintaan VIP Bulanan Rp29.000", setDoc(requestRef, {
     uid: "alice",
     email: "alice@example.com",
     displayName: "Alice",
-    plan: "VIP Mingguan (7 hari)",
-    amountIdr: 15000,
+    plan: "VIP Bulanan (30 hari)",
+    amountIdr: 29000,
     paymentMethod: "SEABANK_TRANSFER",
     bankName: "SeaBank",
     accountNumber: "901023118338",
@@ -176,7 +176,7 @@ try {
     uid: "bob",
     email: "bob@example.com",
     displayName: "Bob",
-    plan: "VIP Mingguan (7 hari)",
+    plan: "VIP Bulanan (30 hari)",
     amountIdr: 1,
     paymentMethod: "SEABANK_TRANSFER",
     bankName: "SeaBank",
@@ -188,6 +188,23 @@ try {
     status: "PENDING_REVIEW",
     createdAt: serverTimestamp()
   }));
+  await deny("paket VIP Mingguan yang sudah dihapus tidak dapat diajukan", addDoc(collection(bob, "vip_payment_requests"), {
+    uid: "bob",
+    email: "bob@example.com",
+    displayName: "Bob",
+    plan: "VIP Mingguan (7 hari)",
+    amountIdr: 15000,
+    paymentMethod: "SEABANK_TRANSFER",
+    bankName: "SeaBank",
+    accountNumber: "901023118338",
+    accountBrandName: "M Asisten",
+    registeredAccountHolder: "Muhamad Soleh",
+    payerName: "Bob Example",
+    transferReference: "TRX-TEST-WEEKLY-RETIRED",
+    status: "PENDING_REVIEW",
+    createdAt: serverTimestamp()
+  }));
+
   await deny("pengguna tidak dapat menyetujui pembayaran sendiri", updateDoc(doc(alice, requestRef.path), {
     status: "VERIFIED",
     adminUid: "alice",
@@ -221,7 +238,25 @@ try {
     status: "PENDING_REVIEW",
     createdAt: serverTimestamp()
   }));
-  await deny("paket permanen dengan nominal lama Rp500.000 ditolak", setDoc(
+  await deny("paket permanen dengan nominal lama Rp720.000 ditolak", setDoc(
+    doc(collection(bob, "vip_payment_requests")), {
+      uid: "bob",
+      email: "bob@example.com",
+      displayName: "Bob",
+      plan: "VIP Permanen",
+      amountIdr: 720000,
+      paymentMethod: "SEABANK_TRANSFER",
+      bankName: "SeaBank",
+      accountNumber: "901023118338",
+      accountBrandName: "M Asisten",
+      registeredAccountHolder: "Muhamad Soleh",
+      payerName: "Bob Example",
+      transferReference: "TRX-TEST-PERMANEN-OLD",
+      status: "PENDING_REVIEW",
+      createdAt: serverTimestamp()
+    }
+  ));
+  await deny("nominal permanen Rp500.000 yang bukan harga aktif ditolak", setDoc(
     doc(collection(bob, "vip_payment_requests")), {
       uid: "bob",
       email: "bob@example.com",
@@ -234,16 +269,17 @@ try {
       accountBrandName: "M Asisten",
       registeredAccountHolder: "Muhamad Soleh",
       payerName: "Bob Example",
-      transferReference: "TRX-TEST-PERMANEN-OLD",
+      transferReference: "TRX-TEST-PERMANEN-500",
       status: "PENDING_REVIEW",
       createdAt: serverTimestamp()
     }
   ));
+
   await allow("admin dapat menyimpan metadata simulasi aktivasi VIP", updateDoc(doc(admin, "vip_members/alice"), {
     membershipStatus: "ACTIVE",
-    membershipPlan: "VIP Mingguan (7 hari)",
+    membershipPlan: "VIP Bulanan (30 hari)",
     startedAt: Timestamp.now(),
-    expiresAt: Timestamp.fromMillis(Date.now() + 7 * 86400000),
+    expiresAt: Timestamp.fromMillis(Date.now() + 30 * 86400000),
     testMode: true,
     testPaymentRequestId: "SIM-TEST-001",
     updatedAt: serverTimestamp()
