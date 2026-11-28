@@ -47,11 +47,17 @@ async function main() {
     console.log("Approved admin UID:", approvedUid);
     console.log("Admin claim UIDs:", admins.length ? admins.join(", ") : "(none)");
     const unexpected = admins.filter(uid => uid !== approvedUid);
+    const primaryMissing = !admins.includes(approvedUid);
     if (unexpected.length) {
-      console.error("Unexpected admin claims detected. Revoke these UIDs manually after confirming ownership:", unexpected.join(", "));
+      console.error("Unexpected admin claims detected. Revoke these UIDs after confirming ownership:", unexpected.join(", "));
       process.exitCode = 1;
-    } else {
-      console.log("No unexpected admin accounts found.");
+    }
+    if (primaryMissing) {
+      console.error("The approved primary UID does not currently have the admin claim.");
+      process.exitCode = 1;
+    }
+    if (!unexpected.length && !primaryMissing) {
+      console.log("Exactly the approved primary admin UID is configured.");
     }
     return;
   }
