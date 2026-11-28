@@ -5371,6 +5371,26 @@ jobs:
                       return
                   }
 
+                  // WhatsApp harus diperiksa sebelum aturan umum "pesan" agar tidak
+                  // salah diarahkan ke aplikasi SMS. Akses aplikasi tetap mengikuti VIP+.
+                  val requestsWhatsApp = text.contains("whatsapp") ||
+                      Regex("\\bwa\\b").containsMatchIn(text)
+                  val requestsWhatsAppMessage = requestsWhatsApp && (
+                      text.contains("kirim") ||
+                      text.contains("pesan") ||
+                      text.contains("chat") ||
+                      text.contains("message") ||
+                      text.contains("balas")
+                  )
+                  if (requestsWhatsAppMessage) {
+                      if (openAppByName("WhatsApp")) {
+                          showMessage("Membuka WhatsApp. Lanjutkan percakapan di aplikasi WhatsApp.")
+                      } else {
+                          showMessage("WhatsApp tidak ditemukan atau fitur ini memerlukan akses VIP+.")
+                      }
+                      return
+                  }
+
                   // SMS disiapkan sebagai draf. Tidak dikirim otomatis tanpa pemeriksaan pengguna.
                   val smsDraftMatch = Regex(
                       "(?i)^(?:tolong\\s+)?(?:kirim|buat)\\s+(?:sms|pesan)\\s+(?:ke|kepada)\\s+(\\+?[0-9][0-9\\s().-]{6,}[0-9])\\s+(?:isi|dengan pesan|pesan)\\s+(.+)$"
