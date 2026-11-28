@@ -375,7 +375,7 @@ jobs:
               private const val KEY_VERIFIED_AT = "verified_at"
               private const val KEY_VERIFIED_ELAPSED = "verified_elapsed"
               private const val KEY_VERIFIED_BOOT = "verified_boot"
-              private const val OFFLINE_GRACE_MS = 30L * 24L * 60L * 60L * 1000L
+              private const val OFFLINE_GRACE_MS = 72L * 60L * 60L * 1000L
 
               private fun currentBootCount(context: android.content.Context): Int {
                   if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.N) return -1
