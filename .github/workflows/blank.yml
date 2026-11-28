@@ -340,6 +340,10 @@ jobs:
 
           private const val TEST_INTERSTITIAL_AD_UNIT_ID = "ca-app-pub-3940256099942544/1033173712"
 
+          object MAsistenTrial {
+              const val DURATION_MS = 72L * 60L * 60L * 1000L
+          }
+
           // Hak VIP+ yang sudah diverifikasi disimpan agar tetap tersedia tanpa internet.
           // Cache terikat ke UID dan tidak boleh melewati masa berlaku membership.
           object VipEntitlementCache {
@@ -751,12 +755,92 @@ jobs:
                           val active = status == "ACTIVE" &&
                               (expiresAt == 0L || expiresAt > System.currentTimeMillis())
                           VipEntitlementCache.save(this, uid, active, expiresAt, false)
-                          vipMembershipStatus = if (active) "VIP+ AKTIF" else "BELUM AKTIF"
+                          if (active) {
+                              vipMembershipStatus = "VIP+ AKTIF"
+                          } else {
+                              resolveTrialEntitlement(uid, false) { trialActive, _ ->
+                                  vipMembershipStatus = if (trialActive) "TRIAL AKTIF" else "PAKET STANDAR"
+                              }
+                          }
                       }
                       .addOnFailureListener {
                           val cached = VipEntitlementCache.isActive(this, uid)
-                          vipMembershipStatus = if (cached) "VIP+ AKTIF • OFFLINE" else "STATUS BELUM TERSINKRON"
+                          vipMembershipStatus = if (cached) "VIP+ AKTIF • OFFLINE" else "PAKET STANDAR"
                       }
+              }
+
+              private fun currentTrialDeviceId(): String {
+                  return Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
+                      .orEmpty()
+                      .takeIf { it.matches(Regex("^[A-Za-z0-9_-]{16,64}$")) }
+                      .orEmpty()
+              }
+
+              private fun resolveTrialEntitlement(
+                  uid: String,
+                  startIfMissing: Boolean,
+                  callback: (Boolean, Long) -> Unit
+              ) {
+                  val deviceId = currentTrialDeviceId()
+                  if (deviceId.isBlank()) {
+                      callback(false, 0L)
+                      return
+                  }
+
+                  val db = FirebaseFirestore.getInstance()
+                  val trialRef = db.collection("trial_entitlements").document(uid)
+
+                  fun deliver(snapshot: com.google.firebase.firestore.DocumentSnapshot) {
+                      val storedDeviceId = snapshot.getString("deviceId").orEmpty()
+                      val startedAt = snapshot.getTimestamp("startedAt")?.toDate()?.time ?: 0L
+                      val expiresAt = if (startedAt > 0L) startedAt + MAsistenTrial.DURATION_MS else 0L
+                      val active = snapshot.exists() &&
+                          storedDeviceId == deviceId &&
+                          expiresAt > System.currentTimeMillis()
+                      callback(active, expiresAt)
+                  }
+
+                  trialRef.get(com.google.firebase.firestore.Source.SERVER)
+                      .addOnSuccessListener { existing ->
+                          if (existing.exists()) {
+                              deliver(existing)
+                          } else if (!startIfMissing) {
+                              callback(false, 0L)
+                          } else {
+                              val deviceRef = db.collection("trial_devices").document(deviceId)
+                              deviceRef.get(com.google.firebase.firestore.Source.SERVER)
+                                  .addOnSuccessListener { device ->
+                                      if (device.exists()) {
+                                          callback(false, 0L)
+                                      } else {
+                                          val batch = db.batch()
+                                          batch.set(deviceRef, mapOf(
+                                              "deviceId" to deviceId,
+                                              "startedAt" to FieldValue.serverTimestamp()
+                                          ))
+                                          batch.set(trialRef, mapOf(
+                                              "uid" to uid,
+                                              "deviceId" to deviceId,
+                                              "startedAt" to FieldValue.serverTimestamp()
+                                          ))
+                                          batch.commit()
+                                              .addOnSuccessListener {
+                                                  trialRef.get(com.google.firebase.firestore.Source.SERVER)
+                                                      .addOnSuccessListener { created -> deliver(created) }
+                                                      .addOnFailureListener { callback(false, 0L) }
+                                              }
+                                              .addOnFailureListener {
+                                                  // A competing account/device claim wins; never restart the trial.
+                                                  trialRef.get(com.google.firebase.firestore.Source.SERVER)
+                                                      .addOnSuccessListener { raced -> deliver(raced) }
+                                                      .addOnFailureListener { callback(false, 0L) }
+                                              }
+                                      }
+                                  }
+                                  .addOnFailureListener { callback(false, 0L) }
+                          }
+                      }
+                      .addOnFailureListener { callback(false, 0L) }
               }
 
               private val permissionLauncher =
@@ -1061,8 +1145,23 @@ jobs:
                                       val expiresAt = member.getTimestamp("expiresAt")?.toDate()?.time ?: 0L
                                       val active = member.getString("membershipStatus") == "ACTIVE" &&
                                           (expiresAt == 0L || expiresAt > System.currentTimeMillis())
-                                      vipMembershipStatus = if (active) "VIP+ AKTIF" else "BELUM AKTIF"
-                                      activateVerifiedVip(active, expiresAt, false)
+                                      if (active) {
+                                          vipMembershipStatus = "VIP+ AKTIF"
+                                          activateVerifiedVip(true, expiresAt, false)
+                                      } else {
+                                          VipEntitlementCache.clear(this, userUid)
+                                          resolveTrialEntitlement(userUid, true) { trialActive, _ ->
+                                              if (trialActive) {
+                                                  vipMembershipStatus = "TRIAL AKTIF"
+                                                  showStandardAdThen {
+                                                      startWidgetService(FloatingVoiceService.MODE_VIP)
+                                                  }
+                                              } else {
+                                                  vipMembershipStatus = "PAKET STANDAR"
+                                                  activateVerifiedVip(false, 0L, false)
+                                              }
+                                          }
+                                      }
                                   }
                                   .addOnFailureListener { useOfflineEntitlement() }
                           }
@@ -1290,7 +1389,8 @@ jobs:
               val Panel = Color(0xFF111F32)
               val Cyan = Color(0xFF35D6E8)
               val Muted = Color(0xFF9DB2C9)
-              val isVipPlus = vipMembershipStatus.startsWith("VIP+ AKTIF")
+              val isVipPlus = vipMembershipStatus.startsWith("VIP+ AKTIF") ||
+                  vipMembershipStatus.startsWith("TRIAL AKTIF")
               val notificationContext = LocalContext.current
 
               // Pantau perubahan status VIP dan pembayaran akun ini selama beranda terbuka.
@@ -2638,6 +2738,8 @@ jobs:
               private var serviceInitialized = false
               private var modeVerificationRequest = 0
               private var membershipListener: com.google.firebase.firestore.ListenerRegistration? = null
+              private var trialListener: com.google.firebase.firestore.ListenerRegistration? = null
+              private var trialExpiryRunnable: Runnable? = null
               private lateinit var windowManager: WindowManager
               private lateinit var container: FrameLayout
               private lateinit var micButton: View
@@ -2771,8 +2873,17 @@ jobs:
                           val expiresAt = member.getTimestamp("expiresAt")?.toDate()?.time ?: 0L
                           val vipActive = member.getString("membershipStatus") == "ACTIVE" &&
                               (expiresAt == 0L || expiresAt > System.currentTimeMillis())
-                          VipEntitlementCache.save(this, uid, vipActive, expiresAt, false)
-                          configureMode(vipActive)
+                          if (vipActive) {
+                              trialListener?.remove()
+                              trialListener = null
+                              trialExpiryRunnable?.let { handler.removeCallbacks(it) }
+                              trialExpiryRunnable = null
+                              VipEntitlementCache.save(this, uid, true, expiresAt, false)
+                              configureMode(true)
+                          } else {
+                              VipEntitlementCache.clear(this, uid)
+                              verifyTrialEntitlement(uid, verificationId)
+                          }
                       }
                       .addOnFailureListener {
                           if (verificationId == modeVerificationRequest) {
@@ -2780,6 +2891,70 @@ jobs:
                               configureMode(cached)
                           }
                       }
+              }
+
+              private fun currentTrialDeviceId(): String {
+                  return Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID).orEmpty()
+              }
+
+              private fun verifyTrialEntitlement(uid: String, verificationId: Int) {
+                  FirebaseFirestore.getInstance()
+                      .collection("trial_entitlements")
+                      .document(uid)
+                      .get(com.google.firebase.firestore.Source.SERVER)
+                      .addOnSuccessListener { trial ->
+                          if (verificationId != modeVerificationRequest) return@addOnSuccessListener
+                          val deviceId = currentTrialDeviceId()
+                          val storedDeviceId = trial.getString("deviceId").orEmpty()
+                          val startedAt = trial.getTimestamp("startedAt")?.toDate()?.time ?: 0L
+                          val expiresAt = if (startedAt > 0L) startedAt + MAsistenTrial.DURATION_MS else 0L
+                          val trialActive = trial.exists() &&
+                              deviceId.isNotBlank() &&
+                              storedDeviceId == deviceId &&
+                              expiresAt > System.currentTimeMillis()
+                          if (trialActive) {
+                              configureMode(true)
+                              watchTrialEntitlement(uid, expiresAt)
+                          } else {
+                              trialListener?.remove()
+                              trialListener = null
+                              trialExpiryRunnable?.let { handler.removeCallbacks(it) }
+                              trialExpiryRunnable = null
+                              configureMode(false)
+                          }
+                      }
+                      .addOnFailureListener {
+                          // A network error is not proof that an already-running trial has expired.
+                          if (verificationId == modeVerificationRequest && !vipMode) {
+                              configureMode(false)
+                          }
+                      }
+              }
+
+              private fun watchTrialEntitlement(uid: String, expiresAt: Long) {
+                  trialListener?.remove()
+                  trialListener = FirebaseFirestore.getInstance()
+                      .collection("trial_entitlements")
+                      .document(uid)
+                      .addSnapshotListener { snapshot, error ->
+                          if (error == null && snapshot != null && !snapshot.metadata.isFromCache) {
+                              val deviceId = currentTrialDeviceId()
+                              val storedDeviceId = snapshot.getString("deviceId").orEmpty()
+                              val startedAt = snapshot.getTimestamp("startedAt")?.toDate()?.time ?: 0L
+                              val latestExpiry = if (startedAt > 0L) startedAt + MAsistenTrial.DURATION_MS else 0L
+                              if (!snapshot.exists() || storedDeviceId != deviceId ||
+                                  latestExpiry <= System.currentTimeMillis()) {
+                                  verifyRegularVip(uid, modeVerificationRequest)
+                              }
+                          }
+                      }
+
+                  trialExpiryRunnable?.let { handler.removeCallbacks(it) }
+                  val expiryCheck = Runnable {
+                      verifyRegularVip(uid, modeVerificationRequest)
+                  }
+                  trialExpiryRunnable = expiryCheck
+                  handler.postDelayed(expiryCheck, (expiresAt - System.currentTimeMillis()).coerceAtLeast(0L))
               }
 
               // Mode Standar dan VIP+ memakai siklus hidup terpisah.
@@ -2807,6 +2982,10 @@ jobs:
                   } else {
                       membershipListener?.remove()
                       membershipListener = null
+                      trialListener?.remove()
+                      trialListener = null
+                      trialExpiryRunnable?.let { handler.removeCallbacks(it) }
+                      trialExpiryRunnable = null
                   }
 
                   createOverlay()
@@ -2870,6 +3049,10 @@ jobs:
                   releaseVipWakeLock()
                   membershipListener?.remove()
                   membershipListener = null
+                  trialListener?.remove()
+                  trialListener = null
+                  trialExpiryRunnable?.let { handler.removeCallbacks(it) }
+                  trialExpiryRunnable = null
                   try { speechRecognizer?.cancel() } catch (_: Exception) {}
                   try { speechRecognizer?.destroy() } catch (_: Exception) {}
                   speechRecognizer = null
@@ -2927,10 +3110,7 @@ jobs:
                       .document(uid)
                       .addSnapshotListener { snapshot, error ->
                           if (error != null || snapshot == null) {
-                              // Gangguan jaringan bukan berarti membership telah berakhir.
-                              if (!VipEntitlementCache.isActive(this, uid)) {
-                                  handler.post { if (vipMode) configureMode(false) }
-                              }
+                              // Gangguan jaringan bukan bukti bahwa VIP atau Trial telah berakhir.
                               return@addSnapshotListener
                           }
 
@@ -2938,15 +3118,16 @@ jobs:
                           val vipStillActive = snapshot.getString("membershipStatus") == "ACTIVE" &&
                               (expiresAt == 0L || expiresAt > System.currentTimeMillis())
                           if (vipStillActive) {
+                              trialListener?.remove()
+                              trialListener = null
+                              trialExpiryRunnable?.let { handler.removeCallbacks(it) }
+                              trialExpiryRunnable = null
                               VipEntitlementCache.save(this, uid, true, expiresAt, false)
                           } else if (!snapshot.metadata.isFromCache) {
-                              // Hanya hasil server yang menyatakan nonaktif yang boleh mencabut cache.
+                              // VIP berakhir: periksa hak Trial 72 jam sebelum kembali ke Standar.
                               VipEntitlementCache.clear(this, uid)
                               handler.post {
-                                  if (vipMode) {
-                                      showMessage("VIP berakhir. Kembali ke sistem Standar.")
-                                      configureMode(false)
-                                  }
+                                  if (vipMode) verifyTrialEntitlement(uid, modeVerificationRequest)
                               }
                           }
                       }
