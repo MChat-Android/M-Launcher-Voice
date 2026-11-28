@@ -2248,7 +2248,7 @@ jobs:
                                                                       val days = when (plan) {
                                                                           "VIP+ Mingguan (7 hari)" -> if (amount == 15000L) 7 else 0
                                                                           "VIP+ Bulanan (30 hari)" -> if (amount == 50000L) 30 else 0
-                                                                          "VIP+ Permanen" -> if (amount == 750000L) -1 else 0
+                                                                          "VIP+ Permanen" -> if (amount == 499000L || amount == 750000L) -1 else 0
                                                                           else -> 0
                                                                       }
                                                                       check(days != 0) { "Paket dan nominal tidak cocok." }
@@ -2460,21 +2460,21 @@ jobs:
                                   Text(mAsistenUiText("PILIHAN PAKET", isEnglish), color = Cyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                   Spacer(Modifier.height(7.dp))
                                   listOf(
-                                      "VIP+ Mingguan (7 hari)" to "Rp15.000",
-                                      "VIP+ Bulanan (30 hari)" to "Rp50.000",
-                                      "VIP+ Permanen" to "Rp750.000"
-                                  ).forEach { (plan, price) ->
+                                      Triple("VIP+ Mingguan (7 hari)", "Rp20.000", "Rp15.000" to "PROMO 25%"),
+                                      Triple("VIP+ Bulanan (30 hari)", "Rp70.000", "Rp50.000" to "PROMO 29%"),
+                                      Triple("VIP+ Permanen", "Rp699.000", "Rp499.000" to "PROMO 29%")
+                                  ).forEach { (plan, originalPrice, promo) ->
+                                      val (promoPrice, promoLabel) = promo
                                       Card(
                                           modifier = Modifier
                                               .fillMaxWidth()
                                               .padding(vertical = 4.dp)
                                               .clickable { selectedVipPlan = plan },
-                                          // Elevasi berlapis memberi kesan panel 3D tanpa mengganti warna asli.
-                          elevation = CardDefaults.cardElevation(
-                              defaultElevation = if (isVipPlus) 10.dp else 0.dp,
-                              pressedElevation = if (isVipPlus) 14.dp else 0.dp
-                          ),
-                          colors = CardDefaults.cardColors(
+                                          elevation = CardDefaults.cardElevation(
+                                              defaultElevation = if (isVipPlus) 10.dp else 0.dp,
+                                              pressedElevation = if (isVipPlus) 14.dp else 0.dp
+                                          ),
+                                          colors = CardDefaults.cardColors(
                                               containerColor = if (selectedVipPlan == plan) Color(0xFF164354) else Color(0xFF172B42)
                                           ),
                                           border = if (selectedVipPlan == plan) androidx.compose.foundation.BorderStroke(1.dp, Cyan) else null,
@@ -2486,7 +2486,16 @@ jobs:
                                           ) {
                                               Text(plan.replace("VIP+", "VIP"), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                               Spacer(Modifier.weight(1f))
-                                              Text(price, color = Cyan, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold)
+                                              Column(horizontalAlignment = Alignment.End) {
+                                                  Text(
+                                                      originalPrice,
+                                                      color = Muted,
+                                                      fontSize = 9.sp,
+                                                      textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough
+                                                  )
+                                                  Text(promoLabel, color = Color(0xFFFFD166), fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                                                  Text(promoPrice, color = Cyan, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold)
+                                              }
                                           }
                                       }
                                   }
@@ -2598,8 +2607,8 @@ jobs:
                                               val amount = when (selectedVipPlan) {
                                                   "VIP+ Mingguan (7 hari)" -> 15000
                                                   "VIP+ Bulanan (30 hari)" -> 50000
-                                                  "VIP+ Permanen" -> 750000
-                                                  else -> 750000
+                                                  "VIP+ Permanen" -> 499000
+                                                  else -> 499000
                                               }
                                               paymentSubmitting = true
                                               paymentSubmitMessage = "Mengirim konfirmasi..."
