@@ -29,7 +29,7 @@ Klien Android tidak boleh mengubah status keanggotaan, masa berlaku, hasil verif
 
 - Trial berlangsung 72 jam dan memakai waktu server Firestore, bukan jam perangkat.
 - Firestore mengikat klaim Trial pada UID dan ID perangkat Android. Ini mencegah penggunaan ulang normal, tetapi bukan perlindungan hardware yang tidak dapat dipalsukan; factory reset atau perangkat yang dimodifikasi dapat melemahkan penguncian.
-- Cache VIP berjangka menggunakan sisa waktu yang dihitung dari timestamp server dan jam monotonic perangkat. Jika waktu server tidak dapat diverifikasi, paket berjangka tidak disimpan sebagai akses offline.
+- Cache VIP berjangka menggunakan timestamp server tepercaya dan jam monotonic perangkat. Cache hanya berlaku pada boot yang sama; jika waktu server atau penghitung boot tidak dapat diverifikasi, paket berjangka tidak disimpan sebagai akses offline. Android API 23 tetap bisa memakai VIP saat online, tetapi harus memverifikasi ulang setelah offline.
 - VIP permanen masih memiliki grace offline hingga 30 hari sejak verifikasi terakhir.
 - Pencabutan VIP oleh admin tidak dapat diterima perangkat yang sedang offline sampai perangkat tersambung kembali.
 
