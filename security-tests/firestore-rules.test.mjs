@@ -15,7 +15,9 @@ import {
   serverTimestamp,
   setDoc,
   updateDoc,
-  where
+  where,
+  writeBatch,
+  deleteDoc
 } from "firebase/firestore";
 
 const projectId = "demo-m-launcher-voice";
@@ -68,6 +70,42 @@ try {
       expiresAt: Timestamp.fromMillis(Date.now() + 86400000)
     });
   });
+
+  const trialDeviceId = "device_1234567890123456";
+  const trialBatch = writeBatch(alice);
+  trialBatch.set(doc(alice, "trial_devices/" + trialDeviceId), {
+    deviceId: trialDeviceId,
+    startedAt: serverTimestamp()
+  });
+  trialBatch.set(doc(alice, "trial_entitlements/alice"), {
+    uid: "alice",
+    deviceId: trialDeviceId,
+    startedAt: serverTimestamp()
+  });
+  await allow("akun dapat memulai Trial satu kali dengan waktu server", trialBatch.commit());
+  await allow("akun dapat membaca data Trial miliknya", getDoc(doc(alice, "trial_entitlements/alice")));
+  await deny("akun lain tidak dapat membaca data Trial pengguna", getDoc(doc(bob, "trial_entitlements/alice")));
+  await deny("akun tidak dapat memperpanjang atau mengubah Trial", updateDoc(doc(alice, "trial_entitlements/alice"), {
+    startedAt: serverTimestamp()
+  }));
+  await deny("akun tidak dapat menghapus catatan Trial", deleteDoc(doc(alice, "trial_entitlements/alice")));
+  await deny("akun lain tidak dapat memakai Android ID yang sudah diklaim", setDoc(
+    doc(bob, "trial_devices/" + trialDeviceId), {
+      deviceId: trialDeviceId,
+      startedAt: serverTimestamp()
+    }
+  ));
+  const secondDeviceBatch = writeBatch(alice);
+  secondDeviceBatch.set(doc(alice, "trial_devices/device_abcdefghijklmnop"), {
+    deviceId: "device_abcdefghijklmnop",
+    startedAt: serverTimestamp()
+  });
+  secondDeviceBatch.set(doc(alice, "trial_entitlements/alice"), {
+    uid: "alice",
+    deviceId: "device_abcdefghijklmnop",
+    startedAt: serverTimestamp()
+  });
+  await deny("akun tidak dapat mengulang Trial pada perangkat kedua", secondDeviceBatch.commit());
 
   await allow("anggota dapat membaca status VIP+ miliknya", getDoc(doc(alice, "vip_members/alice")));
   await deny("anggota tidak dapat membaca status VIP+ pengguna lain", getDoc(doc(bob, "vip_members/alice")));
