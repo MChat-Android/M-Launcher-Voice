@@ -2313,8 +2313,12 @@ jobs:
                                                                       val now = com.google.firebase.Timestamp.now()
                                                                       val nowMillis = now.toDate().time
                                                                       val currentExpiry = member.getTimestamp("expiresAt")?.toDate()?.time ?: 0L
+                                                                      val currentPlan = member.getString("membershipPlan").orEmpty()
+                                                                      check(!(member.getString("membershipStatus") == "ACTIVE" && currentPlan == "VIP Permanen" && currentExpiry > 0L)) {
+                                                                          "Data VIP Permanen memiliki tanggal kedaluwarsa yang tidak valid; periksa akun sebelum mengubahnya."
+                                                                      }
                                                                       val currentActive = member.getString("membershipStatus") == "ACTIVE" &&
-                                                                          (currentExpiry == 0L || currentExpiry > nowMillis)
+                                                                          (currentExpiry == 0L && currentPlan == "VIP Permanen" || currentExpiry > nowMillis)
                                                                       check(!(days > 0 && currentActive && currentExpiry == 0L)) {
                                                                           "Akun sudah VIP Permanen. Paket bulanan tidak boleh menggantikan akses permanen."
                                                                       }
