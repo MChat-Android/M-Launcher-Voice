@@ -72,6 +72,7 @@ try {
   });
 
   const trialDeviceId = "device_1234567890123456";
+  await allow("pengguna dapat memeriksa Android ID yang belum diklaim", getDoc(doc(alice, "trial_devices/" + trialDeviceId)));
   const trialBatch = writeBatch(alice);
   trialBatch.set(doc(alice, "trial_devices/" + trialDeviceId), {
     deviceId: trialDeviceId,
