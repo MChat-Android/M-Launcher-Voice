@@ -122,6 +122,9 @@ async function main() {
       const nowMillis = now.toMillis();
       const currentExpiry = member.expiresAt?.toMillis?.() ?? 0;
       const currentPlan = member.membershipPlan || "";
+      if (member.membershipStatus === "ACTIVE" && currentPlan === "VIP Permanen" && currentExpiry > 0) {
+        throw new Error("Permanent VIP record has an unexpected expiry date; review the account before changing it.");
+      }
       const currentActive = member.membershipStatus === "ACTIVE" &&
         (currentExpiry === 0 ? currentPlan === "VIP Permanen" : currentExpiry > nowMillis);
       if (member.membershipStatus === "ACTIVE" && currentExpiry === 0 && currentPlan !== "VIP Permanen") {
