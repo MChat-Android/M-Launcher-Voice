@@ -1037,8 +1037,11 @@ jobs:
                                       inmobiRewardedAd = null
                                       standardAdDismissed = true
                                       if (standardRewardUnlocked) {
+                                          inmobiLastDiagnostic = "AD_DISMISSED_AFTER_REWARD"
                                           completeStandardActivation()
                                       } else if (standardActivationPending) {
+                                          inmobiLastDiagnostic = "AD_DISMISSED_WITHOUT_REWARD_CALLBACK"
+                                          android.util.Log.w("MAsisten-InMobi", inmobiLastDiagnostic)
                                           failStandardActivation()
                                       }
                                       loadStandardRewardedAd()
