@@ -349,31 +349,7 @@ jobs:
           }
 
           object MAsistenVoiceSettings {
-              private const val PREFS = "m_asisten_voice_settings"
-              private const val KEY_WAKE_PHRASE = "wake_phrase"
-              private const val KEY_VOICE_STYLE = "voice_style"
               const val DEFAULT_WAKE_PHRASE = "Hallo M"
-              const val DEFAULT_VOICE_STYLE = "YOUNG_MALE_ENERGETIC"
-
-              fun getWakePhrase(context: android.content.Context): String =
-                  context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
-                      .getString(KEY_WAKE_PHRASE, DEFAULT_WAKE_PHRASE)
-                      ?.trim()
-                      ?.takeIf { it.isNotBlank() }
-                      ?: DEFAULT_WAKE_PHRASE
-
-              fun getVoiceStyle(context: android.content.Context): String =
-                  context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
-                      .getString(KEY_VOICE_STYLE, DEFAULT_VOICE_STYLE)
-                      ?: DEFAULT_VOICE_STYLE
-
-              fun save(context: android.content.Context, wakePhrase: String, voiceStyle: String) {
-                  context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
-                      .edit()
-                      .putString(KEY_WAKE_PHRASE, wakePhrase.trim())
-                      .putString(KEY_VOICE_STYLE, voiceStyle)
-                      .apply()
-              }
 
               fun normalize(value: String): String =
                   value.lowercase(Locale("id", "ID"))
@@ -381,27 +357,10 @@ jobs:
                       .replace(Regex("\\s+"), " ")
                       .trim()
 
-              // Empat karakter menggunakan kombinasi nada dan kecepatan TTS perangkat.
-              // Suara dasar tetap bergantung pada mesin dan paket suara yang tersedia di Android.
+              // Karakter suara tetap: pemuda energik.
               fun applyTo(context: android.content.Context, engine: TextToSpeech) {
-                  when (getVoiceStyle(context)) {
-                      "YOUNG_MALE_POLITE" -> {
-                          engine.setPitch(0.88f)
-                          engine.setSpeechRate(0.94f)
-                      }
-                      "YOUNG_FEMALE_ENERGETIC" -> {
-                          engine.setPitch(1.22f)
-                          engine.setSpeechRate(1.12f)
-                      }
-                      "YOUNG_FEMALE_POLITE" -> {
-                          engine.setPitch(1.18f)
-                          engine.setSpeechRate(0.94f)
-                      }
-                      else -> {
-                          engine.setPitch(0.94f)
-                          engine.setSpeechRate(1.12f)
-                      }
-                  }
+                  engine.setPitch(0.94f)
+                  engine.setSpeechRate(1.12f)
               }
           }
 
@@ -1446,11 +1405,6 @@ jobs:
               onLogout: () -> Unit
           ) {
               val isEnglish = Locale.getDefault().language.equals("en", ignoreCase = true)
-              val voiceSettingsContext = LocalContext.current
-              var showVoiceSettings by remember { mutableStateOf(false) }
-              var wakePhrase by remember { mutableStateOf(MAsistenVoiceSettings.getWakePhrase(voiceSettingsContext)) }
-              var wakePhraseDraft by remember { mutableStateOf(wakePhrase) }
-              var selectedVoiceStyle by remember { mutableStateOf(MAsistenVoiceSettings.getVoiceStyle(voiceSettingsContext)) }
               var showVipPlus by remember { mutableStateOf(false) }
               var selectedVipPlan by remember { mutableStateOf("VIP+ Bulanan (30 hari)") }
               var payerName by remember { mutableStateOf("") }
@@ -1837,113 +1791,6 @@ jobs:
                               Spacer(Modifier.height(12.dp))
                               Text(message, color = if (message.contains("diaktifkan")) Cyan else Muted, fontSize = 12.sp, textAlign = TextAlign.Center)
                           }
-                      }
-
-                      Spacer(Modifier.height(14.dp))
-                      Card(
-                          modifier = Modifier.fillMaxWidth().clickable {
-                              wakePhraseDraft = wakePhrase
-                              selectedVoiceStyle = MAsistenVoiceSettings.getVoiceStyle(voiceSettingsContext)
-                              showVoiceSettings = true
-                          },
-                          shape = RoundedCornerShape(18.dp),
-                          colors = CardDefaults.cardColors(containerColor = if (isVipPlus) premiumPanel else Panel),
-                          border = androidx.compose.foundation.BorderStroke(1.dp, if (isVipPlus) premiumBorder else Cyan)
-                      ) {
-                          Row(
-                              modifier = Modifier.fillMaxWidth().padding(18.dp),
-                              verticalAlignment = Alignment.CenterVertically
-                          ) {
-                              Column(modifier = Modifier.weight(1f)) {
-                                  Text("PENGATURAN SUARA", color = if (isVipPlus) premiumGold else Cyan, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold)
-                                  Spacer(Modifier.height(4.dp))
-                                  Text("Ubah kata pemicu dan karakter suara M Asisten", color = Muted, fontSize = 11.sp)
-                              }
-                              Text("⚙", color = if (isVipPlus) premiumGold else Cyan, fontSize = 24.sp)
-                          }
-                      }
-
-                      if (showVoiceSettings) {
-                          AlertDialog(
-                              onDismissRequest = { showVoiceSettings = false },
-                              containerColor = Panel,
-                              title = { Text("Pengaturan Suara", color = Color.White, fontWeight = FontWeight.ExtraBold) },
-                              text = {
-                                  Column(
-                                      modifier = Modifier.fillMaxWidth().heightIn(max = 470.dp).verticalScroll(rememberScrollState()),
-                                      verticalArrangement = Arrangement.spacedBy(8.dp)
-                                  ) {
-                                      Text("KATA PEMICU", color = Cyan, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold)
-                                      OutlinedTextField(
-                                          value = wakePhraseDraft,
-                                          onValueChange = { wakePhraseDraft = it },
-                                          modifier = Modifier.fillMaxWidth(),
-                                          singleLine = true,
-                                          label = { Text("Contoh: Hallo M") },
-                                          supportingText = { Text("Ucapkan kalimat ini untuk membangunkan M Asisten.") },
-                                          colors = OutlinedTextFieldDefaults.colors(
-                                              focusedTextColor = Color.White,
-                                              unfocusedTextColor = Color.White,
-                                              focusedBorderColor = Cyan,
-                                              unfocusedBorderColor = Muted,
-                                              focusedLabelColor = Cyan,
-                                              unfocusedLabelColor = Muted
-                                          )
-                                      )
-                                      Spacer(Modifier.height(4.dp))
-                                      Text("PILIH KARAKTER SUARA", color = Cyan, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold)
-                                      val voiceChoices = listOf(
-                                          "YOUNG_MALE_ENERGETIC" to ("Pemuda Ceria" to "Laki-laki muda, bersemangat dan ekspresif"),
-                                          "YOUNG_MALE_POLITE" to ("Pemuda Santun" to "Laki-laki muda, tenang dan ramah"),
-                                          "YOUNG_FEMALE_ENERGETIC" to ("Pemudi Ceria" to "Perempuan muda, bersemangat dan ekspresif"),
-                                          "YOUNG_FEMALE_POLITE" to ("Pemudi Santun" to "Perempuan muda, lembut dan ramah")
-                                      )
-                                      voiceChoices.forEach { (key, details) ->
-                                          Row(
-                                              modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
-                                                  .clickable { selectedVoiceStyle = key }
-                                                  .background(if (selectedVoiceStyle == key) Color(0xFF17394A) else Color(0xFF0B1929))
-                                                  .padding(horizontal = 10.dp, vertical = 8.dp),
-                                              verticalAlignment = Alignment.CenterVertically
-                                          ) {
-                                              RadioButton(
-                                                  selected = selectedVoiceStyle == key,
-                                                  onClick = { selectedVoiceStyle = key },
-                                                  colors = RadioButtonDefaults.colors(selectedColor = Cyan, unselectedColor = Muted)
-                                              )
-                                              Column(modifier = Modifier.weight(1f)) {
-                                                  Text(details.first, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                                                  Text(details.second, color = Muted, fontSize = 10.sp)
-                                              }
-                                          }
-                                      }
-                                      Text(
-                                          "Karakter suara dibentuk dari nada dan kecepatan Text-to-Speech Android. Hasil suara dapat berbeda sesuai mesin suara yang tersedia di ponsel.",
-                                          color = Muted,
-                                          fontSize = 10.sp,
-                                          lineHeight = 15.sp
-                                      )
-                                  }
-                              },
-                              confirmButton = {
-                                  Button(
-                                      onClick = {
-                                          if (wakePhraseDraft.trim().isNotBlank()) {
-                                              wakePhrase = wakePhraseDraft.trim()
-                                              MAsistenVoiceSettings.save(voiceSettingsContext, wakePhrase, selectedVoiceStyle)
-                                              showVoiceSettings = false
-                                          }
-                                      },
-                                      enabled = wakePhraseDraft.trim().isNotBlank(),
-                                      colors = ButtonDefaults.buttonColors(containerColor = Cyan, contentColor = Navy)
-                                  ) { Text("SIMPAN") }
-                              },
-                              dismissButton = {
-                                  TextButton(onClick = { showVoiceSettings = false }) {
-                                      Text("BATAL", color = Muted)
-                                  }
-                              }
-                          )
                       }
 
                       Spacer(Modifier.height(18.dp))
@@ -3713,12 +3560,11 @@ jobs:
               private fun isWakeWord(text: String): Boolean {
                   val normalized = MAsistenVoiceSettings.normalize(text)
                   val configuredPhrase = MAsistenVoiceSettings.normalize(
-                      MAsistenVoiceSettings.getWakePhrase(this)
+                      MAsistenVoiceSettings.DEFAULT_WAKE_PHRASE
                   )
                   if (normalized == configuredPhrase) return true
-                  // Variasi pengucapan bawaan tetap diterima selama pengguna memakai "Hallo M".
-                  return configuredPhrase == "hallo m" &&
-                      normalized in setOf("halo m", "hello m", "hallo em", "halo em", "hello em")
+                  // Variasi pengucapan untuk kata pemicu tetap "Hallo M".
+                  return normalized in setOf("halo m", "hello m", "hallo em", "halo em", "hello em")
               }
 
               private fun scheduleWakeWordListening(delayMs: Long = 800L) {
