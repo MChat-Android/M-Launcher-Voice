@@ -284,6 +284,22 @@ try {
     testPaymentRequestId: "SIM-TEST-001",
     updatedAt: serverTimestamp()
   }));
+
+  await deny("admin tidak dapat mengaktifkan paket bulanan tanpa tanggal kedaluwarsa", updateDoc(doc(admin, "vip_members/alice"), {
+    membershipStatus: "ACTIVE",
+    membershipPlan: "VIP Bulanan (30 hari)",
+    startedAt: Timestamp.now(),
+    expiresAt: null,
+    updatedAt: serverTimestamp()
+  }));
+
+  await allow("admin dapat mengaktifkan VIP Permanen tanpa tanggal kedaluwarsa", updateDoc(doc(admin, "vip_members/alice"), {
+    membershipStatus: "ACTIVE",
+    membershipPlan: "VIP Permanen",
+    startedAt: Timestamp.now(),
+    expiresAt: null,
+    updatedAt: serverTimestamp()
+  }));
   await deny("pengguna biasa tidak dapat menulis metadata simulasi VIP", updateDoc(doc(alice, "vip_members/alice"), {
     testMode: true,
     testPaymentRequestId: "SIM-TEST-USER",
