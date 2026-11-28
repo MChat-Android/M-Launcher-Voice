@@ -16,7 +16,7 @@ const auth = admin.auth();
 const PLANS = {
   "VIP+ Mingguan (7 hari)": { amount: 15000, days: 7 },
   "VIP+ Bulanan (30 hari)": { amount: 50000, days: 30 },
-  "VIP+ Permanen": { amount: 750000, days: null }
+  "VIP+ Permanen": { amount: 499000, legacyAmounts: [750000], days: null }
 };
 
 async function main() {
@@ -63,7 +63,9 @@ async function main() {
         return;
       }
       const plan = PLANS[payment.plan];
-      if (!plan || payment.amountIdr !== plan.amount) throw new Error("Plan/amount mismatch; refusing activation.");
+      if (!plan || ![plan.amount, ...(plan.legacyAmounts || [])].includes(payment.amountIdr)) {
+        throw new Error("Plan/amount mismatch; refusing activation.");
+      }
       const now = admin.firestore.Timestamp.now();
       const expiresAt = plan.days === null
         ? null
