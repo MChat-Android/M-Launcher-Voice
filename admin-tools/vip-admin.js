@@ -87,7 +87,7 @@ async function main() {
         adminNote: note || "Pembayaran diverifikasi."
       });
     });
-    console.log(command === "verify" ? "Payment verified and VIP+ activated." : "Payment request rejected.");
+    console.log(command === "verify" ? "Payment verified and VIP activated." : "Payment request rejected.");
     return;
   }
   console.log("Commands:");
