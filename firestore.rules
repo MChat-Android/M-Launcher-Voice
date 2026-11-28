@@ -13,7 +13,363 @@ service cloud.firestore {
       return value is string
         && value.size() >= 20
         && value.size() <= 64
-        && value.matches('^[A-Za-z0-9_-]+$');
+        && value.matches('^[A-Za-z0-9_-]+
+
+    function isAdmin() {
+      return request.auth != null && request.auth.token.admin == true;
+    }
+
+    function validVipPlan(plan, amount) {
+      return (plan == 'VIP+ Mingguan (7 hari)' && amount == 15000)
+        || (plan == 'VIP+ Bulanan (30 hari)' && amount == 50000)
+        || (plan == 'VIP+ Permanen' && amount == 750000);
+    }
+
+    match /vip_payment_requests/{requestId} {
+      allow create: if request.auth != null
+        && request.auth.token.email_verified == true
+        && request.resource.data.keys().hasOnly([
+          'uid', 'email', 'displayName', 'plan', 'amountIdr',
+          'paymentMethod', 'bankName', 'accountNumber',
+          'accountBrandName', 'registeredAccountHolder',
+          'payerName', 'transferReference', 'status', 'createdAt'
+        ])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() <= 128
+        && request.resource.data.plan is string
+        && request.resource.data.amountIdr is int
+        && validVipPlan(request.resource.data.plan, request.resource.data.amountIdr)
+        && request.resource.data.paymentMethod == 'SEABANK_TRANSFER'
+        && request.resource.data.bankName == 'SeaBank'
+        && request.resource.data.accountNumber == '901023118338'
+        && request.resource.data.accountBrandName == 'M Asisten'
+        && request.resource.data.registeredAccountHolder == 'Muhamad Soleh'
+        && request.resource.data.payerName is string
+        && request.resource.data.payerName.size() >= 2
+        && request.resource.data.payerName.size() <= 100
+        && request.resource.data.transferReference is string
+        && request.resource.data.transferReference.size() <= 120
+        && request.resource.data.status == 'PENDING_REVIEW'
+        && request.resource.data.createdAt == request.time;
+
+      allow read: if (request.auth != null && resource.data.uid == request.auth.uid) || isAdmin();
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'status', 'adminUid', 'reviewedAt', 'adminNote'
+        ])
+        && request.resource.data.status in ['VERIFIED', 'REJECTED']
+        && request.resource.data.adminUid == request.auth.uid
+        && request.resource.data.reviewedAt == request.time
+        && (!('adminNote' in request.resource.data)
+          || (request.resource.data.adminNote is string
+            && request.resource.data.adminNote.size() <= 500));
+      allow delete: if false;
+    }
+
+    match /vip_members/{userId} {
+      allow read: if signedInAs(userId) || isAdmin();
+
+      allow create: if verifiedOwner(userId)
+        && request.resource.data.keys().hasOnly([
+          'uid', 'email', 'displayName', 'provider',
+          'lastLoginAt', 'updatedAt'
+        ])
+        && request.resource.data.uid == userId
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() > 0
+        && request.resource.data.displayName.size() <= 128
+        && request.resource.data.provider == 'google'
+        && request.resource.data.lastLoginAt == request.time
+        && request.resource.data.updatedAt == request.time;
+
+      allow update: if (verifiedOwner(userId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'email', 'displayName', 'provider', 'lastLoginAt', 'updatedAt'
+        ])
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() > 0
+        && request.resource.data.displayName.size() <= 128
+        && request.resource.data.provider == 'google'
+        && request.resource.data.lastLoginAt == request.time
+        && request.resource.data.updatedAt == request.time)
+        || (isAdmin()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'membershipStatus', 'membershipPlan', 'startedAt',
+            'expiresAt', 'verifiedPaymentRequestId', 'updatedAt',
+            'testMode', 'testPaymentRequestId'
+          ])
+          && request.resource.data.membershipStatus in ['ACTIVE', 'FREE']
+          && request.resource.data.updatedAt == request.time
+          && (!('testMode' in request.resource.data)
+            || request.resource.data.testMode == true)
+          && (!('testPaymentRequestId' in request.resource.data)
+            || (request.resource.data.testPaymentRequestId is string
+              && request.resource.data.testPaymentRequestId.size() > 0)));
+
+      allow delete: if false;
+    }
+
+    // Trial hanya dapat dibuat sekali per akun dan sekali per Android ID.
+    // Waktu mulai wajib berasal dari server; dokumen tidak dapat diubah atau dihapus.
+    match /trial_entitlements/{userId} {
+      allow read: if signedInAs(userId);
+
+      allow create: if verifiedOwner(userId)
+        && request.resource.data.keys().hasOnly(['uid', 'deviceId', 'startedAt'])
+        && request.resource.data.uid == userId
+        && validTrialDeviceId(request.resource.data.deviceId)
+        && request.resource.data.startedAt == request.time
+        && getAfter(/databases/$(database)/documents/trial_devices/$(request.resource.data.deviceId)).data.deviceId
+          == request.resource.data.deviceId;
+
+      allow update, delete: if false;
+    }
+
+    match /trial_devices/{deviceId} {
+      // Dokumen hanya berisi ID perangkat dan waktu server, tanpa data akun.
+      allow read: if request.auth != null && resource.data.deviceId == deviceId;
+
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['deviceId', 'startedAt'])
+        && validTrialDeviceId(deviceId)
+        && request.resource.data.deviceId == deviceId
+        && request.resource.data.startedAt == request.time;
+
+      allow update, delete: if false;
+    }
+
+    match /users/{userId} {
+      allow read: if signedInAs(userId);
+
+      allow create: if verifiedOwner(userId)
+        && request.resource.data.keys().hasOnly([
+          'memberId', 'displayName', 'activeDeviceId',
+          'deviceChangedAt', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.memberId is string
+        && request.resource.data.memberId.matches('^MA-[A-Z0-9]{10}$')
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() > 0
+        && request.resource.data.displayName.size() <= 32
+        && validDeviceId(request.resource.data.activeDeviceId)
+        && request.resource.data.deviceChangedAt == request.time
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+
+      allow update: if verifiedOwner(userId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'displayName', 'activeDeviceId', 'deviceChangedAt', 'updatedAt'
+        ])
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() > 0
+        && request.resource.data.displayName.size() <= 32
+        && validDeviceId(request.resource.data.activeDeviceId)
+        && request.resource.data.deviceChangedAt == request.time
+        && request.resource.data.updatedAt == request.time;
+
+      allow delete: if false;
+
+      match /backups/{backupId} {
+        function isActiveDevice() {
+          return signedInAs(userId)
+            && get(/databases/$(database)/documents/users/$(userId))
+              .data.activeDeviceId == request.resource.data.deviceId;
+        }
+
+        allow read: if signedInAs(userId)
+          && get(/databases/$(database)/documents/users/$(userId))
+            .data.activeDeviceId == resource.data.deviceId;
+
+        allow create, update: if isActiveDevice()
+          && request.resource.data.keys().hasOnly([
+            'deviceId', 'schemaVersion', 'payload', 'updatedAt'
+          ])
+          && validDeviceId(request.resource.data.deviceId)
+          && request.resource.data.schemaVersion is int
+          && request.resource.data.payload is map
+          && request.resource.data.updatedAt == request.time
+          && request.resource.data.payload.keys().hasOnly([
+            'displayName', 'preferences'
+          ]);
+
+        allow delete: if signedInAs(userId)
+          && get(/databases/$(database)/documents/users/$(userId))
+            .data.activeDeviceId == resource.data.deviceId;
+      }
+    }
+  }
+});
+    }
+
+    function validTrialDeviceId(value) {
+      return value is string
+        && value.size() >= 16
+        && value.size() <= 64
+        && value.matches('^[A-Za-z0-9_-]+
+
+    function isAdmin() {
+      return request.auth != null && request.auth.token.admin == true;
+    }
+
+    function validVipPlan(plan, amount) {
+      return (plan == 'VIP+ Mingguan (7 hari)' && amount == 15000)
+        || (plan == 'VIP+ Bulanan (30 hari)' && amount == 50000)
+        || (plan == 'VIP+ Permanen' && amount == 750000);
+    }
+
+    match /vip_payment_requests/{requestId} {
+      allow create: if request.auth != null
+        && request.auth.token.email_verified == true
+        && request.resource.data.keys().hasOnly([
+          'uid', 'email', 'displayName', 'plan', 'amountIdr',
+          'paymentMethod', 'bankName', 'accountNumber',
+          'accountBrandName', 'registeredAccountHolder',
+          'payerName', 'transferReference', 'status', 'createdAt'
+        ])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() <= 128
+        && request.resource.data.plan is string
+        && request.resource.data.amountIdr is int
+        && validVipPlan(request.resource.data.plan, request.resource.data.amountIdr)
+        && request.resource.data.paymentMethod == 'SEABANK_TRANSFER'
+        && request.resource.data.bankName == 'SeaBank'
+        && request.resource.data.accountNumber == '901023118338'
+        && request.resource.data.accountBrandName == 'M Asisten'
+        && request.resource.data.registeredAccountHolder == 'Muhamad Soleh'
+        && request.resource.data.payerName is string
+        && request.resource.data.payerName.size() >= 2
+        && request.resource.data.payerName.size() <= 100
+        && request.resource.data.transferReference is string
+        && request.resource.data.transferReference.size() <= 120
+        && request.resource.data.status == 'PENDING_REVIEW'
+        && request.resource.data.createdAt == request.time;
+
+      allow read: if (request.auth != null && resource.data.uid == request.auth.uid) || isAdmin();
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'status', 'adminUid', 'reviewedAt', 'adminNote'
+        ])
+        && request.resource.data.status in ['VERIFIED', 'REJECTED']
+        && request.resource.data.adminUid == request.auth.uid
+        && request.resource.data.reviewedAt == request.time
+        && (!('adminNote' in request.resource.data)
+          || (request.resource.data.adminNote is string
+            && request.resource.data.adminNote.size() <= 500));
+      allow delete: if false;
+    }
+
+    match /vip_members/{userId} {
+      allow read: if signedInAs(userId) || isAdmin();
+
+      allow create: if verifiedOwner(userId)
+        && request.resource.data.keys().hasOnly([
+          'uid', 'email', 'displayName', 'provider',
+          'lastLoginAt', 'updatedAt'
+        ])
+        && request.resource.data.uid == userId
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() > 0
+        && request.resource.data.displayName.size() <= 128
+        && request.resource.data.provider == 'google'
+        && request.resource.data.lastLoginAt == request.time
+        && request.resource.data.updatedAt == request.time;
+
+      allow update: if (verifiedOwner(userId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'email', 'displayName', 'provider', 'lastLoginAt', 'updatedAt'
+        ])
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() > 0
+        && request.resource.data.displayName.size() <= 128
+        && request.resource.data.provider == 'google'
+        && request.resource.data.lastLoginAt == request.time
+        && request.resource.data.updatedAt == request.time)
+        || (isAdmin()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'membershipStatus', 'membershipPlan', 'startedAt',
+            'expiresAt', 'verifiedPaymentRequestId', 'updatedAt',
+            'testMode', 'testPaymentRequestId'
+          ])
+          && request.resource.data.membershipStatus in ['ACTIVE', 'FREE']
+          && request.resource.data.updatedAt == request.time
+          && (!('testMode' in request.resource.data)
+            || request.resource.data.testMode == true)
+          && (!('testPaymentRequestId' in request.resource.data)
+            || (request.resource.data.testPaymentRequestId is string
+              && request.resource.data.testPaymentRequestId.size() > 0)));
+
+      allow delete: if false;
+    }
+
+    match /users/{userId} {
+      allow read: if signedInAs(userId);
+
+      allow create: if verifiedOwner(userId)
+        && request.resource.data.keys().hasOnly([
+          'memberId', 'displayName', 'activeDeviceId',
+          'deviceChangedAt', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.memberId is string
+        && request.resource.data.memberId.matches('^MA-[A-Z0-9]{10}$')
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() > 0
+        && request.resource.data.displayName.size() <= 32
+        && validDeviceId(request.resource.data.activeDeviceId)
+        && request.resource.data.deviceChangedAt == request.time
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+
+      allow update: if verifiedOwner(userId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'displayName', 'activeDeviceId', 'deviceChangedAt', 'updatedAt'
+        ])
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() > 0
+        && request.resource.data.displayName.size() <= 32
+        && validDeviceId(request.resource.data.activeDeviceId)
+        && request.resource.data.deviceChangedAt == request.time
+        && request.resource.data.updatedAt == request.time;
+
+      allow delete: if false;
+
+      match /backups/{backupId} {
+        function isActiveDevice() {
+          return signedInAs(userId)
+            && get(/databases/$(database)/documents/users/$(userId))
+              .data.activeDeviceId == request.resource.data.deviceId;
+        }
+
+        allow read: if signedInAs(userId)
+          && get(/databases/$(database)/documents/users/$(userId))
+            .data.activeDeviceId == resource.data.deviceId;
+
+        allow create, update: if isActiveDevice()
+          && request.resource.data.keys().hasOnly([
+            'deviceId', 'schemaVersion', 'payload', 'updatedAt'
+          ])
+          && validDeviceId(request.resource.data.deviceId)
+          && request.resource.data.schemaVersion is int
+          && request.resource.data.payload is map
+          && request.resource.data.updatedAt == request.time
+          && request.resource.data.payload.keys().hasOnly([
+            'displayName', 'preferences'
+          ]);
+
+        allow delete: if signedInAs(userId)
+          && get(/databases/$(database)/documents/users/$(userId))
+            .data.activeDeviceId == resource.data.deviceId;
+      }
+    }
+  }
+});
     }
 
     function isAdmin() {
