@@ -628,6 +628,7 @@ jobs:
               private var standardWidgetStarter: (() -> Unit)? = null
               private var standardRewardUnlocked = false
               private var standardAdDismissed = false
+              private var inmobiLastDiagnostic = ""
 
               private val voiceMessageReceiver = object : android.content.BroadcastReceiver() {
                   override fun onReceive(context: android.content.Context?, intent: Intent?) {
@@ -960,9 +961,13 @@ jobs:
                               override fun onInitializationComplete(error: Error?) {
                                   runOnUiThread {
                                       if (error == null) {
+                                          inmobiLastDiagnostic = "SDK_INIT_SUCCESS"
+                                          android.util.Log.i("MAsisten-InMobi", inmobiLastDiagnostic)
                                           isInMobiInitialized = true
                                           loadStandardRewardedAd()
                                       } else {
+                                          inmobiLastDiagnostic = "SDK_INIT_FAILED: ${error}"
+                                          android.util.Log.e("MAsisten-InMobi", inmobiLastDiagnostic)
                                           isInMobiInitialized = false
                                           message = "Layanan iklan belum siap. Periksa koneksi lalu coba lagi."
                                           if (standardActivationPending) failStandardActivation()
@@ -971,7 +976,9 @@ jobs:
                               }
                           }
                       )
-                  } catch (_: Exception) {
+                  } catch (e: Exception) {
+                      inmobiLastDiagnostic = "SDK_INIT_EXCEPTION: ${e}"
+                      android.util.Log.e("MAsisten-InMobi", inmobiLastDiagnostic, e)
                       isInMobiInitialized = false
                       message = "Layanan iklan belum dapat dijalankan. Widget belum diaktifkan."
                   }
@@ -986,7 +993,9 @@ jobs:
                           INMOBI_WIDGET_REWARDED_PLACEMENT_ID,
                           object : InterstitialAdEventListener() {
                               override fun onAdLoadSucceeded(ad: InMobiInterstitial, info: AdMetaInfo) {
+                                  android.util.Log.i("MAsisten-InMobi", "AD_LOAD_SUCCESS: ${info}")
                                   runOnUiThread {
+                                      inmobiLastDiagnostic = "AD_LOAD_SUCCESS"
                                       isInMobiAdLoading = false
                                       inmobiRewardedAd = ad
                                       if (standardActivationPending) showLoadedStandardRewardedAd()
@@ -994,6 +1003,8 @@ jobs:
                               }
 
                               override fun onAdLoadFailed(ad: InMobiInterstitial, status: InMobiAdRequestStatus) {
+                                  inmobiLastDiagnostic = "AD_LOAD_FAILED: ${status}"
+                                  android.util.Log.e("MAsisten-InMobi", inmobiLastDiagnostic)
                                   runOnUiThread {
                                       isInMobiAdLoading = false
                                       inmobiRewardedAd = null
@@ -1002,6 +1013,8 @@ jobs:
                               }
 
                               override fun onAdDisplayFailed(ad: InMobiInterstitial) {
+                                  inmobiLastDiagnostic = "AD_DISPLAY_FAILED"
+                                  android.util.Log.e("MAsisten-InMobi", inmobiLastDiagnostic)
                                   runOnUiThread {
                                       inmobiRewardedAd = null
                                       if (standardActivationPending) failStandardActivation()
@@ -1010,6 +1023,8 @@ jobs:
                               }
 
                               override fun onRewardsUnlocked(ad: InMobiInterstitial, rewards: Map<Any, Any>) {
+                                  inmobiLastDiagnostic = "REWARD_UNLOCKED: ${rewards}"
+                                  android.util.Log.i("MAsisten-InMobi", inmobiLastDiagnostic)
                                   runOnUiThread {
                                       standardRewardUnlocked = true
                                       if (standardAdDismissed) completeStandardActivation()
@@ -1017,6 +1032,7 @@ jobs:
                               }
 
                               override fun onAdDismissed(ad: InMobiInterstitial) {
+                                  android.util.Log.i("MAsisten-InMobi", "AD_DISMISSED; rewardUnlocked=${standardRewardUnlocked}")
                                   runOnUiThread {
                                       inmobiRewardedAd = null
                                       standardAdDismissed = true
@@ -1032,7 +1048,9 @@ jobs:
                       )
                       inmobiRewardedAd = ad
                       ad.load()
-                  } catch (_: Exception) {
+                  } catch (e: Exception) {
+                      inmobiLastDiagnostic = "AD_LOAD_EXCEPTION: ${e}"
+                      android.util.Log.e("MAsisten-InMobi", inmobiLastDiagnostic, e)
                       isInMobiAdLoading = false
                       inmobiRewardedAd = null
                       if (standardActivationPending) failStandardActivation()
@@ -1068,7 +1086,9 @@ jobs:
                   }
                   try {
                       ad.show()
-                  } catch (_: Exception) {
+                  } catch (e: Exception) {
+                      inmobiLastDiagnostic = "AD_SHOW_EXCEPTION: ${e}"
+                      android.util.Log.e("MAsisten-InMobi", inmobiLastDiagnostic, e)
                       inmobiRewardedAd = null
                       failStandardActivation()
                       loadStandardRewardedAd()
@@ -1081,7 +1101,8 @@ jobs:
                   standardWidgetStarter = null
                   standardRewardUnlocked = false
                   standardAdDismissed = false
-                  message = "Iklan belum selesai atau tidak tersedia. Widget belum diaktifkan; silakan coba lagi."
+                  val detail = inmobiLastDiagnostic.ifBlank { "Belum ada detail callback dari InMobi." }
+                  message = "Iklan belum selesai atau tidak tersedia. Widget belum diaktifkan; silakan coba lagi.\nDetail teknis: ${detail}"
               }
 
               private fun completeStandardActivation() {
