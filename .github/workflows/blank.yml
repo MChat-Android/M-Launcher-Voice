@@ -1257,7 +1257,9 @@ jobs:
                       horizontalAlignment = Alignment.CenterHorizontally
                   ) {
                       Row(
-                          modifier = Modifier.fillMaxWidth(),
+                          modifier = Modifier
+                              .fillMaxWidth()
+                              .padding(top = 30.dp),
                           horizontalArrangement = Arrangement.End,
                           verticalAlignment = Alignment.CenterVertically
                       ) {
@@ -1705,10 +1707,10 @@ jobs:
                   if (showAdminPanel && isAdminAccount) {
                       AlertDialog(
                           onDismissRequest = { showAdminPanel = false },
-                          containerColor = Panel,
+                          containerColor = Color(0xFF0D2932),
                           title = {
                               Column {
-                                  Text("PANEL ADMINISTRATOR", color = Cyan, fontWeight = FontWeight.ExtraBold)
+                                  Text("PANEL ADMINISTRATOR", color = Cyan, fontWeight = FontWeight.ExtraBold, style = vipTitleStyle)
                                   Text("Audit keanggotaan dan aktivitas administrasi", color = Muted, fontSize = 10.sp)
                               }
                           },
@@ -1746,78 +1748,6 @@ jobs:
                                   ) {
                                       Text(if (adminDashboardLoading) "MEMUAT DATA..." else "PERBARUI SEMUA DATA")
                                   }
-                                  Text("DATA KEANGGOTAAN (maks. 100 akun)", color = Cyan, fontWeight = FontWeight.Bold, fontSize = 11.sp)
-                                  if (adminVipRows.isEmpty()) {
-                                      Text("Belum ada data atau data belum dimuat.", color = Muted, fontSize = 10.sp)
-                                  } else {
-                                      adminVipRows.forEach { item ->
-                                          Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color(0xFF172B42))) {
-                                              Text(item, modifier = Modifier.padding(9.dp), color = Color.White, fontSize = 9.sp, lineHeight = 14.sp)
-                                          }
-                                      }
-                                  }
-                                  Text("RIWAYAT PEMBAYARAN (maks. 100 transaksi)", color = Cyan, fontWeight = FontWeight.Bold, fontSize = 11.sp)
-                                  if (adminPaymentRows.isEmpty()) {
-                                      Text("Belum ada riwayat pembayaran.", color = Muted, fontSize = 10.sp)
-                                  } else {
-                                      adminPaymentRows.forEach { item ->
-                                          Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color(0xFF172B42))) {
-                                              Text(item, modifier = Modifier.padding(9.dp), color = Color.White, fontSize = 9.sp, lineHeight = 14.sp)
-                                          }
-                                      }
-                                  }
-                                  Text("NOTIFIKASI & JEJAK PERUBAHAN", color = Cyan, fontWeight = FontWeight.Bold, fontSize = 11.sp)
-                                  if (adminAuditEvents.isEmpty()) {
-                                      Text("Belum ada perubahan administrasi baru sejak panel admin dibuka.", color = Muted, fontSize = 10.sp)
-                                  } else {
-                                      adminAuditEvents.forEach { event ->
-                                          Row(verticalAlignment = Alignment.Top) {
-                                              Text("•", color = Color(0xFFFFC66D), fontSize = 12.sp)
-                                              Spacer(Modifier.width(6.dp))
-                                              Text(event, color = Color.White, fontSize = 10.sp, lineHeight = 14.sp)
-                                          }
-                                      }
-                                  }
-                                  if (adminMessage.isNotBlank()) {
-                                      Text(adminMessage, color = Muted, fontSize = 9.sp)
-                                  }
-                                  Text(
-                                      "Notifikasi dipantau saat akun admin sedang membuka aplikasi. Daftar menampilkan maksimal 100 akun dan 100 transaksi terbaru; angka ringkasan dihitung melalui agregasi Firestore.",
-                                      color = Muted,
-                                      fontSize = 9.sp,
-                                      lineHeight = 13.sp
-                                  )
-                              }
-                          },
-                          confirmButton = {
-                              OutlinedButton(
-                                  onClick = { showAdminPanel = false },
-                                  modifier = Modifier.fillMaxWidth(),
-                                  colors = ButtonDefaults.outlinedButtonColors(contentColor = Cyan)
-                              ) {
-                                  Text("TUTUP PANEL ADMIN", fontWeight = FontWeight.Bold)
-                              }
-                          }
-                      )
-                  }
-                  if (showVipPlus) {
-                      AlertDialog(
-                          onDismissRequest = { showVipPlus = false },
-                          containerColor = Panel,
-                          title = {
-                              Text(
-                                  "KEANGGOTAAN VIP",
-                                  color = Cyan,
-                                  fontWeight = FontWeight.ExtraBold,
-                                  style = if (isVipPlus) vipTitleStyle else androidx.compose.ui.text.TextStyle.Default
-                              )
-                          },
-                          text = {
-                              Column(
-                                  modifier = Modifier
-                                      .heightIn(max = maxHeight * 0.72f)
-                                      .verticalScroll(rememberScrollState())
-                              ) {
                                   if (isAdminAccount) {
                                       Card(Modifier.fillMaxWidth().padding(bottom = 12.dp),
                                           // Elevasi berlapis memberi kesan panel 3D tanpa mengganti warna asli.
@@ -2000,6 +1930,79 @@ jobs:
                                           }
                                       }
                                   }
+                                  Text("DATA KEANGGOTAAN (maks. 100 akun)", color = Cyan, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                                  if (adminVipRows.isEmpty()) {
+                                      Text("Belum ada data atau data belum dimuat.", color = Muted, fontSize = 10.sp)
+                                  } else {
+                                      adminVipRows.forEach { item ->
+                                          Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color(0xFF172B42))) {
+                                              Text(item, modifier = Modifier.padding(9.dp), color = Color.White, fontSize = 9.sp, lineHeight = 14.sp)
+                                          }
+                                      }
+                                  }
+                                  Text("RIWAYAT PEMBAYARAN (maks. 100 transaksi)", color = Cyan, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                                  if (adminPaymentRows.isEmpty()) {
+                                      Text("Belum ada riwayat pembayaran.", color = Muted, fontSize = 10.sp)
+                                  } else {
+                                      adminPaymentRows.forEach { item ->
+                                          Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color(0xFF172B42))) {
+                                              Text(item, modifier = Modifier.padding(9.dp), color = Color.White, fontSize = 9.sp, lineHeight = 14.sp)
+                                          }
+                                      }
+                                  }
+                                  Text("NOTIFIKASI & JEJAK PERUBAHAN", color = Cyan, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                                  if (adminAuditEvents.isEmpty()) {
+                                      Text("Belum ada perubahan administrasi baru sejak panel admin dibuka.", color = Muted, fontSize = 10.sp)
+                                  } else {
+                                      adminAuditEvents.forEach { event ->
+                                          Row(verticalAlignment = Alignment.Top) {
+                                              Text("•", color = Color(0xFFFFC66D), fontSize = 12.sp)
+                                              Spacer(Modifier.width(6.dp))
+                                              Text(event, color = Color.White, fontSize = 10.sp, lineHeight = 14.sp)
+                                          }
+                                      }
+                                  }
+                                  if (adminMessage.isNotBlank()) {
+                                      Text(adminMessage, color = Muted, fontSize = 9.sp)
+                                  }
+                                  Text(
+                                      "Notifikasi dipantau saat akun admin sedang membuka aplikasi. Daftar menampilkan maksimal 100 akun dan 100 transaksi terbaru; angka ringkasan dihitung melalui agregasi Firestore.",
+                                      color = Muted,
+                                      fontSize = 9.sp,
+                                      lineHeight = 13.sp
+                                  )
+                              }
+                          },
+                          confirmButton = {
+                              OutlinedButton(
+                                  onClick = { showAdminPanel = false },
+                                  modifier = Modifier.fillMaxWidth(),
+                                  colors = ButtonDefaults.outlinedButtonColors(contentColor = Cyan)
+                              ) {
+                                  Text("TUTUP PANEL ADMIN", fontWeight = FontWeight.Bold)
+                              }
+                          }
+                      )
+                  }
+                  if (showVipPlus) {
+                      AlertDialog(
+                          onDismissRequest = { showVipPlus = false },
+                          containerColor = Panel,
+                          title = {
+                              Text(
+                                  "KEANGGOTAAN VIP",
+                                  color = Cyan,
+                                  fontWeight = FontWeight.ExtraBold,
+                                  style = if (isVipPlus) vipTitleStyle else androidx.compose.ui.text.TextStyle.Default
+                              )
+                          },
+                          text = {
+                              Column(
+                                  modifier = Modifier
+                                      .heightIn(max = maxHeight * 0.72f)
+                                      .verticalScroll(rememberScrollState())
+                              ) {
+                                  
                                   Text(
                                       "Pengalaman lebih nyaman, dengan dukungan untuk pengembangan M Asisten.",
                                       color = Color.White,
